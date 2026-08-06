@@ -438,12 +438,19 @@ async function loadData() {
   document.getElementById('status').textContent = 'در حال دریافت...';
 
   try {
-    const res = await fetch(`/api/klines?symbol=${symbol}&interval=${currentInterval}&limit=300`);
-    const json = await res.json();
+    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${currentInterval}&limit=300`);
 
-    if (!json.success) throw new Error(json.error || 'خطا در دریافت داده');
+    if (!res.ok) throw new Error(`خطای بایننس: ${res.status}`);
 
-    const candles = json.data;
+    const raw = await res.json();
+    const candles = raw.map(k => ({
+      time:   Math.floor(k[0] / 1000),
+      open:   parseFloat(k[1]),
+      high:   parseFloat(k[2]),
+      low:    parseFloat(k[3]),
+      close:  parseFloat(k[4]),
+      volume: parseFloat(k[5]),
+    }));
     const closes  = candles.map(c => c.close);
     const times   = candles.map(c => c.time);
 
