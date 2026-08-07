@@ -179,12 +179,10 @@
     .no-data { color: var(--muted); font-size: 0.8rem; text-align: center; padding: 16px 0; }
 
     /* ── این کلاس با JS (نه CSS media query) کنترل میشه، پس مستقل از رفتار مرورگره ── */
-    /* از Flexbox استفاده شده نه Grid، چون بعضی مرورگرهای اندرویدی (مثل quetta) از CSS Grid پشتیبانی کامل ندارن */
+    /* ستون‌بندی صریح: هر ردیف (قله+دره) توی یه div جدا با ۲ بچه — مطمئن‌تر از flex-wrap کل سایدبار */
     .sidebar.mobile-grid {
       display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      align-content: flex-start;
+      flex-direction: column;
       gap: 6px;
       padding: 8px;
       overflow-y: auto;
@@ -194,14 +192,20 @@
       border-right: none;
       border-top: 1px solid var(--border);
     }
-    .sidebar.mobile-grid h2 { flex: 1 1 100%; width: 100%; font-size: 0.62rem; padding-bottom: 4px; }
-    .sidebar.mobile-grid .signal-card { flex: 1 1 100%; width: 100%; }
-    .sidebar.mobile-grid .pivot-card {
-      flex: 1 1 calc(50% - 3px);
-      width: calc(50% - 3px);
+    .sidebar.mobile-grid h2 { font-size: 0.62rem; padding-bottom: 4px; }
+
+    /* ردیف جفتی قله|دره — فقط تو حالت موبایل فعاله */
+    .sidebar.mobile-grid .pivot-row {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+    }
+    .sidebar.mobile-grid .pivot-row .pivot-card {
+      flex: 1 1 0;
       min-width: 0;
       box-sizing: border-box;
     }
+
     .sidebar.mobile-grid .signal-card,
     .sidebar.mobile-grid .pivot-card {
       padding: 7px 9px;
@@ -958,8 +962,9 @@ function renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence }) 
   }
 
   for (let idx = 0; idx < pairCount; idx++) {
-    html += lastPeaks[idx]   != null ? peakCardHtml(lastPeaks[idx], idx)     : '<div></div>';
-    html += lastValleys[idx] != null ? valleyCardHtml(lastValleys[idx], idx) : '<div></div>';
+    const peakHtml   = lastPeaks[idx]   != null ? peakCardHtml(lastPeaks[idx], idx)     : '<div></div>';
+    const valleyHtml = lastValleys[idx] != null ? valleyCardHtml(lastValleys[idx], idx) : '<div></div>';
+    html += `<div class="pivot-row">${peakHtml}${valleyHtml}</div>`;
   }
 
   document.getElementById('pivotCards').innerHTML = html || '<p class="no-data">Pivot پیدا نشد</p>';
@@ -968,6 +973,8 @@ function renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence }) 
 // ─── Boot ────────────────────────────────────────────────────────────────────
 applyResponsiveLayout();
 initCharts();
+// لایه محافظ: دوباره روی window.load هم اجرا میشه، برای اطمینان بیشتر
+window.addEventListener('load', applyResponsiveLayout);
 </script>
 </body>
 </html>
