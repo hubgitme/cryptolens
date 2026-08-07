@@ -574,38 +574,61 @@ function calcZigZag(candles, deviationPct = 0.5) {
   return { peaks, valleys };
 }
 
-// ─── Divergence — scans ALL recent consecutive pivot pairs, not just the last ─
-function detectDivergence({ candles, rsiArr, peaks, valleys }, lookback = 5) {
-  const result = { bearish: null, bullish: null, allBearish: [], allBullish: [] };
+// ─── RSI Local Extrema (finds peaks/valleys directly ON the RSI curve) ───────
+function findRsiExtrema(rsiArr, wing = 1) {
+  const highs = [], lows = [];
+  for (let i = wing; i < rsiArr.length - wing; i++) {
+    if (rsiArr[i] == null) continue;
+    let isHigh = true, isLow = true;
+    for (let j = i - wing; j <= i + wing; j++) {
+      if (j === i || rsiArr[j] == null) continue;
+      if (rsiArr[j] >= rsiArr[i]) isHigh = false;
+      if (rsiArr[j] <= rsiArr[i]) isLow  = false;
+    }
+    if (isHigh) highs.push(i);
+    if (isLow)  lows.push(i);
+  }
+  return { highs, lows };
+}
 
-  const recentPeaks   = peaks.slice(-lookback);
-  const recentValleys = valleys.slice(-lookback);
+// ─── Divergence — پیوت‌ها از روی خود RSI پیدا میشن، قیمت (close) در همون نقاط مقایسه میشه ─
+function detectDivergence({ candles, rsiArr }, lookback = 6, wing = 1) {
+  const result = { bearish: null, bullish: null, allBearish: [], allBullish: [], rsiHighs: [], rsiLows: [] };
 
-  for (let k = 1; k < recentPeaks.length; k++) {
-    const prev = recentPeaks[k-1], curr = recentPeaks[k];
+  const { highs, lows } = findRsiExtrema(rsiArr, wing);
+  result.rsiHighs = highs;
+  result.rsiLows  = lows;
+
+  const recentHighs = highs.slice(-lookback);
+  const recentLows  = lows.slice(-lookback);
+
+  // Bearish: RSI قله پایین‌تر ولی قیمت (close) پایین‌تر نرفته (مساوی یا بالاتر)
+  for (let k = 1; k < recentHighs.length; k++) {
+    const prev = recentHighs[k-1], curr = recentHighs[k];
     const rp = rsiArr[prev], rc = rsiArr[curr];
-    if (rp == null || rc == null) continue;
-    if (candles[curr].high > candles[prev].high && rc < rp) {
+    const pp = candles[prev].close, pc = candles[curr].close;
+    if (rc < rp && pc >= pp * 0.999) {
       result.allBearish.push({
         prevIdx: prev, currentIdx: curr,
-        prevPrice: candles[prev].high, currentPrice: candles[curr].high,
+        prevPrice: pp, currentPrice: pc,
         prevRsi: rp, currentRsi: rc,
-        priceDiff: ((candles[curr].high - candles[prev].high) / candles[prev].high * 100).toFixed(2),
+        priceDiff: ((pc - pp) / pp * 100).toFixed(2),
         rsiDiff: (rc - rp).toFixed(2),
       });
     }
   }
 
-  for (let k = 1; k < recentValleys.length; k++) {
-    const prev = recentValleys[k-1], curr = recentValleys[k];
+  // Bullish: RSI دره بالاتر ولی قیمت (close) بالاتر نرفته (مساوی یا پایین‌تر)
+  for (let k = 1; k < recentLows.length; k++) {
+    const prev = recentLows[k-1], curr = recentLows[k];
     const rp = rsiArr[prev], rc = rsiArr[curr];
-    if (rp == null || rc == null) continue;
-    if (candles[curr].low < candles[prev].low && rc > rp) {
+    const pp = candles[prev].close, pc = candles[curr].close;
+    if (rc > rp && pc <= pp * 1.001) {
       result.allBullish.push({
         prevIdx: prev, currentIdx: curr,
-        prevPrice: candles[prev].low, currentPrice: candles[curr].low,
+        prevPrice: pp, currentPrice: pc,
         prevRsi: rp, currentRsi: rc,
-        priceDiff: ((candles[curr].low - candles[prev].low) / candles[prev].low * 100).toFixed(2),
+        priceDiff: ((pc - pp) / pp * 100).toFixed(2),
         rsiDiff: (rc - rp).toFixed(2),
       });
     }
@@ -661,7 +684,7 @@ async function loadData() {
     if (peaks.length)   markers.push({ time: times[peaks[peaks.length-1]],     position: 'aboveBar', color: '#ef5350', shape: 'arrowDown', text: 'قله' });
     if (valleys.length) markers.push({ time: times[valleys[valleys.length-1]], position: 'belowBar', color: '#26a69a', shape: 'arrowUp',   text: 'دره' });
 
-    const divergence = detectDivergence({ candles, rsiArr, peaks, valleys });
+    const divergence = detectDivergence({ candles, rsiArr });
 
     // همه واگرایی‌های اخیر رو روی چارت علامت بزن، نه فقط آخری
     divergence.allBearish.forEach(d =>
@@ -678,6 +701,13 @@ async function loadData() {
     rsiSeries.setData(times.map((t,i) => rsiArr[i]!=null ? {time:t, value:rsiArr[i]} : null).filter(Boolean));
     rsiOB.setData(times.map(t => ({time:t, value:70})));
     rsiOS.setData(times.map(t => ({time:t, value:30})));
+
+    // نقاط پیوت شناسایی‌شده روی RSI (برای اطمینان بصری)
+    const rsiMarkers = [];
+    divergence.rsiHighs.forEach(i => rsiMarkers.push({ time: times[i], position: 'aboveBar', color: '#ffc107', shape: 'circle' }));
+    divergence.rsiLows.forEach(i  => rsiMarkers.push({ time: times[i], position: 'belowBar', color: '#ffc107', shape: 'circle' }));
+    rsiMarkers.sort((a,b) => a.time - b.time);
+    rsiSeries.setMarkers(rsiMarkers);
 
     // ── MACD ──
     macdLineSeries.setData(times.map((t,i)   => ml[i]!=null ? {time:t,value:ml[i]} : null).filter(Boolean));
