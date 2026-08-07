@@ -234,6 +234,10 @@
       <button onclick="setIv('4h')"  id="btn-4h" class="active">4H</button>
       <button onclick="setIv('1d')"  id="btn-1d">1D</button>
     </div>
+    <div style="display:flex; align-items:center; gap:5px;">
+      <label style="font-size:0.78rem; color:var(--muted);">حساسیت%</label>
+      <input id="zigzagInput" type="number" value="0.5" step="0.1" min="0.1" max="5" style="width:55px; direction:ltr;" onchange="zigzagPct = parseFloat(this.value) || 0.5" />
+    </div>
     <button id="loadBtn" onclick="loadData()">بارگذاری</button>
   </div>
   <span id="status">آماده</span>
@@ -298,6 +302,7 @@
 <script>
 // ─── Globals ────────────────────────────────────────────────────────────────
 let currentIv = '4h';
+let zigzagPct = 0.5; // درصد حساسیت تشخیص دره/قله
 let priceChart, rsiChart, macdChart;
 let candleSeries, rsiSeries, rsiOB, rsiOS, macdLineSeries, macdSignalSeries, macdHistSeries;
 let globalCandles = [], globalRsi = [], globalMacdL = [], globalMacdS = [], globalMacdH = [];
@@ -521,53 +526,93 @@ function calcMACD(closes, fast=12, slow=26, sig=9) {
   return { ml, sl, hl };
 }
 
-// ─── Pivots ──────────────────────────────────────────────────────────────────
-function findPivots(candles, wing=3) {
-  const peaks = [], valleys = [];
-  for (let i = wing; i < candles.length - wing; i++) {
-    let isPeak = true, isValley = true;
-    for (let j = i-wing; j <= i+wing; j++) {
-      if (j === i) continue;
-      if (candles[j].high >= candles[i].high) isPeak = false;
-      if (candles[j].low  <= candles[i].low)  isValley = false;
+// ─── ZigZag Pivots (percentage-based, catches close-together swings) ─────────
+function calcZigZag(candles, deviationPct = 0.5) {
+  const pivots = [];
+  if (candles.length < 2) return pivots;
+
+  let direction = 0; // 0=unknown, 1=up-tracking(looking for high), -1=down-tracking
+  let anchorIdx = 0;
+  let anchorHigh = candles[0].high;
+  let anchorLow  = candles[0].low;
+
+  for (let i = 1; i < candles.length; i++) {
+    const c = candles[i];
+
+    if (direction === 0) {
+      const upPct   = (c.high - anchorLow) / anchorLow * 100;
+      const downPct = (anchorHigh - c.low) / anchorHigh * 100;
+      if (upPct >= deviationPct) {
+        pivots.push({ idx: 0, type: 'low', price: candles[0].low });
+        direction = 1; anchorHigh = c.high; anchorIdx = i;
+      } else if (downPct >= deviationPct) {
+        pivots.push({ idx: 0, type: 'high', price: candles[0].high });
+        direction = -1; anchorLow = c.low; anchorIdx = i;
+      }
+      continue;
     }
-    if (isPeak)   peaks.push(i);
-    if (isValley) valleys.push(i);
+
+    if (direction === 1) {
+      if (c.high >= anchorHigh) { anchorHigh = c.high; anchorIdx = i; }
+      const retrace = (anchorHigh - c.low) / anchorHigh * 100;
+      if (retrace >= deviationPct) {
+        pivots.push({ idx: anchorIdx, type: 'high', price: anchorHigh });
+        direction = -1; anchorLow = c.low; anchorIdx = i;
+      }
+    } else {
+      if (c.low <= anchorLow) { anchorLow = c.low; anchorIdx = i; }
+      const retrace = (c.high - anchorLow) / anchorLow * 100;
+      if (retrace >= deviationPct) {
+        pivots.push({ idx: anchorIdx, type: 'low', price: anchorLow });
+        direction = 1; anchorHigh = c.high; anchorIdx = i;
+      }
+    }
   }
+
+  const peaks   = pivots.filter(p => p.type === 'high').map(p => p.idx);
+  const valleys = pivots.filter(p => p.type === 'low').map(p => p.idx);
   return { peaks, valleys };
 }
 
-// ─── Divergence ──────────────────────────────────────────────────────────────
-function detectDivergence({ candles, rsiArr, peaks, valleys }) {
-  const result = { bearish: null, bullish: null };
+// ─── Divergence — scans ALL recent consecutive pivot pairs, not just the last ─
+function detectDivergence({ candles, rsiArr, peaks, valleys }, lookback = 5) {
+  const result = { bearish: null, bullish: null, allBearish: [], allBullish: [] };
 
-  if (peaks.length >= 2) {
-    const prev = peaks[peaks.length-2], curr = peaks[peaks.length-1];
+  const recentPeaks   = peaks.slice(-lookback);
+  const recentValleys = valleys.slice(-lookback);
+
+  for (let k = 1; k < recentPeaks.length; k++) {
+    const prev = recentPeaks[k-1], curr = recentPeaks[k];
     const rp = rsiArr[prev], rc = rsiArr[curr];
-    if (rp != null && rc != null && candles[curr].high > candles[prev].high && rc < rp) {
-      result.bearish = {
+    if (rp == null || rc == null) continue;
+    if (candles[curr].high > candles[prev].high && rc < rp) {
+      result.allBearish.push({
         prevIdx: prev, currentIdx: curr,
         prevPrice: candles[prev].high, currentPrice: candles[curr].high,
         prevRsi: rp, currentRsi: rc,
         priceDiff: ((candles[curr].high - candles[prev].high) / candles[prev].high * 100).toFixed(2),
         rsiDiff: (rc - rp).toFixed(2),
-      };
+      });
     }
   }
 
-  if (valleys.length >= 2) {
-    const prev = valleys[valleys.length-2], curr = valleys[valleys.length-1];
+  for (let k = 1; k < recentValleys.length; k++) {
+    const prev = recentValleys[k-1], curr = recentValleys[k];
     const rp = rsiArr[prev], rc = rsiArr[curr];
-    if (rp != null && rc != null && candles[curr].low < candles[prev].low && rc > rp) {
-      result.bullish = {
+    if (rp == null || rc == null) continue;
+    if (candles[curr].low < candles[prev].low && rc > rp) {
+      result.allBullish.push({
         prevIdx: prev, currentIdx: curr,
         prevPrice: candles[prev].low, currentPrice: candles[curr].low,
         prevRsi: rp, currentRsi: rc,
         priceDiff: ((candles[curr].low - candles[prev].low) / candles[prev].low * 100).toFixed(2),
         rsiDiff: (rc - rp).toFixed(2),
-      };
+      });
     }
   }
+
+  result.bearish = result.allBearish.length ? result.allBearish[result.allBearish.length - 1] : null;
+  result.bullish = result.allBullish.length ? result.allBullish[result.allBullish.length - 1] : null;
 
   return result;
 }
@@ -606,7 +651,7 @@ async function loadData() {
     globalMacdS = sl;
     globalMacdH = hl;
 
-    const { peaks, valleys } = findPivots(candles);
+    const { peaks, valleys } = calcZigZag(candles, zigzagPct);
 
     // ── Candlestick ──
     candleSeries.setData(candles);
@@ -617,8 +662,14 @@ async function loadData() {
     if (valleys.length) markers.push({ time: times[valleys[valleys.length-1]], position: 'belowBar', color: '#26a69a', shape: 'arrowUp',   text: 'دره' });
 
     const divergence = detectDivergence({ candles, rsiArr, peaks, valleys });
-    if (divergence.bearish) markers.push({ time: times[divergence.bearish.currentIdx], position: 'aboveBar', color: '#ff1744', shape: 'arrowDown', text: '⚠ واگرایی نزولی' });
-    if (divergence.bullish) markers.push({ time: times[divergence.bullish.currentIdx], position: 'belowBar', color: '#00e676', shape: 'arrowUp',   text: '⚠ واگرایی صعودی' });
+
+    // همه واگرایی‌های اخیر رو روی چارت علامت بزن، نه فقط آخری
+    divergence.allBearish.forEach(d =>
+      markers.push({ time: times[d.currentIdx], position: 'aboveBar', color: '#ff1744', shape: 'arrowDown', text: '⚠ نزولی' })
+    );
+    divergence.allBullish.forEach(d =>
+      markers.push({ time: times[d.currentIdx], position: 'belowBar', color: '#00e676', shape: 'arrowUp', text: '⚠ صعودی' })
+    );
     markers.sort((a,b) => a.time - b.time);
     candleSeries.setMarkers(markers);
 
