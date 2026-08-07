@@ -430,8 +430,8 @@ function applyResponsiveLayout() {
     main.style.overflow = 'hidden';
 
     chartsCol.style.order  = '1';
-    chartsCol.style.flex   = '0 0 58vh';
-    chartsCol.style.height = '58vh';
+    chartsCol.style.flex   = '0 0 62vh';
+    chartsCol.style.height = '62vh';
     chartsCol.style.overflow = 'hidden';
 
     sidebar.style.order = '2';
@@ -457,8 +457,8 @@ function calcHeights() {
   // حداقل ارتفاع تا اندیکاتورها خیلی فشرده نشن
   const minTotal = Math.max(total, 420);
   return {
-    price: Math.floor(minTotal * 0.48),
-    rsi:   Math.floor(minTotal * 0.26),
+    price: Math.floor(minTotal * 0.40),
+    rsi:   Math.floor(minTotal * 0.34),
     macd:  Math.floor(minTotal * 0.26),
   };
 }
