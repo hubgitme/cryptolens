@@ -227,87 +227,102 @@
        ══════════════════════════════════════════════════════════ */
     @media (max-width: 768px) {
       header {
-        padding: 8px 12px;
-        gap: 8px;
+        padding: 5px 10px;
+        gap: 6px;
+        min-height: auto;
       }
-      header h1 { font-size: 0.88rem; }
+      header h1 { font-size: 0.78rem; }
 
       .controls {
         width: 100%;
         justify-content: flex-start;
-        gap: 6px;
+        gap: 5px;
       }
       #symbolInput {
-        flex: 1 1 90px;
+        flex: 1 1 80px;
         min-width: 0;
-        font-size: 16px; /* از زوم خودکار iOS روی فوکوس جلوگیری می‌کنه */
-        padding: 8px 10px;
+        font-size: 16px;
+        padding: 5px 8px;
       }
-      #zigzagInput { font-size: 16px; width: 48px; padding: 8px 6px; }
+      #zigzagInput { font-size: 16px; width: 42px; padding: 5px 4px; }
+      label[for], .controls label { font-size: 0.68rem; }
 
       .iv-group button, #loadBtn {
-        padding: 9px 12px;
-        font-size: 0.82rem;
+        padding: 5px 9px;
+        font-size: 0.72rem;
       }
 
       #status {
         width: 100%;
         order: 10;
-        font-size: 0.72rem;
+        font-size: 0.62rem;
       }
 
+      /* نوار Tooltip فشرده‌تر */
       #tooltip-bar {
-        padding: 5px 12px;
-        gap: 10px;
-        font-size: 0.68rem;
+        padding: 3px 10px;
+        gap: 8px;
+        font-size: 0.6rem;
         overflow-x: auto;
         flex-wrap: nowrap;
         white-space: nowrap;
+        min-height: 22px;
       }
-      .tt-group { gap: 6px; flex-shrink: 0; }
+      .tt-group { gap: 4px; flex-shrink: 0; }
 
+      /* ── کل صفحه ثابت، بدون اسکرول کلی؛ فقط سایدبار داخلی اسکرول میشه ── */
       .main {
         flex-direction: column;
-        overflow-y: auto;
+        overflow: hidden;
       }
 
+      /* چارت‌ها فقط ۴۵٪ ارتفاع صفحه — کوچیک و کامل تو یه نگاه دیده میشن */
       .charts-col {
-        flex: 1 1 auto;
-        min-height: 0;
+        flex: 0 0 45vh;
+        height: 45vh;
+        overflow: hidden;
       }
 
-      /* سایدبار به یه نوار افقی قابل اسکرول زیر چارت‌ها تبدیل میشه */
+      /* داده‌ها (سیگنال/پیوت) در گرید دو‌ستونه فشرده، باقی‌مونده صفحه رو با اسکرول داخلی پر می‌کنه */
       .sidebar {
+        flex: 1 1 auto;
         width: 100%;
-        flex-shrink: 0;
-        max-height: 38vh;
+        min-height: 0;
         border-right: none;
         border-top: 1px solid var(--border);
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-auto-rows: min-content;
+        align-content: start;
+        gap: 6px;
+        padding: 8px;
         overflow-y: auto;
-        padding: 10px;
-        gap: 8px;
       }
       .sidebar h2 {
-        position: sticky;
-        top: 0;
-        background: var(--surface);
-        z-index: 5;
+        grid-column: 1 / -1;
+        font-size: 0.62rem;
+        padding-bottom: 4px;
       }
 
       .signal-card, .pivot-card {
-        padding: 10px 12px;
-        font-size: 0.76rem;
+        padding: 7px 9px;
+        font-size: 0.66rem;
+        gap: 3px;
       }
-      .price-val { font-size: 1rem !important; }
+      .signal-title { font-size: 0.7rem; }
+      .signal-desc  { font-size: 0.6rem; }
+      .price-val    { font-size: 0.88rem !important; }
+      .ptype        { font-size: 0.58rem !important; }
+      .badge        { font-size: 0.58rem; padding: 0 4px; }
 
-      .chart-label { font-size: 0.62rem; top: 5px; right: 8px; }
+      .chart-label { font-size: 0.56rem; top: 3px; right: 6px; }
     }
 
     @media (max-width: 420px) {
-      .iv-group button { padding: 8px 9px; font-size: 0.76rem; }
-      #symbolInput { flex-basis: 80px; }
-      header h1 { display: none; } /* صرفه‌جویی فضا در گوشی‌های خیلی کوچیک */
+      header h1 { display: none; }
+      .charts-col { flex-basis: 42vh; height: 42vh; }
+      .sidebar { grid-template-columns: 1fr; }
+      .iv-group button, #loadBtn { padding: 5px 7px; font-size: 0.68rem; }
     }
   </style>
 </head>
