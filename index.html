@@ -526,45 +526,44 @@ function calcMACD(closes, fast=12, slow=26, sig=9) {
   return { ml, sl, hl };
 }
 
-// ─── ZigZag Pivots (percentage-based, catches close-together swings) ─────────
+// ─── ZigZag Pivots (بر اساس قیمت بسته شدن، نه سایه کندل) ─────────────────────
 function calcZigZag(candles, deviationPct = 0.5) {
   const pivots = [];
   if (candles.length < 2) return pivots;
 
   let direction = 0; // 0=unknown, 1=up-tracking(looking for high), -1=down-tracking
   let anchorIdx = 0;
-  let anchorHigh = candles[0].high;
-  let anchorLow  = candles[0].low;
+  let anchorPrice = candles[0].close;
 
   for (let i = 1; i < candles.length; i++) {
-    const c = candles[i];
+    const cp = candles[i].close;
 
     if (direction === 0) {
-      const upPct   = (c.high - anchorLow) / anchorLow * 100;
-      const downPct = (anchorHigh - c.low) / anchorHigh * 100;
+      const upPct   = (cp - anchorPrice) / anchorPrice * 100;
+      const downPct = (anchorPrice - cp) / anchorPrice * 100;
       if (upPct >= deviationPct) {
-        pivots.push({ idx: 0, type: 'low', price: candles[0].low });
-        direction = 1; anchorHigh = c.high; anchorIdx = i;
+        pivots.push({ idx: 0, type: 'low', price: candles[0].close });
+        direction = 1; anchorPrice = cp; anchorIdx = i;
       } else if (downPct >= deviationPct) {
-        pivots.push({ idx: 0, type: 'high', price: candles[0].high });
-        direction = -1; anchorLow = c.low; anchorIdx = i;
+        pivots.push({ idx: 0, type: 'high', price: candles[0].close });
+        direction = -1; anchorPrice = cp; anchorIdx = i;
       }
       continue;
     }
 
     if (direction === 1) {
-      if (c.high >= anchorHigh) { anchorHigh = c.high; anchorIdx = i; }
-      const retrace = (anchorHigh - c.low) / anchorHigh * 100;
+      if (cp >= anchorPrice) { anchorPrice = cp; anchorIdx = i; }
+      const retrace = (anchorPrice - cp) / anchorPrice * 100;
       if (retrace >= deviationPct) {
-        pivots.push({ idx: anchorIdx, type: 'high', price: anchorHigh });
-        direction = -1; anchorLow = c.low; anchorIdx = i;
+        pivots.push({ idx: anchorIdx, type: 'high', price: anchorPrice });
+        direction = -1; anchorPrice = cp; anchorIdx = i;
       }
     } else {
-      if (c.low <= anchorLow) { anchorLow = c.low; anchorIdx = i; }
-      const retrace = (c.high - anchorLow) / anchorLow * 100;
+      if (cp <= anchorPrice) { anchorPrice = cp; anchorIdx = i; }
+      const retrace = (cp - anchorPrice) / anchorPrice * 100;
       if (retrace >= deviationPct) {
-        pivots.push({ idx: anchorIdx, type: 'low', price: anchorLow });
-        direction = 1; anchorHigh = c.high; anchorIdx = i;
+        pivots.push({ idx: anchorIdx, type: 'low', price: anchorPrice });
+        direction = 1; anchorPrice = cp; anchorIdx = i;
       }
     }
   }
@@ -772,10 +771,9 @@ function renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence }) 
   if (peaks.length) {
     const i = peaks[peaks.length-1], c = candles[i], rv = rsiArr[i];
     html += `<div class="pivot-card peak">
-      <div class="ptype">▼ آخرین قله</div>
-      <div class="price-val">$${fmt(c.high)}</div>
+      <div class="ptype">▼ آخرین قله (بسته‌شدن)</div>
+      <div class="price-val">$${fmt(c.close)}</div>
       <div class="row"><span>تاریخ</span><span>${fmtD(c.time)}</span></div>
-      <div class="row"><span>بسته</span><span>$${fmt(c.close)}</span></div>
       <div class="row"><span>RSI</span><span>${rv!=null?rv.toFixed(1):'—'} <span class="badge ${rsiClass(rv)}">${rsiLbl(rv)}</span></span></div>
       <div class="row"><span>MACD</span><span>${ml[i]!=null?ml[i].toFixed(3):'—'} <span class="badge ${macdClass(i)}">${macdLbl(i)}</span></span></div>
     </div>`;
@@ -785,10 +783,9 @@ function renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence }) 
   if (valleys.length) {
     const i = valleys[valleys.length-1], c = candles[i], rv = rsiArr[i];
     html += `<div class="pivot-card valley">
-      <div class="ptype">▲ آخرین دره</div>
-      <div class="price-val">$${fmt(c.low)}</div>
+      <div class="ptype">▲ آخرین دره (بسته‌شدن)</div>
+      <div class="price-val">$${fmt(c.close)}</div>
       <div class="row"><span>تاریخ</span><span>${fmtD(c.time)}</span></div>
-      <div class="row"><span>بسته</span><span>$${fmt(c.close)}</span></div>
       <div class="row"><span>RSI</span><span>${rv!=null?rv.toFixed(1):'—'} <span class="badge ${rsiClass(rv)}">${rsiLbl(rv)}</span></span></div>
       <div class="row"><span>MACD</span><span>${ml[i]!=null?ml[i].toFixed(3):'—'} <span class="badge ${macdClass(i)}">${macdLbl(i)}</span></span></div>
     </div>`;
