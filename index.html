@@ -649,17 +649,11 @@ async function loadData() {
   document.getElementById('status').textContent = 'در حال دریافت...';
 
   try {
-    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${currentIv}&limit=300`);
-    if (!res.ok) throw new Error(`بایننس: ${res.status}`);
+    const res = await fetch(`/api/klines?symbol=${symbol}&interval=${currentIv}&limit=300`);
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'خطا در دریافت داده');
 
-    const raw = await res.json();
-    const candles = raw.map(k => ({
-      time:  Math.floor(k[0] / 1000),
-      open:  parseFloat(k[1]),
-      high:  parseFloat(k[2]),
-      low:   parseFloat(k[3]),
-      close: parseFloat(k[4]),
-    }));
+    const candles = json.data;
 
     const closes = candles.map(c => c.close);
     const times  = candles.map(c => c.time);
@@ -680,8 +674,14 @@ async function loadData() {
 
     // Markers
     const markers = [];
-    if (peaks.length)   markers.push({ time: times[peaks[peaks.length-1]],     position: 'aboveBar', color: '#ef5350', shape: 'arrowDown', text: 'قله' });
-    if (valleys.length) markers.push({ time: times[valleys[valleys.length-1]], position: 'belowBar', color: '#26a69a', shape: 'arrowUp',   text: 'دره' });
+    peaks.slice(-3).forEach((i, idx, arr) => {
+      const label = idx === arr.length - 1 ? 'قله' : `قله-${arr.length - idx}`;
+      markers.push({ time: times[i], position: 'aboveBar', color: '#ef5350', shape: 'arrowDown', text: label });
+    });
+    valleys.slice(-3).forEach((i, idx, arr) => {
+      const label = idx === arr.length - 1 ? 'دره' : `دره-${arr.length - idx}`;
+      markers.push({ time: times[i], position: 'belowBar', color: '#26a69a', shape: 'arrowUp', text: label });
+    });
 
     const divergence = detectDivergence({ candles, rsiArr });
 
@@ -767,29 +767,33 @@ function renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence }) 
     html += `<div class="signal-card neutral">⚪ واگرایی شناسایی نشد</div>`;
   }
 
-  // Peak info
-  if (peaks.length) {
-    const i = peaks[peaks.length-1], c = candles[i], rv = rsiArr[i];
+  // Peak info — آخرین ۳ قله
+  const lastPeaks = peaks.slice(-3).reverse();
+  lastPeaks.forEach((i, idx) => {
+    const c = candles[i], rv = rsiArr[i];
+    const label = idx === 0 ? 'آخرین قله' : `قله ${idx + 1} دوره قبل`;
     html += `<div class="pivot-card peak">
-      <div class="ptype">▼ آخرین قله (بسته‌شدن)</div>
+      <div class="ptype">▼ ${label} (بسته‌شدن)</div>
       <div class="price-val">$${fmt(c.close)}</div>
       <div class="row"><span>تاریخ</span><span>${fmtD(c.time)}</span></div>
       <div class="row"><span>RSI</span><span>${rv!=null?rv.toFixed(1):'—'} <span class="badge ${rsiClass(rv)}">${rsiLbl(rv)}</span></span></div>
       <div class="row"><span>MACD</span><span>${ml[i]!=null?ml[i].toFixed(3):'—'} <span class="badge ${macdClass(i)}">${macdLbl(i)}</span></span></div>
     </div>`;
-  }
+  });
 
-  // Valley info
-  if (valleys.length) {
-    const i = valleys[valleys.length-1], c = candles[i], rv = rsiArr[i];
+  // Valley info — آخرین ۳ دره
+  const lastValleys = valleys.slice(-3).reverse();
+  lastValleys.forEach((i, idx) => {
+    const c = candles[i], rv = rsiArr[i];
+    const label = idx === 0 ? 'آخرین دره' : `دره ${idx + 1} دوره قبل`;
     html += `<div class="pivot-card valley">
-      <div class="ptype">▲ آخرین دره (بسته‌شدن)</div>
+      <div class="ptype">▲ ${label} (بسته‌شدن)</div>
       <div class="price-val">$${fmt(c.close)}</div>
       <div class="row"><span>تاریخ</span><span>${fmtD(c.time)}</span></div>
       <div class="row"><span>RSI</span><span>${rv!=null?rv.toFixed(1):'—'} <span class="badge ${rsiClass(rv)}">${rsiLbl(rv)}</span></span></div>
       <div class="row"><span>MACD</span><span>${ml[i]!=null?ml[i].toFixed(3):'—'} <span class="badge ${macdClass(i)}">${macdLbl(i)}</span></span></div>
     </div>`;
-  }
+  });
 
   document.getElementById('pivotCards').innerHTML = html || '<p class="no-data">Pivot پیدا نشد</p>';
 }
