@@ -282,10 +282,10 @@
       .charts-col { order: 1; }
       .sidebar    { order: 2; }
 
-      /* چارت‌ها فقط ۴۵٪ ارتفاع صفحه — کوچیک و کامل تو یه نگاه دیده میشن */
+      /* چارت‌ها ۵۸٪ ارتفاع صفحه — قیمت + اندیکاتورها هر دو خوانا باشن */
       .charts-col {
-        flex: 0 0 45vh;
-        height: 45vh;
+        flex: 0 0 58vh;
+        height: 58vh;
         overflow: hidden;
       }
 
@@ -309,6 +309,7 @@
         font-size: 0.62rem;
         padding-bottom: 4px;
       }
+      .signal-card { grid-column: 1 / -1; }
 
       .signal-card, .pivot-card {
         padding: 7px 9px;
@@ -326,7 +327,7 @@
 
     @media (max-width: 420px) {
       header h1 { display: none; }
-      .charts-col { flex-basis: 42vh; height: 42vh; }
+      .charts-col { flex-basis: 55vh; height: 55vh; }
       .sidebar { grid-template-columns: 1fr; }
       .iv-group button, #loadBtn { padding: 5px 7px; font-size: 0.68rem; }
     }
@@ -429,12 +430,12 @@ function setIv(iv) {
 function calcHeights() {
   const col = document.getElementById('chartsCol');
   const total = col.clientHeight;
-  // حداقل ارتفاع تا تو موبایل خیلی فشرده نشه
-  const minTotal = Math.max(total, 320);
+  // حداقل ارتفاع تا اندیکاتورها خیلی فشرده نشن
+  const minTotal = Math.max(total, 420);
   return {
-    price: Math.floor(minTotal * 0.55),
-    rsi:   Math.floor(minTotal * 0.225),
-    macd:  Math.floor(minTotal * 0.225),
+    price: Math.floor(minTotal * 0.48),
+    rsi:   Math.floor(minTotal * 0.26),
+    macd:  Math.floor(minTotal * 0.26),
   };
 }
 
@@ -906,33 +907,39 @@ function renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence }) 
     html += `<div class="signal-card neutral">⚪ واگرایی شناسایی نشد</div>`;
   }
 
-  // Peak info — آخرین ۳ قله
-  const lastPeaks = peaks.slice(-3).reverse();
-  lastPeaks.forEach((i, idx) => {
+  // قله‌ها و دره‌ها به صورت جفت (قله | دره) توی هر ردیف کنار هم
+  const lastPeaks   = peaks.slice(-3).reverse();
+  const lastValleys = valleys.slice(-3).reverse();
+  const pairCount = Math.max(lastPeaks.length, lastValleys.length);
+
+  function peakCardHtml(i, idx) {
     const c = candles[i], rv = rsiArr[i];
     const label = idx === 0 ? 'آخرین قله' : `قله ${idx + 1} دوره قبل`;
-    html += `<div class="pivot-card peak">
-      <div class="ptype">▼ ${label} (بسته‌شدن)</div>
+    return `<div class="pivot-card peak">
+      <div class="ptype">▼ ${label}</div>
       <div class="price-val">$${fmt(c.close)}</div>
       <div class="row"><span>تاریخ</span><span>${fmtD(c.time)}</span></div>
       <div class="row"><span>RSI</span><span>${rv!=null?rv.toFixed(1):'—'} <span class="badge ${rsiClass(rv)}">${rsiLbl(rv)}</span></span></div>
       <div class="row"><span>MACD</span><span>${ml[i]!=null?ml[i].toFixed(3):'—'} <span class="badge ${macdClass(i)}">${macdLbl(i)}</span></span></div>
     </div>`;
-  });
+  }
 
-  // Valley info — آخرین ۳ دره
-  const lastValleys = valleys.slice(-3).reverse();
-  lastValleys.forEach((i, idx) => {
+  function valleyCardHtml(i, idx) {
     const c = candles[i], rv = rsiArr[i];
     const label = idx === 0 ? 'آخرین دره' : `دره ${idx + 1} دوره قبل`;
-    html += `<div class="pivot-card valley">
-      <div class="ptype">▲ ${label} (بسته‌شدن)</div>
+    return `<div class="pivot-card valley">
+      <div class="ptype">▲ ${label}</div>
       <div class="price-val">$${fmt(c.close)}</div>
       <div class="row"><span>تاریخ</span><span>${fmtD(c.time)}</span></div>
       <div class="row"><span>RSI</span><span>${rv!=null?rv.toFixed(1):'—'} <span class="badge ${rsiClass(rv)}">${rsiLbl(rv)}</span></span></div>
       <div class="row"><span>MACD</span><span>${ml[i]!=null?ml[i].toFixed(3):'—'} <span class="badge ${macdClass(i)}">${macdLbl(i)}</span></span></div>
     </div>`;
-  });
+  }
+
+  for (let idx = 0; idx < pairCount; idx++) {
+    html += lastPeaks[idx]   != null ? peakCardHtml(lastPeaks[idx], idx)     : '<div></div>';
+    html += lastValleys[idx] != null ? valleyCardHtml(lastValleys[idx], idx) : '<div></div>';
+  }
 
   document.getElementById('pivotCards').innerHTML = html || '<p class="no-data">Pivot پیدا نشد</p>';
 }
