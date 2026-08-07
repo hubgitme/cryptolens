@@ -141,7 +141,8 @@
     .signal-card.neutral { background: var(--bg); color: var(--muted); text-align: center; padding: 12px; }
     .signal-title { font-weight: 700; font-size: 0.82rem; color: #fff; }
     .signal-desc  { color: var(--muted); font-size: 0.72rem; margin-bottom: 3px; }
-    .signal-row   { display: flex; justify-content: space-between; color: var(--muted); }
+    .signal-row   { display: flex; gap: 6px; color: var(--muted); }
+    .signal-row span:first-child { flex-shrink: 0; }
     .signal-row span:last-child { color: var(--text); font-weight: 600; }
     em.up { color: var(--green); font-style: normal; }
     em.dn { color: var(--red);   font-style: normal; }
@@ -161,7 +162,8 @@
     .pivot-card.peak   .ptype { color: var(--red); }
     .pivot-card.valley .ptype { color: var(--green); }
     .pivot-card .price-val { font-size: 1.1rem; font-weight: 700; color: #fff; direction: ltr; }
-    .pivot-card .row { display: flex; justify-content: space-between; color: var(--muted); }
+    .pivot-card .row { display: flex; gap: 6px; color: var(--muted); }
+    .pivot-card .row span:first-child { flex-shrink: 0; }
     .pivot-card .row span:last-child { color: var(--text); font-weight: 600; }
 
     .badge {
@@ -275,6 +277,10 @@
         flex-direction: column;
         overflow: hidden;
       }
+
+      /* مهم: تو DOM سایدبار قبل از چارته، پس با order مجبورش می‌کنیم چارت اول (بالا) بیاد */
+      .charts-col { order: 1; }
+      .sidebar    { order: 2; }
 
       /* چارت‌ها فقط ۴۵٪ ارتفاع صفحه — کوچیک و کامل تو یه نگاه دیده میشن */
       .charts-col {
