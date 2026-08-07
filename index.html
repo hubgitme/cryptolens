@@ -355,18 +355,21 @@ function initCharts() {
   macdSignalSeries = macdChart.addLineSeries({ color: '#ff6d00', lineWidth: 1.5 });
   macdHistSeries   = macdChart.addHistogramSeries({ priceFormat: { type: 'price', precision: 4 } });
 
-  // ── Sync timescales ──
-  function syncRange(src, targets) {
+  // ── Sync timescales (robust) ──
+  const allCharts = [priceChart, rsiChart, macdChart];
+
+  allCharts.forEach(src => {
     src.timeScale().subscribeVisibleLogicalRangeChange(range => {
       if (isSyncing || !range) return;
       isSyncing = true;
-      targets.forEach(t => t.timeScale().setVisibleLogicalRange(range));
+      allCharts.forEach(t => {
+        if (t !== src) {
+          try { t.timeScale().setVisibleLogicalRange(range); } catch(e) {}
+        }
+      });
       isSyncing = false;
     });
-  }
-  syncRange(priceChart, [rsiChart, macdChart]);
-  syncRange(rsiChart,   [priceChart, macdChart]);
-  syncRange(macdChart,  [priceChart, rsiChart]);
+  });
 
   // ── Crosshair sync + tooltip ──
   function syncCrosshair(src, targets, getTooltip) {
@@ -620,10 +623,10 @@ async function loadData() {
     candleSeries.setMarkers(markers);
 
     // ── RSI ──
+    // همه بازه رو پوشش بده تا timescale یکی باشه
     rsiSeries.setData(times.map((t,i) => rsiArr[i]!=null ? {time:t, value:rsiArr[i]} : null).filter(Boolean));
-    const rsiTimes = times.filter((_,i) => rsiArr[i]!=null);
-    rsiOB.setData(rsiTimes.map(t => ({time:t, value:70})));
-    rsiOS.setData(rsiTimes.map(t => ({time:t, value:30})));
+    rsiOB.setData(times.map(t => ({time:t, value:70})));
+    rsiOS.setData(times.map(t => ({time:t, value:30})));
 
     // ── MACD ──
     macdLineSeries.setData(times.map((t,i)   => ml[i]!=null ? {time:t,value:ml[i]} : null).filter(Boolean));
@@ -633,9 +636,8 @@ async function loadData() {
     // ── Sidebar ──
     renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence });
 
+    // فقط priceChart فیت میشه، بقیه از طریق sync آپدیت میشن
     priceChart.timeScale().fitContent();
-    rsiChart.timeScale().fitContent();
-    macdChart.timeScale().fitContent();
 
     document.getElementById('status').textContent = `${symbol} · ${currentIv} · ${candles.length} کندل`;
   } catch(e) {
