@@ -223,12 +223,111 @@
     .macd-bull { background: rgba(38,166,154,0.18); color: var(--green); }
     .macd-bear { background: rgba(239,83,80,0.18); color: var(--red); }
 
+    .signal-card {
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.8rem;
+    }
+    .signal-card.bearish {
+      background: rgba(239,83,80,0.08);
+      border: 1px solid rgba(239,83,80,0.35);
+    }
+    .signal-card.bullish {
+      background: rgba(38,166,154,0.08);
+      border: 1px solid rgba(38,166,154,0.35);
+    }
+    .signal-card.neutral {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      text-align: center;
+      padding: 14px;
+    }
+    .signal-title {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #fff;
+    }
+    .signal-desc {
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-bottom: 4px;
+    }
+    .signal-row {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+    }
+    .signal-row span:last-child { color: var(--text); font-weight: 600; }
+    em.up { color: var(--green); font-style: normal; font-size: 0.75rem; }
+    em.dn { color: var(--red);   font-style: normal; font-size: 0.75rem; }
+
     .no-data {
       color: var(--muted);
       font-size: 0.82rem;
       text-align: center;
       padding: 20px 0;
     }
+
+    .signal-card {
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1.5px solid;
+      position: relative;
+      overflow: hidden;
+    }
+    .signal-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.07;
+    }
+    .signal-card.sell {
+      border-color: var(--red);
+      background: rgba(239,83,80,0.06);
+    }
+    .signal-card.sell::before { background: var(--red); }
+    .signal-card.buy {
+      border-color: var(--green);
+      background: rgba(38,166,154,0.06);
+    }
+    .signal-card.buy::before { background: var(--green); }
+    .signal-card.neutral {
+      border-color: var(--border);
+      background: var(--bg);
+    }
+
+    .signal-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+    }
+
+    .signal-main {
+      font-size: 1.05rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .signal-card.sell .signal-main { color: var(--red); }
+    .signal-card.buy  .signal-main { color: var(--green); }
+    .signal-card.neutral .signal-main { color: var(--muted); }
+
+    .signal-desc {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .signal-desc b { color: var(--text); }
 
     .loader {
       display: none;
@@ -271,7 +370,7 @@
 
 <div class="main">
   <aside class="sidebar">
-    <h2>آخرین دره و قله</h2>
+    <h2>سیگنال واگرایی</h2>
     <div id="pivotCards"><p class="no-data">داده‌ای بارگذاری نشده</p></div>
   </aside>
 
@@ -501,8 +600,23 @@ async function loadData() {
       ).filter(Boolean)
     );
 
+    // ── Divergence Detection ──
+    const divergence = detectDivergence({ candles, rsiArr, peaks, valleys });
+
+    // Add divergence markers to price chart
+    if (divergence.bearish) {
+      const i = divergence.bearish.currentIdx;
+      markers.push({ time: times[i], position: 'aboveBar', color: '#ff1744', shape: 'arrowDown', text: '⚠ واگرایی نزولی' });
+    }
+    if (divergence.bullish) {
+      const i = divergence.bullish.currentIdx;
+      markers.push({ time: times[i], position: 'belowBar', color: '#00e676', shape: 'arrowUp', text: '⚠ واگرایی صعودی' });
+    }
+    markers.sort((a, b) => a.time - b.time);
+    priceSeries.setMarkers(markers);
+
     // ── Sidebar ──
-    renderSidebar({ candles, rsiArr, macdLine: ml, signalLine: sl, peaks, valleys });
+    renderSidebar({ candles, rsiArr, macdLine: ml, signalLine: sl, peaks, valleys, divergence });
 
     // Fit
     priceChart.timeScale().fitContent();
@@ -518,7 +632,56 @@ async function loadData() {
   }
 }
 
-function renderSidebar({ candles, rsiArr, macdLine, signalLine, peaks, valleys }) {
+// ─── Divergence Detection ────────────────────────────────────────────────────
+function detectDivergence({ candles, rsiArr, peaks, valleys }) {
+  const result = { bearish: null, bullish: null };
+
+  // Bearish: قله قیمت بالاتر + RSI قله پایین‌تر
+  if (peaks.length >= 2) {
+    const prev = peaks[peaks.length - 2];
+    const curr = peaks[peaks.length - 1];
+    const pricePrev = candles[prev].high;
+    const priceCurr = candles[curr].high;
+    const rsiPrev   = rsiArr[prev];
+    const rsiCurr   = rsiArr[curr];
+    if (rsiPrev != null && rsiCurr != null) {
+      if (priceCurr > pricePrev && rsiCurr < rsiPrev) {
+        result.bearish = {
+          prevIdx: prev, currentIdx: curr,
+          prevPrice: pricePrev, currentPrice: priceCurr,
+          prevRsi: rsiPrev, currentRsi: rsiCurr,
+          priceDiff: ((priceCurr - pricePrev) / pricePrev * 100).toFixed(2),
+          rsiDiff: (rsiCurr - rsiPrev).toFixed(2),
+        };
+      }
+    }
+  }
+
+  // Bullish: دره قیمت پایین‌تر + RSI دره بالاتر
+  if (valleys.length >= 2) {
+    const prev = valleys[valleys.length - 2];
+    const curr = valleys[valleys.length - 1];
+    const pricePrev = candles[prev].low;
+    const priceCurr = candles[curr].low;
+    const rsiPrev   = rsiArr[prev];
+    const rsiCurr   = rsiArr[curr];
+    if (rsiPrev != null && rsiCurr != null) {
+      if (priceCurr < pricePrev && rsiCurr > rsiPrev) {
+        result.bullish = {
+          prevIdx: prev, currentIdx: curr,
+          prevPrice: pricePrev, currentPrice: priceCurr,
+          prevRsi: rsiPrev, currentRsi: rsiCurr,
+          priceDiff: ((priceCurr - pricePrev) / pricePrev * 100).toFixed(2),
+          rsiDiff: (rsiCurr - rsiPrev).toFixed(2),
+        };
+      }
+    }
+  }
+
+  return result;
+}
+
+function renderSidebar({ candles, rsiArr, macdLine, signalLine, peaks, valleys, divergence }) {
   const fmt = v => v?.toLocaleString('en-US', { maximumFractionDigits: 4 }) ?? '—';
   const fmtDate = t => new Date(t * 1000).toLocaleDateString('fa-IR');
 
@@ -544,6 +707,37 @@ function renderSidebar({ candles, rsiArr, macdLine, signalLine, peaks, valleys }
   }
 
   let html = '';
+
+  // ── Signal Cards ──
+  if (divergence.bearish) {
+    const d = divergence.bearish;
+    html += `
+    <div class="signal-card bearish">
+      <div class="signal-title">🔴 سیگنال فروش — واگرایی نزولی</div>
+      <div class="signal-desc">قله قیمت بالاتر رفت ولی RSI پایین‌تر آمد</div>
+      <div class="signal-row"><span>قله قبلی</span><span>$${fmt(d.prevPrice)}</span></div>
+      <div class="signal-row"><span>قله فعلی</span><span>$${fmt(d.currentPrice)} <em class="up">+${d.priceDiff}%</em></span></div>
+      <div class="signal-row"><span>RSI قبلی</span><span>${(+d.prevRsi).toFixed(1)}</span></div>
+      <div class="signal-row"><span>RSI فعلی</span><span>${(+d.currentRsi).toFixed(1)} <em class="dn">${d.rsiDiff}</em></span></div>
+    </div>`;
+  }
+
+  if (divergence.bullish) {
+    const d = divergence.bullish;
+    html += `
+    <div class="signal-card bullish">
+      <div class="signal-title">🟢 سیگنال خرید — واگرایی صعودی</div>
+      <div class="signal-desc">دره قیمت پایین‌تر رفت ولی RSI بالاتر آمد</div>
+      <div class="signal-row"><span>دره قبلی</span><span>$${fmt(d.prevPrice)}</span></div>
+      <div class="signal-row"><span>دره فعلی</span><span>$${fmt(d.currentPrice)} <em class="dn">${d.priceDiff}%</em></span></div>
+      <div class="signal-row"><span>RSI قبلی</span><span>${(+d.prevRsi).toFixed(1)}</span></div>
+      <div class="signal-row"><span>RSI فعلی</span><span>${(+d.currentRsi).toFixed(1)} <em class="up">+${d.rsiDiff}</em></span></div>
+    </div>`;
+  }
+
+  if (!divergence.bearish && !divergence.bullish) {
+    html += `<div class="signal-card neutral">⚪ واگرایی فعال شناسایی نشد</div>`;
+  }
 
   if (peaks.length) {
     const i = peaks[peaks.length - 1];
