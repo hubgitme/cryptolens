@@ -47,7 +47,7 @@
 
     .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
-    input, button {
+    input, button, select {
       background: var(--bg);
       border: 1px solid var(--border);
       color: var(--text);
@@ -57,8 +57,9 @@
       font-family: var(--font);
       outline: none;
     }
-    input:focus { border-color: var(--accent); }
-    button { cursor: pointer; transition: opacity 0.2s; }
+    input:focus, select:focus { border-color: var(--accent); }
+    button, select { cursor: pointer; }
+    button { transition: opacity 0.2s; }
     button:hover { opacity: 0.8; }
     button:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -78,25 +79,25 @@
 
     #status { margin-right: auto; font-size: 0.78rem; color: var(--muted); }
 
-    /* ── Tooltip bar ── */
-    #tooltip-bar {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 5px 20px;
+    /* ── Pane Legend — روی خود چارت، بالا-چپ هر پنل (سبک TradingView) ── */
+    .pane-legend {
+      position: absolute;
+      top: 6px; left: 10px;
+      z-index: 10;
       display: flex;
-      gap: 24px;
       align-items: center;
-      flex-shrink: 0;
-      font-size: 0.78rem;
-      min-height: 30px;
-      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 0.72rem;
+      font-variant-numeric: tabular-nums;
+      direction: ltr;
+      pointer-events: none;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
     }
-    .tt-group { display: flex; gap: 10px; align-items: center; }
-    .tt-label { color: var(--muted); }
-    .tt-val   { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; direction: ltr; }
-    .tt-val.up   { color: var(--green); }
-    .tt-val.dn   { color: var(--red); }
-    .tt-sep { color: var(--border); }
+    .lg-symbol { color: #fff; font-weight: 700; letter-spacing: 0.3px; }
+    .lg-item   { color: var(--muted); display: flex; gap: 3px; align-items: baseline; }
+    .lg-val    { color: var(--text); font-weight: 600; }
+    .lg-val.up { color: var(--green); }
+    .lg-val.dn { color: var(--red); }
 
     /* ── Layout ── */
     .main {
@@ -234,18 +235,6 @@
     }
     .chart-wrap:last-child { border-bottom: none; }
 
-    .chart-label {
-      position: absolute;
-      top: 7px; right: 10px;
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      z-index: 10;
-      pointer-events: none;
-    }
-
     /* ── Loader ── */
     .loader {
       display: none;
@@ -301,21 +290,14 @@
         font-size: 0.62rem;
       }
 
-      /* نوار Tooltip فشرده‌تر */
-      #tooltip-bar {
-        padding: 3px 10px;
-        gap: 8px;
+      /* Legend روی چارت، فشرده‌تر تو موبایل */
+      .pane-legend {
         font-size: 0.6rem;
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        white-space: nowrap;
-        min-height: 22px;
+        gap: 6px;
+        top: 4px; left: 6px;
       }
-      .tt-group { gap: 4px; flex-shrink: 0; }
 
       /* توجه: چیدمان اصلی (main/charts-col/sidebar) الان توسط JS (applyLayout) کنترل میشه، نه اینجا */
-
-      .chart-label { font-size: 0.56rem; top: 3px; right: 6px; }
     }
 
     @media (max-width: 420px) {
@@ -329,7 +311,13 @@
 <header>
   <h1>📊 تحلیل تکنیکال</h1>
   <div class="controls">
-    <input id="symbolInput" type="text" value="BTCUSDT" style="width:120px; direction:ltr;" />
+    <input id="symbolInput" type="text" value="BTCUSDT" style="width:100px; direction:ltr;" />
+    <select id="symbolSelect" onchange="onSymbolSelect(this)" style="direction:ltr; max-width:150px;">
+      <option value="">— انتخاب سریع —</option>
+      <optgroup label="۱۰ ارز برتر" id="topCoinsGroup"></optgroup>
+      <optgroup label="ذخیره‌شده‌های من" id="savedCoinsGroup"></optgroup>
+    </select>
+    <button id="saveSymbolBtn" onclick="saveCurrentSymbol()" title="ذخیره ارز فعلی">⭐ ذخیره</button>
     <div class="iv-group">
       <button onclick="setIv('1h')"  id="btn-1h">1H</button>
       <button onclick="setIv('4h')"  id="btn-4h" class="active">4H</button>
@@ -344,35 +332,6 @@
   <span id="status">آماده</span>
 </header>
 
-<!-- Crosshair tooltip bar -->
-<div id="tooltip-bar">
-  <div class="tt-group">
-    <span class="tt-label">زمان</span>
-    <span class="tt-val" id="tt-time">—</span>
-  </div>
-  <span class="tt-sep">|</span>
-  <div class="tt-group">
-    <span class="tt-label">O</span><span class="tt-val" id="tt-open">—</span>
-    <span class="tt-label">H</span><span class="tt-val" id="tt-high">—</span>
-    <span class="tt-label">L</span><span class="tt-val" id="tt-low">—</span>
-    <span class="tt-label">C</span><span class="tt-val" id="tt-close">—</span>
-  </div>
-  <span class="tt-sep">|</span>
-  <div class="tt-group">
-    <span class="tt-label">RSI</span>
-    <span class="tt-val" id="tt-rsi">—</span>
-  </div>
-  <span class="tt-sep">|</span>
-  <div class="tt-group">
-    <span class="tt-label">MACD</span>
-    <span class="tt-val" id="tt-macd">—</span>
-    <span class="tt-label">Signal</span>
-    <span class="tt-val" id="tt-signal">—</span>
-    <span class="tt-label">Hist</span>
-    <span class="tt-val" id="tt-hist">—</span>
-  </div>
-</div>
-
 <div class="main">
   <aside class="sidebar">
     <h2>سیگنال واگرایی</h2>
@@ -381,21 +340,36 @@
 
   <div class="charts-col" id="chartsCol">
     <div class="chart-wrap" id="wrap-price">
-      <div class="chart-label">قیمت</div>
+      <div class="pane-legend" id="legend-price">
+        <span class="lg-symbol" id="lg-symbol">BTCUSDT · 4H</span>
+        <span class="lg-item">O<b id="lg-open" class="lg-val">—</b></span>
+        <span class="lg-item">H<b id="lg-high" class="lg-val">—</b></span>
+        <span class="lg-item">L<b id="lg-low"  class="lg-val">—</b></span>
+        <span class="lg-item">C<b id="lg-close" class="lg-val">—</b></span>
+      </div>
       <div id="chart-price"></div>
     </div>
     <div class="chart-wrap" id="wrap-rsi">
-      <div class="chart-label">RSI (14)</div>
+      <div class="pane-legend" id="legend-rsi">
+        <span class="lg-symbol">RSI (14)</span>
+        <b id="lg-rsi" class="lg-val">—</b>
+      </div>
       <div id="chart-rsi"></div>
     </div>
     <div class="chart-wrap" id="wrap-macd">
-      <div class="chart-label">MACD (12,26,9)</div>
+      <div class="pane-legend" id="legend-macd">
+        <span class="lg-symbol">MACD (12,26,9)</span>
+        <span class="lg-item" style="color:#2962ff">MACD <b id="lg-macd" class="lg-val">—</b></span>
+        <span class="lg-item" style="color:#ff6d00">Signal <b id="lg-signal" class="lg-val">—</b></span>
+        <span class="lg-item">Hist <b id="lg-hist" class="lg-val">—</b></span>
+      </div>
       <div id="chart-macd"></div>
     </div>
   </div>
 </div>
 
 <div class="loader" id="loader">
+
   <div class="spinner"></div>
   <p>در حال دریافت داده از بایننس...</p>
 </div>
@@ -403,10 +377,56 @@
 <script>
 // ─── Globals ────────────────────────────────────────────────────────────────
 let currentIv = '4h';
+
+// ─── لیست ارزها (۱۰ ارز برتر + ذخیره‌شده‌های کاربر با localStorage) ──────────
+const TOP_COINS = ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','ADAUSDT','DOGEUSDT','TRXUSDT','TONUSDT','AVAXUSDT'];
+
+function getSavedSymbols() {
+  try { return JSON.parse(localStorage.getItem('savedSymbols') || '[]'); }
+  catch(e) { return []; }
+}
+
+function setSavedSymbols(arr) {
+  try { localStorage.setItem('savedSymbols', JSON.stringify(arr)); } catch(e) {}
+}
+
+function populateSymbolDropdown() {
+  const topGroup   = document.getElementById('topCoinsGroup');
+  const savedGroup = document.getElementById('savedCoinsGroup');
+
+  topGroup.innerHTML = TOP_COINS.map(s => `<option value="${s}">${s}</option>`).join('');
+
+  const saved = getSavedSymbols();
+  savedGroup.innerHTML = saved.length
+    ? saved.map(s => `<option value="${s}">${s} ⭐</option>`).join('')
+    : '';
+  savedGroup.style.display = saved.length ? '' : 'none';
+}
+
+function onSymbolSelect(sel) {
+  if (!sel.value) return;
+  document.getElementById('symbolInput').value = sel.value;
+  sel.value = ''; // برگردون به حالت پیش‌فرض تا دوباره قابل انتخاب باشه
+  loadData();
+}
+
+function saveCurrentSymbol() {
+  const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
+  if (!symbol) return;
+  const saved = getSavedSymbols();
+  if (!saved.includes(symbol)) {
+    saved.push(symbol);
+    setSavedSymbols(saved);
+    populateSymbolDropdown();
+  }
+  document.getElementById('status').textContent = `✅ ${symbol} ذخیره شد`;
+}
+
 let zigzagPct = 0.5; // درصد حساسیت تشخیص دره/قله
 let priceChart, rsiChart, macdChart;
 let candleSeries, rsiSeries, rsiOB, rsiOS, macdLineSeries, macdSignalSeries, macdHistSeries;
 let globalCandles = [], globalRsi = [], globalMacdL = [], globalMacdS = [], globalMacdH = [];
+let lastPricePrecision = 2;
 let isSyncing = false;
 
 // ─── Interval ───────────────────────────────────────────────────────────────
@@ -463,27 +483,29 @@ function calcHeights() {
   };
 }
 
-// ─── Resize handler — چارت‌ها رو موقع چرخش/تغییر سایز صفحه دوباره اندازه می‌کنه ──
+// ─── Resize — چارت‌ها رو موقع چرخش/تغییر سایز صفحه دوباره اندازه می‌کنه ──
+function resizeChartsNow() {
+  applyResponsiveLayout();
+  if (!priceChart) return;
+  const h = calcHeights();
+
+  const priceEl = document.getElementById('chart-price');
+  const rsiEl   = document.getElementById('chart-rsi');
+  const macdEl  = document.getElementById('chart-macd');
+
+  priceEl.style.height = h.price + 'px';
+  rsiEl.style.height   = h.rsi + 'px';
+  macdEl.style.height  = h.macd + 'px';
+
+  priceChart.resize(priceEl.clientWidth, h.price);
+  rsiChart.resize(rsiEl.clientWidth, h.rsi);
+  macdChart.resize(macdEl.clientWidth, h.macd);
+}
+
 let resizeTimer = null;
 function handleResize() {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => {
-    applyResponsiveLayout();
-    if (!priceChart) return;
-    const h = calcHeights();
-
-    const priceEl = document.getElementById('chart-price');
-    const rsiEl   = document.getElementById('chart-rsi');
-    const macdEl  = document.getElementById('chart-macd');
-
-    priceEl.style.height = h.price + 'px';
-    rsiEl.style.height   = h.rsi + 'px';
-    macdEl.style.height  = h.macd + 'px';
-
-    priceChart.resize(priceEl.clientWidth, h.price);
-    rsiChart.resize(rsiEl.clientWidth, h.rsi);
-    macdChart.resize(macdEl.clientWidth, h.macd);
-  }, 150);
+  resizeTimer = setTimeout(resizeChartsNow, 150);
 }
 window.addEventListener('resize', handleResize);
 window.addEventListener('orientationchange', handleResize);
@@ -495,7 +517,7 @@ function initCharts() {
   const base = {
     layout: { background: { color: '#0b0e17' }, textColor: '#6b7280' },
     grid: { vertLines: { color: '#1e2535' }, horzLines: { color: '#1e2535' } },
-    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Magnet },
     timeScale: { borderColor: '#1e2535', timeVisible: true, rightOffset: 5 },
     rightPriceScale: { borderColor: '#1e2535' },
     handleScroll: true,
@@ -509,7 +531,7 @@ function initCharts() {
     upColor: '#26a69a', downColor: '#ef5350',
     borderUpColor: '#26a69a', borderDownColor: '#ef5350',
     wickUpColor: '#26a69a', wickDownColor: '#ef5350',
-    priceFormat: { type: 'price', precision: 4, minMove: 0.01 }, // ← تعداد رقم اعشار قیمت اینجا
+    priceFormat: { type: 'price', precision: 2, minMove: 0.01 }, // ← تعداد رقم اعشار قیمت اینجا
   });
 
   // RSI
@@ -562,98 +584,78 @@ function initCharts() {
     });
   }
 
-  // crosshair on price chart drives tooltip
+  // crosshair on price chart drives legend
   priceChart.subscribeCrosshairMove(param => {
-    if (!param.time) return;
-    const time = param.time;
-
-    // Find candle index
-    const idx = globalCandles.findIndex(c => c.time === time);
+    if (!param.time) { showLastLegend(); return; }
+    const idx = globalCandles.findIndex(c => c.time === param.time);
     if (idx === -1) return;
-
-    const c = globalCandles[idx];
-    const rsi = globalRsi[idx];
-    const ml  = globalMacdL[idx];
-    const sl  = globalMacdS[idx];
-    const hl  = globalMacdH[idx];
-
-    const fmt = v => v != null ? v.toFixed(2) : '—';
-    const fmtP = v => v != null ? v.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—';
-
-    const d = new Date(time * 1000);
-    document.getElementById('tt-time').textContent   = d.toLocaleString('fa-IR');
-    document.getElementById('tt-open').textContent   = fmtP(c.open);
-    document.getElementById('tt-high').textContent   = fmtP(c.high);
-    document.getElementById('tt-low').textContent    = fmtP(c.low);
-    const closeEl = document.getElementById('tt-close');
-    closeEl.textContent = fmtP(c.close);
-    closeEl.className = 'tt-val ' + (c.close >= c.open ? 'up' : 'dn');
-
-    const rsiEl = document.getElementById('tt-rsi');
-    rsiEl.textContent = fmt(rsi);
-    rsiEl.className = 'tt-val' + (rsi >= 70 ? ' dn' : rsi <= 30 ? ' up' : '');
-
-    document.getElementById('tt-macd').textContent   = fmt(ml);
-    document.getElementById('tt-signal').textContent = fmt(sl);
-    const histEl = document.getElementById('tt-hist');
-    histEl.textContent = fmt(hl);
-    histEl.className = 'tt-val ' + (hl >= 0 ? 'up' : 'dn');
+    updateLegendByIndex(idx);
 
     // sync crosshair position on rsi and macd charts
     if (!isSyncing) {
       isSyncing = true;
-      if (rsi != null) {
-        try { rsiChart.setCrosshairPosition(rsi, time, rsiSeries); } catch(e){}
-      }
-      if (ml != null) {
-        try { macdChart.setCrosshairPosition(ml, time, macdLineSeries); } catch(e){}
-      }
+      const rsi = globalRsi[idx], ml = globalMacdL[idx];
+      if (rsi != null) { try { rsiChart.setCrosshairPosition(rsi, param.time, rsiSeries); } catch(e){} }
+      if (ml  != null) { try { macdChart.setCrosshairPosition(ml, param.time, macdLineSeries); } catch(e){} }
       isSyncing = false;
     }
   });
 
   rsiChart.subscribeCrosshairMove(param => {
-    if (!param.time || isSyncing) return;
+    if (!param.time) { if (!isSyncing) showLastLegend(); return; }
+    if (isSyncing) return;
     isSyncing = true;
     try { priceChart.setCrosshairPosition(0, param.time, candleSeries); } catch(e){}
     try { macdChart.setCrosshairPosition(0, param.time, macdLineSeries); } catch(e){}
     isSyncing = false;
-    updateTooltipByTime(param.time);
+    const idx = globalCandles.findIndex(c => c.time === param.time);
+    if (idx !== -1) updateLegendByIndex(idx);
   });
 
   macdChart.subscribeCrosshairMove(param => {
-    if (!param.time || isSyncing) return;
+    if (!param.time) { if (!isSyncing) showLastLegend(); return; }
+    if (isSyncing) return;
     isSyncing = true;
     try { priceChart.setCrosshairPosition(0, param.time, candleSeries); } catch(e){}
     try { rsiChart.setCrosshairPosition(0, param.time, rsiSeries); } catch(e){}
     isSyncing = false;
-    updateTooltipByTime(param.time);
+    const idx = globalCandles.findIndex(c => c.time === param.time);
+    if (idx !== -1) updateLegendByIndex(idx);
   });
 }
 
-function updateTooltipByTime(time) {
-  const idx = globalCandles.findIndex(c => c.time === time);
-  if (idx === -1) return;
+// ─── Pane Legends (سبک TradingView — بالا-چپ هر پنل، همیشه یه مقدار نشون میده) ──
+function updateLegendByIndex(idx) {
   const c   = globalCandles[idx];
   const rsi = globalRsi[idx];
   const ml  = globalMacdL[idx];
   const sl  = globalMacdS[idx];
   const hl  = globalMacdH[idx];
-  const fmt = v => v != null ? v.toFixed(2) : '—';
-  const fmtP = v => v != null ? v.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—';
-  document.getElementById('tt-time').textContent   = new Date(time * 1000).toLocaleString('fa-IR');
-  document.getElementById('tt-open').textContent   = fmtP(c.open);
-  document.getElementById('tt-high').textContent   = fmtP(c.high);
-  document.getElementById('tt-low').textContent    = fmtP(c.low);
-  const closeEl = document.getElementById('tt-close');
+  if (!c) return;
+
+  const fmt  = v => v != null ? v.toFixed(2) : '—';
+  const fmtP = v => v != null ? v.toLocaleString('en-US', { maximumFractionDigits: lastPricePrecision }) : '—';
+
+  document.getElementById('lg-open').textContent  = fmtP(c.open);
+  document.getElementById('lg-high').textContent  = fmtP(c.high);
+  document.getElementById('lg-low').textContent   = fmtP(c.low);
+  const closeEl = document.getElementById('lg-close');
   closeEl.textContent = fmtP(c.close);
-  closeEl.className = 'tt-val ' + (c.close >= c.open ? 'up' : 'dn');
-  document.getElementById('tt-rsi').textContent    = fmt(rsi);
-  document.getElementById('tt-macd').textContent   = fmt(ml);
-  document.getElementById('tt-signal').textContent = fmt(sl);
-  const histEl = document.getElementById('tt-hist');
+  closeEl.className = 'lg-val ' + (c.close >= c.open ? 'up' : 'dn');
+
+  const rsiEl = document.getElementById('lg-rsi');
+  rsiEl.textContent = fmt(rsi);
+  rsiEl.className = 'lg-val' + (rsi >= 70 ? ' dn' : rsi <= 30 ? ' up' : '');
+
+  document.getElementById('lg-macd').textContent   = fmt(ml);
+  document.getElementById('lg-signal').textContent = fmt(sl);
+  const histEl = document.getElementById('lg-hist');
   histEl.textContent = fmt(hl);
-  histEl.className = 'tt-val ' + (hl >= 0 ? 'up' : 'dn');
+  histEl.className = 'lg-val ' + (hl >= 0 ? 'up' : 'dn');
+}
+
+function showLastLegend() {
+  if (globalCandles.length) updateLegendByIndex(globalCandles.length - 1);
 }
 
 // ─── Indicators ──────────────────────────────────────────────────────────────
@@ -810,6 +812,9 @@ async function loadData() {
   const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
   if (!symbol) return;
 
+  // موبایل: کیبورد رو ببند و اندازه چارت‌ها رو دوباره حساب کن، چون کیبورد ارتفاع صفحه رو موقتاً عوض می‌کنه
+  document.activeElement && document.activeElement.blur();
+
   document.getElementById('loader').classList.add('show');
   document.getElementById('loadBtn').disabled = true;
   document.getElementById('status').textContent = 'در حال دریافت...';
@@ -834,6 +839,18 @@ async function loadData() {
     globalMacdH = hl;
 
     const { peaks, valleys } = calcZigZag(candles, zigzagPct);
+
+    // ── تعداد رقم اعشار بر اساس قیمت: زیر ۱ دلار → ۴ رقم، بالاتر → ۲ رقم ──
+    const lastPrice = closes[closes.length - 1];
+    const isSmallPrice = lastPrice < 1;
+    lastPricePrecision = isSmallPrice ? 4 : 2;
+    candleSeries.applyOptions({
+      priceFormat: {
+        type: 'price',
+        precision: lastPricePrecision,
+        minMove:   isSmallPrice ? 0.0001 : 0.01,
+      }
+    });
 
     // ── Candlestick ──
     candleSeries.setData(candles);
@@ -881,6 +898,13 @@ async function loadData() {
 
     // ── Sidebar ──
     renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence });
+
+    // Legend: نماد + تایم‌فریم + مقادیر آخرین کندل (پیش‌فرض بدون crosshair)
+    document.getElementById('lg-symbol').textContent = `${symbol} · ${currentIv.toUpperCase()}`;
+    showLastLegend();
+
+    // اندازه چارت‌ها رو دوباره حساب کن (کیبورد موبایل ممکنه ارتفاع صفحه رو عوض کرده باشه)
+    resizeChartsNow();
 
     // فقط priceChart فیت میشه، بقیه از طریق sync آپدیت میشن
     priceChart.timeScale().fitContent();
@@ -974,6 +998,7 @@ function renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence }) 
 // ─── Boot ────────────────────────────────────────────────────────────────────
 applyResponsiveLayout();
 initCharts();
+populateSymbolDropdown();
 // لایه محافظ: دوباره روی window.load هم اجرا میشه، برای اطمینان بیشتر
 window.addEventListener('load', applyResponsiveLayout);
 </script>
