@@ -1,0 +1,18 @@
+{
+  "name": "سیستم هشدار قیمت کریپتو پلاس",
+  "short_name": "هشدار کریپتو",
+  "description": "نمایش لحظه‌ای قیمت صرافی بایننس همراه با سیستم هشدار قیمت هوشمند",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#0f1724",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3938/3938158.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
