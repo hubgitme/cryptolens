@@ -509,6 +509,7 @@ function initCharts() {
     upColor: '#26a69a', downColor: '#ef5350',
     borderUpColor: '#26a69a', borderDownColor: '#ef5350',
     wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+    priceFormat: { type: 'price', precision: 2, minMove: 0.01 }, // ← تعداد رقم اعشار قیمت اینجا
   });
 
   // RSI
@@ -576,7 +577,7 @@ function initCharts() {
     const sl  = globalMacdS[idx];
     const hl  = globalMacdH[idx];
 
-    const fmt = v => v != null ? v.toFixed(4) : '—';
+    const fmt = v => v != null ? v.toFixed(2) : '—';
     const fmtP = v => v != null ? v.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—';
 
     const d = new Date(time * 1000);
@@ -638,7 +639,7 @@ function updateTooltipByTime(time) {
   const ml  = globalMacdL[idx];
   const sl  = globalMacdS[idx];
   const hl  = globalMacdH[idx];
-  const fmt = v => v != null ? v.toFixed(4) : '—';
+  const fmt = v => v != null ? v.toFixed(2) : '—';
   const fmtP = v => v != null ? v.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—';
   document.getElementById('tt-time').textContent   = new Date(time * 1000).toLocaleString('fa-IR');
   document.getElementById('tt-open').textContent   = fmtP(c.open);
@@ -776,7 +777,7 @@ function detectDivergence({ candles, rsiArr }, lookback = 6, wing = 1) {
         prevIdx: prev, currentIdx: curr,
         prevPrice: pp, currentPrice: pc,
         prevRsi: rp, currentRsi: rc,
-        priceDiff: ((pc - pp) / pp * 100).toFixed(4),
+        priceDiff: ((pc - pp) / pp * 100).toFixed(2),
         rsiDiff: (rc - rp).toFixed(2),
       });
     }
@@ -792,7 +793,7 @@ function detectDivergence({ candles, rsiArr }, lookback = 6, wing = 1) {
         prevIdx: prev, currentIdx: curr,
         prevPrice: pp, currentPrice: pc,
         prevRsi: rp, currentRsi: rc,
-        priceDiff: ((pc - pp) / pp * 100).toFixed(4),
+        priceDiff: ((pc - pp) / pp * 100).toFixed(2),
         rsiDiff: (rc - rp).toFixed(2),
       });
     }
