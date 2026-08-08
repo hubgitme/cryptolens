@@ -140,6 +140,24 @@
     .signal-card.bearish { background: rgba(239,83,80,0.07);  border-color: rgba(239,83,80,0.4); }
     .signal-card.bullish { background: rgba(38,166,154,0.07); border-color: rgba(38,166,154,0.4); }
     .signal-card.neutral { background: var(--bg); color: var(--muted); text-align: center; padding: 12px; }
+
+    /* نوار وضعیت فشرده (واگرایی خنثی + RSI فعلی)، کنار هم توی pivot-row */
+    .status-bar {
+      padding: 7px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .status-bar.neutral { color: var(--muted); }
+    .status-bar.rsi-ob { background: rgba(239,83,80,0.12); border-color: rgba(239,83,80,0.4); color: var(--red); }
+    .status-bar.rsi-os { background: rgba(38,166,154,0.12); border-color: rgba(38,166,154,0.4); color: var(--green); }
+    .status-bar.rsi-n  { color: var(--muted); }
+    .sidebar.mobile-grid .pivot-row .status-bar { flex: 1 1 0; min-width: 0; box-sizing: border-box; }
     .signal-title { font-weight: 700; font-size: 0.82rem; color: #fff; }
     .signal-desc  { color: var(--muted); font-size: 0.72rem; margin-bottom: 3px; }
     .signal-row   { display: flex; gap: 6px; color: var(--muted); }
@@ -855,6 +873,10 @@ async function loadData() {
     // ── Candlestick ──
     candleSeries.setData(candles);
 
+    // رفع باگ مهم: بعد از تغییر ارز، محور قیمت گاهی رنج قیمت قبلی رو نگه می‌داشت
+    // (مثلاً از ارزی با قیمت ۰.۲ به ارزی با قیمت ۰.۰۷ سوییچ می‌کردی، کندل‌ها بیرون از دید می‌رفتن)
+    priceChart.priceScale('right').applyOptions({ autoScale: true });
+
     // Markers
     const markers = [];
     peaks.slice(-3).forEach((i, idx, arr) => {
@@ -907,6 +929,8 @@ async function loadData() {
     resizeChartsNow();
 
     // فقط priceChart فیت میشه، بقیه از طریق sync آپدیت میشن
+    rsiChart.priceScale('right').applyOptions({ autoScale: true });
+    macdChart.priceScale('right').applyOptions({ autoScale: true });
     priceChart.timeScale().fitContent();
 
     document.getElementById('status').textContent = `${symbol} · ${currentIv} · ${candles.length} کندل`;
@@ -954,7 +978,11 @@ function renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence }) 
     </div>`;
   }
   if (!divergence.bearish && !divergence.bullish) {
-    html += `<div class="signal-card neutral">⚪ واگرایی شناسایی نشد</div>`;
+    const lastRsi = rsiArr[rsiArr.length - 1];
+    html += `<div class="pivot-row">
+      <div class="status-bar neutral">⚪ واگرایی شناسایی نشد</div>
+      <div class="status-bar ${rsiClass(lastRsi)}">RSI فعلی: ${lastRsi!=null?lastRsi.toFixed(1):'—'} · ${rsiLbl(lastRsi)}</div>
+    </div>`;
   }
 
   // قله‌ها و دره‌ها به صورت جفت (قله | دره) توی هر ردیف کنار هم
