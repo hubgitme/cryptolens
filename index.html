@@ -653,9 +653,16 @@
     <div id="pivotCards"><p class="no-data">داده‌ای بارگذاری نشده</p></div>
   </aside>
 
-  <div class="charts-col" id="chartsCol">
-    <div class="chart-wrap" id="wrap-price" style="height:100%;">
+  <div class="charts-col" id="chartsCol" style="display:flex; flex-direction:column;">
+    <div class="chart-wrap" id="wrap-price" style="flex:0 0 68%; min-height:0;">
       <div id="dvg-mainChart" style="width:100%; height:100%;"></div>
+    </div>
+    <div class="chart-wrap" id="wrap-rsi" style="flex:0 0 32%; min-height:0; position:relative;">
+      <div class="pane-legend" id="legend-rsi">
+        <span class="lg-symbol">RSI (14) — نقاط زرد = پیوت‌های واگرایی</span>
+        <b id="lg-rsi" class="lg-val">—</b>
+      </div>
+      <div id="chart-rsi" style="width:100%; height:100%;"></div>
     </div>
   </div>
 </div>
@@ -1734,6 +1741,34 @@ async function loadData() {
 
     const divergence = detectDivergence({ candles, rsiArr });
 
+    // ── پنل RSI: خط RSI + خط‌های ۷۰/۳۰ + نقاط زرد پیوت + مارکر واگرایی ──
+    if (rsiPanelInited) {
+      rsiSeries.setData(times.map((t,i) => rsiArr[i]!=null ? {time:t, value:rsiArr[i]} : null).filter(Boolean));
+      rsiOB.setData(times.map(t => ({time:t, value:70})));
+      rsiOS.setData(times.map(t => ({time:t, value:30})));
+
+      const rsiMarkers = [];
+      divergence.rsiHighs.forEach(i => rsiMarkers.push({ time: times[i], position: 'aboveBar', color: '#ffc107', shape: 'circle' }));
+      divergence.rsiLows.forEach(i  => rsiMarkers.push({ time: times[i], position: 'belowBar', color: '#ffc107', shape: 'circle' }));
+      divergence.allBearish.forEach(d =>
+        rsiMarkers.push({ time: times[d.currentIdx], position: 'aboveBar', color: '#ff1744', shape: 'arrowDown', text: '⚠ نزولی' })
+      );
+      divergence.allBullish.forEach(d =>
+        rsiMarkers.push({ time: times[d.currentIdx], position: 'belowBar', color: '#00e676', shape: 'arrowUp', text: '⚠ صعودی' })
+      );
+      rsiMarkers.sort((a,b) => a.time - b.time);
+      rsiSeries.setMarkers(rsiMarkers);
+
+      const lastRsi = rsiArr[rsiArr.length - 1];
+      document.getElementById('lg-rsi').textContent = lastRsi != null ? lastRsi.toFixed(2) : '—';
+
+      const barsToShow = window.innerWidth <= 768 ? 55 : 120;
+      rsiChart.timeScale().setVisibleLogicalRange({
+        from: Math.max(0, candles.length - barsToShow),
+        to:   candles.length + 3,
+      });
+    }
+
     // ── Sidebar ──
     renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence });
 
@@ -1850,14 +1885,54 @@ function buildDvgChart(symbol, iv) {
   });
 }
 
+// ─── پنل RSI مستقل (زیر ویجت TradingView) — برای نمایش بصری نقاط واگرایی ──
+let rsiPanelInited = false;
+function initRsiPanel() {
+  if (rsiPanelInited) return;
+  const el = document.getElementById('chart-rsi');
+  rsiChart = LightweightCharts.createChart(el, {
+    layout: { background: { color: '#0b0e17' }, textColor: '#6b7280' },
+    grid: { vertLines: { color: '#1e2535' }, horzLines: { color: '#1e2535' } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Magnet },
+    timeScale: { borderColor: '#1e2535', timeVisible: true, rightOffset: 5, barSpacing: 9 },
+    rightPriceScale: { borderColor: '#1e2535' },
+    handleScroll: true,
+    handleScale: true,
+    width: el.clientWidth,
+    height: el.clientHeight,
+  });
+  rsiSeries = rsiChart.addLineSeries({ color: '#ffc107', lineWidth: 1.5 });
+  rsiOB = rsiChart.addLineSeries({ color: '#ef5350', lineWidth: 1, lineStyle: 2 });
+  rsiOS = rsiChart.addLineSeries({ color: '#26a69a', lineWidth: 1, lineStyle: 2 });
+
+  rsiChart.subscribeCrosshairMove(param => {
+    if (!param.time) return;
+    const idx = globalCandles.findIndex(c => c.time === param.time);
+    if (idx === -1 || globalRsi[idx] == null) return;
+    document.getElementById('lg-rsi').textContent = globalRsi[idx].toFixed(2);
+  });
+
+  rsiPanelInited = true;
+}
+
+function resizeRsiPanel() {
+  if (!rsiPanelInited) return;
+  const el = document.getElementById('chart-rsi');
+  rsiChart.resize(el.clientWidth, el.clientHeight);
+}
+window.addEventListener('resize', () => { if (dvgTabInited) resizeRsiPanel(); });
+
 function initDivergenceTab() {
   applyResponsiveLayout();
   if (!dvgTabInited) {
     populateSymbolDropdown();
+    initRsiPanel();
     dvgTabInited = true;
     loadData(); // اولین باری که تب باز میشه، خودکار BTCUSDT رو بارگذاری کن
+  } else {
+    // دفعات بعدی که برمی‌گردیم رو این تب: چون قبلاً مخفی بوده، پنل RSI باید اندازه‌اش دوباره حساب بشه
+    resizeRsiPanel();
   }
-  // دفعات بعدی که برمی‌گردیم رو این تب، ویجت TradingView (که خودش iframe مستقله) نیازی به resize دستی نداره
 }
 window.addEventListener('resize', () => { if (dvgTabInited) applyResponsiveLayout(); });
 </script>
