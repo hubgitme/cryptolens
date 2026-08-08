@@ -312,6 +312,7 @@
       background: var(--dvg-surface);
       border-right: 1px solid var(--dvg-border);
       padding: 14px;
+      padding-bottom: 24px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -406,6 +407,7 @@
       flex-direction: column;
       gap: 6px;
       padding: 8px;
+      padding-bottom: 28px;
       overflow-y: auto;
       flex: 1 1 auto;
       min-height: 0;
@@ -652,31 +654,8 @@
   </aside>
 
   <div class="charts-col" id="chartsCol">
-    <div class="chart-wrap" id="wrap-price">
-      <div class="pane-legend" id="legend-price">
-        <span class="lg-symbol" id="lg-symbol">BTCUSDT · 4H</span>
-        <span class="lg-item">O<b id="lg-open" class="lg-val">—</b></span>
-        <span class="lg-item">H<b id="lg-high" class="lg-val">—</b></span>
-        <span class="lg-item">L<b id="lg-low"  class="lg-val">—</b></span>
-        <span class="lg-item">C<b id="lg-close" class="lg-val">—</b></span>
-      </div>
-      <div id="chart-price"></div>
-    </div>
-    <div class="chart-wrap" id="wrap-rsi">
-      <div class="pane-legend" id="legend-rsi">
-        <span class="lg-symbol">RSI (14)</span>
-        <b id="lg-rsi" class="lg-val">—</b>
-      </div>
-      <div id="chart-rsi"></div>
-    </div>
-    <div class="chart-wrap" id="wrap-macd">
-      <div class="pane-legend" id="legend-macd">
-        <span class="lg-symbol">MACD (12,26,9)</span>
-        <span class="lg-item" style="color:#2962ff">MACD <b id="lg-macd" class="lg-val">—</b></span>
-        <span class="lg-item" style="color:#ff6d00">Signal <b id="lg-signal" class="lg-val">—</b></span>
-        <span class="lg-item">Hist <b id="lg-hist" class="lg-val">—</b></span>
-      </div>
-      <div id="chart-macd"></div>
+    <div class="chart-wrap" id="wrap-price" style="height:100%;">
+      <div id="dvg-mainChart" style="width:100%; height:100%;"></div>
     </div>
   </div>
 </div>
@@ -701,7 +680,7 @@ const defaultTopCryptos = ["USDT", "BTC", "ETH", "SOL", "ADA", "CRV", "NEAR", "T
 let topCryptoList = JSON.parse(localStorage.getItem('topCryptoList')) || defaultTopCryptos;
 let customCrypto = localStorage.getItem('customCryptoSymbol') || "NEAR";
 let activeAlerts = JSON.parse(localStorage.getItem('myAlerts')) || [];
-const workerUrl = "https://relay-exchange-8d6b.gwr.workers.dev"; 
+const workerUrl = "/api/proxy"; 
 
 let lastFiredAlerts = {};
 let prices = {};
@@ -1359,8 +1338,8 @@ function applyResponsiveLayout() {
     main.style.overflow = 'hidden';
 
     chartsCol.style.order  = '1';
-    chartsCol.style.flex   = '0 0 62vh';
-    chartsCol.style.height = '62vh';
+    chartsCol.style.flex   = '0 0 70vh';
+    chartsCol.style.height = '70vh';
     chartsCol.style.overflow = 'hidden';
 
     sidebar.style.order = '2';
@@ -1749,85 +1728,17 @@ async function loadData() {
 
     const { peaks, valleys } = calcZigZag(candles, zigzagPct);
 
-    // ── تعداد رقم اعشار بر اساس قیمت: زیر ۱ دلار → ۴ رقم، بالاتر → ۲ رقم ──
+    // ── تعداد رقم اعشار بر اساس قیمت: زیر ۱ دلار → ۴ رقم، بالاتر → ۲ رقم (برای نمایش کارت‌ها) ──
     const lastPrice = closes[closes.length - 1];
-    const isSmallPrice = lastPrice < 1;
-    lastPricePrecision = isSmallPrice ? 4 : 2;
-    candleSeries.applyOptions({
-      priceFormat: {
-        type: 'price',
-        precision: lastPricePrecision,
-        minMove:   isSmallPrice ? 0.0001 : 0.01,
-      }
-    });
-
-    // ── Candlestick ──
-    candleSeries.setData(candles);
-
-    // رفع باگ مهم: بعد از تغییر ارز، محور قیمت گاهی رنج قیمت قبلی رو نگه می‌داشت
-    // (مثلاً از ارزی با قیمت ۰.۲ به ارزی با قیمت ۰.۰۷ سوییچ می‌کردی، کندل‌ها بیرون از دید می‌رفتن)
-    priceChart.priceScale('right').applyOptions({ autoScale: true });
-
-    // Markers
-    const markers = [];
-    peaks.slice(-3).forEach((i, idx, arr) => {
-      const label = idx === arr.length - 1 ? 'قله' : `قله-${arr.length - idx}`;
-      markers.push({ time: times[i], position: 'aboveBar', color: '#ef5350', shape: 'arrowDown', text: label });
-    });
-    valleys.slice(-3).forEach((i, idx, arr) => {
-      const label = idx === arr.length - 1 ? 'دره' : `دره-${arr.length - idx}`;
-      markers.push({ time: times[i], position: 'belowBar', color: '#26a69a', shape: 'arrowUp', text: label });
-    });
+    lastPricePrecision = lastPrice < 1 ? 4 : 2;
 
     const divergence = detectDivergence({ candles, rsiArr });
-
-    // همه واگرایی‌های اخیر رو روی چارت علامت بزن، نه فقط آخری
-    divergence.allBearish.forEach(d =>
-      markers.push({ time: times[d.currentIdx], position: 'aboveBar', color: '#ff1744', shape: 'arrowDown', text: '⚠ نزولی' })
-    );
-    divergence.allBullish.forEach(d =>
-      markers.push({ time: times[d.currentIdx], position: 'belowBar', color: '#00e676', shape: 'arrowUp', text: '⚠ صعودی' })
-    );
-    markers.sort((a,b) => a.time - b.time);
-    candleSeries.setMarkers(markers);
-
-    // ── RSI ──
-    // همه بازه رو پوشش بده تا timescale یکی باشه
-    rsiSeries.setData(times.map((t,i) => rsiArr[i]!=null ? {time:t, value:rsiArr[i]} : null).filter(Boolean));
-    rsiOB.setData(times.map(t => ({time:t, value:70})));
-    rsiOS.setData(times.map(t => ({time:t, value:30})));
-
-    // نقاط پیوت شناسایی‌شده روی RSI (برای اطمینان بصری)
-    const rsiMarkers = [];
-    divergence.rsiHighs.forEach(i => rsiMarkers.push({ time: times[i], position: 'aboveBar', color: '#ffc107', shape: 'circle' }));
-    divergence.rsiLows.forEach(i  => rsiMarkers.push({ time: times[i], position: 'belowBar', color: '#ffc107', shape: 'circle' }));
-    rsiMarkers.sort((a,b) => a.time - b.time);
-    rsiSeries.setMarkers(rsiMarkers);
-
-    // ── MACD ──
-    macdLineSeries.setData(times.map((t,i)   => ml[i]!=null ? {time:t,value:ml[i]} : null).filter(Boolean));
-    macdSignalSeries.setData(times.map((t,i) => sl[i]!=null ? {time:t,value:sl[i]} : null).filter(Boolean));
-    macdHistSeries.setData(times.map((t,i)   => hl[i]!=null ? {time:t,value:hl[i],color:hl[i]>=0?'#26a69a':'#ef5350'} : null).filter(Boolean));
 
     // ── Sidebar ──
     renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence });
 
-    // Legend: نماد + تایم‌فریم + مقادیر آخرین کندل (پیش‌فرض بدون crosshair)
-    document.getElementById('lg-symbol').textContent = `${symbol} · ${currentIv.toUpperCase()}`;
-    showLastLegend();
-
-    // اندازه چارت‌ها رو دوباره حساب کن (کیبورد موبایل ممکنه ارتفاع صفحه رو عوض کرده باشه)
-    resizeChartsNow();
-
-    // به‌جای fitContent (که همه ۳۰۰ کندل رو له می‌کنه تو صفحه)، فقط آخرین کندل‌های اخیر با زوم مناسب نشون داده میشه
-    rsiChart.priceScale('right').applyOptions({ autoScale: true });
-    macdChart.priceScale('right').applyOptions({ autoScale: true });
-    const barsToShow = window.innerWidth <= 768 ? 55 : 120;
-    const totalBars = candles.length;
-    priceChart.timeScale().setVisibleLogicalRange({
-      from: Math.max(0, totalBars - barsToShow),
-      to:   totalBars + 3,
-    });
+    // ── چارت واقعی TradingView (شامل RSI/MACD توکار) ──
+    buildDvgChart(symbol, currentIv);
 
     document.getElementById('status').textContent = `${symbol} · ${currentIv} · ${candles.length} کندل`;
   } catch(e) {
@@ -1913,17 +1824,40 @@ function renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence }) 
 
 // ─── Boot — این تب اول مخفیه، پس فقط وقتی کاربر روش کلیک کرد اجرا میشه (نه موقع لود صفحه) ──
 let dvgTabInited = false;
+// ─── چارت واقعی TradingView برای تب واگرایی (همون ویجت تب دوم، کانتینر و interval جدا) ──
+let dvgWidget = null;
+function buildDvgChart(symbol, iv) {
+  const ivMap = { '1h': '60', '4h': '240', '1d': 'D' };
+  const tvInterval = ivMap[iv] || '240';
+
+  if (dvgWidget) document.getElementById('dvg-mainChart').innerHTML = '';
+
+  dvgWidget = new TradingView.widget({
+    container_id: 'dvg-mainChart',
+    symbol: `BINANCE:${symbol}`,
+    interval: tvInterval,
+    width: '100%',
+    height: '100%',
+    theme: 'dark',
+    locale: 'fa',
+    timezone: 'Asia/Tehran',
+    style: '1',
+    hide_side_toolbar: false,
+    studies: studies,
+    studies_overrides: studiesOverrides,
+    enable_publishing: false,
+    allow_symbol_change: true,
+  });
+}
+
 function initDivergenceTab() {
+  applyResponsiveLayout();
   if (!dvgTabInited) {
-    applyResponsiveLayout();
-    initCharts();
     populateSymbolDropdown();
     dvgTabInited = true;
-  } else {
-    // دفعات بعدی که برمی‌گردیم رو این تب: چون قبلاً مخفی بوده، اندازه‌ها رو دوباره حساب کن
-    applyResponsiveLayout();
-    resizeChartsNow();
+    loadData(); // اولین باری که تب باز میشه، خودکار BTCUSDT رو بارگذاری کن
   }
+  // دفعات بعدی که برمی‌گردیم رو این تب، ویجت TradingView (که خودش iframe مستقله) نیازی به resize دستی نداره
 }
 window.addEventListener('resize', () => { if (dvgTabInited) applyResponsiveLayout(); });
 </script>
