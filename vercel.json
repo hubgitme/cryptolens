@@ -3,9 +3,6 @@
   "functions": {
     "api/klines.js": {
       "regions": ["fra1"]
-    },
-    "api/proxy/[...path].js": {
-      "regions": ["fra1"]
     }
   }
 }

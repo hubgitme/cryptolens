@@ -1,240 +1,41 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📊 رادار ترکیبی و چارت پیشرفته کریپتو</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0f1724">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3938/3938158.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تحلیل تکنیکال ارز دیجیتال</title>
   <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
-
-  
   <style>
     :root {
-      --bg: #0b1020;
-      --panel: #0f1724;
-      --accent: #00d084;
-      --text: #e6eef6;
-      --muted: #98a0b3;
+      --bg:      #0b0e17;
+      --surface: #131722;
+      --border:  #1e2535;
+      --accent:  #2962ff;
+      --green:   #26a69a;
+      --red:     #ef5350;
+      --yellow:  #ffc107;
+      --text:    #d1d4dc;
+      --muted:   #6b7280;
+      --radius:  10px;
+      --font:    'Segoe UI', system-ui, sans-serif;
     }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: Tahoma, sans-serif;
       background: var(--bg);
       color: var(--text);
-      padding: 10px;
-      padding-bottom: 70px;
-      margin: 0;
+      font-family: var(--font);
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      box-sizing: border-box;
-    }
-    
-    .global-nav {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 90%;
-      max-width: 400px;
-      display: flex;
-      gap: 6px;
-      background: var(--panel);
-      padding: 5px;
-      border-radius: 12px 12px 0 0; 
-      border: 1px solid #1e293b;
-      border-bottom: none;
-      box-sizing: border-box;
-      z-index: 9999; 
-      box-shadow: 0 -4px 15px rgba(0,0,0,0.5);
-    }
-    .tab-btn {
-      flex: 1;
-      padding: 8px 12px;
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      cursor: pointer;
-      font-weight: bold;
-      border-radius: 8px;
-      transition: all 0.3s ease;
-      font-size: 12px;
-      white-space: nowrap;
-    }
-    .tab-btn.active {
-      background: var(--accent);
-      color: #000;
-    }
-
-    .tab-content {
-      display: none;
-      width: 100%;
-    }
-    .tab-content.active {
-      display: block;
-    }
-
-    #radar-tab {
-      max-width: 750px;
-    }
-    .box {
-      background: var(--panel);
-      padding: 20px;
-      border-radius: 12px;
-      border: 1px solid #1e293b;
-      margin-bottom: 15px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-    .box h3 { font-size: 1rem; margin-top: 0; color: var(--muted); margin-bottom: 15px; }
-    label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 14px;}
-    select, input, button {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 15px;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      background: #141f30;
-      color: #fff;
-      box-sizing: border-box;
-      font-size: 14px;
-    }
-    input:focus, select:focus { outline: none; border-color: var(--accent); }
-    
-    .btn-small {
-      padding: 6px 10px !important;
-      font-size: 12px !important;
-      border-radius: 6px !important;
-      width: auto !important;
-    }
-    
-    .flex-group { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-    .flex-group input { flex: 2; margin-bottom: 0; }
-    .flex-group button { flex: 1; margin-bottom: 0; background: #38bdf8; color: #000; }
-    button { background: var(--accent); color: #000; font-weight: bold; cursor: pointer; border: none; }
-    .btn-file { background: #e1b12c; color: #000; margin-bottom: 0; }
-    
-    .crypto-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #1e293b; }
-    .crypto-row:last-child { border-bottom: none; }
-    .crypto-info { display: flex; align-items: center; gap: 10px; }
-    .crypto-name { font-weight: bold; font-size: 15px; }
-    .price-top-container { display: flex; align-items: center; gap: 15px; }
-    .price-top { font-size: 18px; color: var(--accent); font-weight: bold; font-family: monospace; }
-    .delete-top-btn { color: #ff7675; cursor: pointer; font-weight: bold; font-size: 13px; }
-
-    .crypto-card { background: var(--panel); border: 1px solid #1e293b; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
-    .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #22334d; padding-bottom: 10px; margin-bottom: 10px; }
-    .crypto-title { font-size: 18px; font-weight: bold; color: #ffd369; }
-    .live-price { font-size: 20px; font-weight: bold; color: var(--accent); font-family: monospace; }
-    
-    .grid-indicators { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-    .ind-section { background: #141f30; padding: 10px; border-radius: 8px; border: 1px solid #1e293b; position: relative; }
-    
-    /* استایل ترکیبی رنگ و فلش/مینی چارت وضعیت */
-    .ind-title { font-size: 12px; font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid #22334d; padding-bottom: 3px; display: flex; justify-content: space-between; align-items: center; }
-    .title-up { color: #00d084 !important; }
-    .title-down { color: #ff7675 !important; }
-
-    .ind-row { display: flex; justify-content: space-between; font-family: monospace; font-size: 13px; padding: 3px 0; align-items: center; }
-
-    .alert-log { margin-top: 10px; padding: 8px; background: #2d1f2d; border: 1px dashed #ff7675; border-radius: 6px; font-size: 12px; color: #ff7675; display: none; text-align: center; }
-    .alert-box { display: none; }
-    .alert-list { text-align: right; font-size: 13px; max-height: 220px; overflow-y: auto; }
-    .alert-item { background: #141f30; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #22334d; }
-    .alert-triggered { border-color: #ff7675; background: #2d1f2d; }
-    .delete-btn { color: #ff7675; cursor: pointer; font-weight: bold; margin-right: 8px; }
-    .status-badge { font-size: 11px; padding: 2px 6px; border-radius: 4px; }
-    .status-active { background: #00b894; color: #fff; }
-    .status-fired { background: #d63031; color: #fff; cursor: pointer; }
-
-    #chart-tab {
-      max-width: 1500px;
-      margin: 0 auto;
-      display: none;
-      flex-direction: column;
-      height: calc(100vh - 90px);
-    }
-    #chart-tab.active {
-      display: flex;
-    }
-    .chart-container-inner {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      width: 100%;
-    }
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 5px;
-    }
-    .chart-header h1 { font-size: 15px; margin: 0; }
-    .chart-select {
-      padding: 5px;
-      border-radius: 6px;
-      background: #0f1724;
-      color: #fff;
-      border: 1px solid #333;
-      cursor: pointer;
-      width: auto;
-      margin-bottom: 0;
-    }
-    .chart-card {
-      background: var(--panel);
-      padding: 6px;
-      border-radius: 8px;
-      margin-top: 5px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    .chart-card h2 { font-size: 12px; margin: 4px 0 6px; flex: 0 0 auto; }
-    #mainChart {
-      width: 100%;
-      height: calc(100vh - 170px);
-    }
-    @media(max-width:768px){
-      .chart-header h1 { font-size: 14px; }
-      .chart-select { padding: 4px; font-size: 13px; }
-      .chart-card h2 { font-size: 11px; }
-    }
-
-    /* ═══════════ استایل‌های تب واگرایی RSI ═══════════ */
-
-    :root {
-      --dvg-bg:      #0b0e17;
-      --dvg-surface: #131722;
-      --dvg-border:  #1e2535;
-      --dvg-accent:  #2962ff;
-      --dvg-green:   #26a69a;
-      --dvg-red:     #ef5350;
-      --dvg-yellow:  #ffc107;
-      --dvg-text:    #d1d4dc;
-      --dvg-muted:   #6b7280;
-      --dvg-radius:  10px;
-      --dvg-font:    'Segoe UI', system-ui, sans-serif;
-    }
-
-    #divergence-tab * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    #divergence-tab.active {
-      display: flex;
-      flex-direction: column;
-      height: calc(100vh - 90px);
       overflow: hidden;
-      background: var(--dvg-bg);
-      color: var(--dvg-text);
-      font-family: var(--dvg-font);
     }
 
     /* ── Header ── */
-    #divergence-tab header {
-      background: var(--dvg-surface);
-      border-bottom: 1px solid var(--dvg-border);
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
       padding: 10px 20px;
       display: flex;
       align-items: center;
@@ -242,41 +43,41 @@
       flex-wrap: wrap;
       flex-shrink: 0;
     }
-    #divergence-tab header h1 { font-size: 1rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+    header h1 { font-size: 1rem; font-weight: 700; color: #fff; flex-shrink: 0; }
 
     .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
-    #divergence-tab input, #divergence-tab button, #divergence-tab select {
-      background: var(--dvg-bg);
-      border: 1px solid var(--dvg-border);
-      color: var(--dvg-text);
+    input, button, select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
       border-radius: 6px;
       padding: 6px 12px;
       font-size: 0.83rem;
-      font-family: var(--dvg-font);
+      font-family: var(--font);
       outline: none;
     }
-    #divergence-tab input:focus, #divergence-tab select:focus { border-color: var(--dvg-accent); }
-    #divergence-tab button, #divergence-tab select { cursor: pointer; }
-    #divergence-tab button { transition: opacity 0.2s; }
-    #divergence-tab button:hover { opacity: 0.8; }
-    #divergence-tab button:disabled { opacity: 0.4; cursor: not-allowed; }
+    input:focus, select:focus { border-color: var(--accent); }
+    button, select { cursor: pointer; }
+    button { transition: opacity 0.2s; }
+    button:hover { opacity: 0.8; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
 
     .iv-group { display: flex; }
     .iv-group button {
       border-radius: 0;
-      background: var(--dvg-bg);
-      border: 1px solid var(--dvg-border);
-      color: var(--dvg-muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
       padding: 6px 13px;
     }
     .iv-group button:first-child { border-radius: 6px 0 0 6px; }
     .iv-group button:last-child  { border-radius: 0 6px 6px 0; }
-    .iv-group button.active { background: var(--dvg-accent); color: #fff; border-color: var(--dvg-accent); }
+    .iv-group button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-    #loadBtn { background: var(--dvg-accent); color: #fff; border: none; font-weight: 600; padding: 6px 16px; }
+    #loadBtn { background: var(--accent); color: #fff; border: none; font-weight: 600; padding: 6px 16px; }
 
-    #status { margin-right: auto; font-size: 0.78rem; color: var(--dvg-muted); }
+    #status { margin-right: auto; font-size: 0.78rem; color: var(--muted); }
 
     /* ── Pane Legend — روی خود چارت، بالا-چپ هر پنل (سبک TradingView) ── */
     .pane-legend {
@@ -293,10 +94,10 @@
       text-shadow: 0 1px 3px rgba(0,0,0,0.8);
     }
     .lg-symbol { color: #fff; font-weight: 700; letter-spacing: 0.3px; }
-    .lg-item   { color: var(--dvg-muted); display: flex; gap: 3px; align-items: baseline; }
-    .lg-val    { color: var(--dvg-text); font-weight: 600; }
-    .lg-val.up { color: var(--dvg-green); }
-    .lg-val.dn { color: var(--dvg-red); }
+    .lg-item   { color: var(--muted); display: flex; gap: 3px; align-items: baseline; }
+    .lg-val    { color: var(--text); font-weight: 600; }
+    .lg-val.up { color: var(--green); }
+    .lg-val.dn { color: var(--red); }
 
     /* ── Layout ── */
     .main {
@@ -309,10 +110,9 @@
     .sidebar {
       width: 260px;
       flex-shrink: 0;
-      background: var(--dvg-surface);
-      border-right: 1px solid var(--dvg-border);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
       padding: 14px;
-      padding-bottom: 24px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -322,30 +122,30 @@
       font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 1px;
-      color: var(--dvg-muted);
+      color: var(--muted);
       padding-bottom: 8px;
-      border-bottom: 1px solid var(--dvg-border);
+      border-bottom: 1px solid var(--border);
     }
 
     /* Signal card */
     .signal-card {
-      border-radius: var(--dvg-radius);
+      border-radius: var(--radius);
       padding: 11px 13px;
       display: flex;
       flex-direction: column;
       gap: 5px;
       font-size: 0.78rem;
-      border: 1px solid var(--dvg-border);
+      border: 1px solid var(--border);
     }
     .signal-card.bearish { background: rgba(239,83,80,0.07);  border-color: rgba(239,83,80,0.4); }
     .signal-card.bullish { background: rgba(38,166,154,0.07); border-color: rgba(38,166,154,0.4); }
-    .signal-card.neutral { background: var(--dvg-bg); color: var(--dvg-muted); text-align: center; padding: 12px; }
+    .signal-card.neutral { background: var(--bg); color: var(--muted); text-align: center; padding: 12px; }
 
     /* نوار وضعیت فشرده (واگرایی خنثی + RSI فعلی)، کنار هم توی pivot-row */
     .status-bar {
       padding: 6px 8px;
       border-radius: 8px;
-      border: 1px solid var(--dvg-border);
+      border: 1px solid var(--border);
       font-size: 0.66rem;
       font-weight: 600;
       text-align: center;
@@ -354,26 +154,26 @@
       align-items: center;
       justify-content: center;
     }
-    .status-bar.neutral { color: var(--dvg-muted); }
-    .status-bar.rsi-ob { background: rgba(239,83,80,0.12); border-color: rgba(239,83,80,0.4); color: var(--dvg-red); }
-    .status-bar.rsi-os { background: rgba(38,166,154,0.12); border-color: rgba(38,166,154,0.4); color: var(--dvg-green); }
-    .status-bar.rsi-n  { color: var(--dvg-muted); }
-    .status-bar.bearish { background: rgba(239,83,80,0.1);  border-color: rgba(239,83,80,0.4);  color: var(--dvg-red); }
-    .status-bar.bullish { background: rgba(38,166,154,0.1); border-color: rgba(38,166,154,0.4); color: var(--dvg-green); }
+    .status-bar.neutral { color: var(--muted); }
+    .status-bar.rsi-ob { background: rgba(239,83,80,0.12); border-color: rgba(239,83,80,0.4); color: var(--red); }
+    .status-bar.rsi-os { background: rgba(38,166,154,0.12); border-color: rgba(38,166,154,0.4); color: var(--green); }
+    .status-bar.rsi-n  { color: var(--muted); }
+    .status-bar.bearish { background: rgba(239,83,80,0.1);  border-color: rgba(239,83,80,0.4);  color: var(--red); }
+    .status-bar.bullish { background: rgba(38,166,154,0.1); border-color: rgba(38,166,154,0.4); color: var(--green); }
     .sidebar.mobile-grid .pivot-row .status-bar { flex: 1 1 0; min-width: 0; box-sizing: border-box; }
     .signal-title { font-weight: 700; font-size: 0.82rem; color: #fff; }
-    .signal-desc  { color: var(--dvg-muted); font-size: 0.72rem; margin-bottom: 3px; }
-    .signal-row   { display: flex; gap: 6px; color: var(--dvg-muted); }
+    .signal-desc  { color: var(--muted); font-size: 0.72rem; margin-bottom: 3px; }
+    .signal-row   { display: flex; gap: 6px; color: var(--muted); }
     .signal-row span:first-child { flex-shrink: 0; }
-    .signal-row span:last-child { color: var(--dvg-text); font-weight: 600; }
-    #divergence-tab em.up { color: var(--dvg-green); font-style: normal; }
-    #divergence-tab em.dn { color: var(--dvg-red);   font-style: normal; }
+    .signal-row span:last-child { color: var(--text); font-weight: 600; }
+    em.up { color: var(--green); font-style: normal; }
+    em.dn { color: var(--red);   font-style: normal; }
 
     /* Pivot card */
     .pivot-card {
-      background: var(--dvg-bg);
-      border: 1px solid var(--dvg-border);
-      border-radius: var(--dvg-radius);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       padding: 11px 13px;
       display: flex;
       flex-direction: column;
@@ -381,24 +181,24 @@
       font-size: 0.78rem;
     }
     .pivot-card .ptype { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-    .pivot-card.peak   .ptype { color: var(--dvg-red); }
-    .pivot-card.valley .ptype { color: var(--dvg-green); }
+    .pivot-card.peak   .ptype { color: var(--red); }
+    .pivot-card.valley .ptype { color: var(--green); }
     .pivot-card .price-val { font-size: 1.1rem; font-weight: 700; color: #fff; direction: ltr; }
-    .pivot-card .row { display: flex; gap: 6px; color: var(--dvg-muted); }
+    .pivot-card .row { display: flex; gap: 6px; color: var(--muted); }
     .pivot-card .row span:first-child { flex-shrink: 0; }
-    .pivot-card .row span:last-child { color: var(--dvg-text); font-weight: 600; }
+    .pivot-card .row span:last-child { color: var(--text); font-weight: 600; }
 
     .badge {
       display: inline-block; padding: 1px 6px; border-radius: 4px;
       font-size: 0.7rem; font-weight: 700;
     }
-    .rsi-ob { background: rgba(239,83,80,0.18);  color: var(--dvg-red); }
-    .rsi-os { background: rgba(38,166,154,0.18); color: var(--dvg-green); }
-    .rsi-n  { background: rgba(107,114,128,0.15); color: var(--dvg-muted); }
-    .macd-bull { background: rgba(38,166,154,0.18); color: var(--dvg-green); }
-    .macd-bear { background: rgba(239,83,80,0.18);  color: var(--dvg-red); }
+    .rsi-ob { background: rgba(239,83,80,0.18);  color: var(--red); }
+    .rsi-os { background: rgba(38,166,154,0.18); color: var(--green); }
+    .rsi-n  { background: rgba(107,114,128,0.15); color: var(--muted); }
+    .macd-bull { background: rgba(38,166,154,0.18); color: var(--green); }
+    .macd-bear { background: rgba(239,83,80,0.18);  color: var(--red); }
 
-    .no-data { color: var(--dvg-muted); font-size: 0.8rem; text-align: center; padding: 16px 0; }
+    .no-data { color: var(--muted); font-size: 0.8rem; text-align: center; padding: 16px 0; }
 
     /* ── این کلاس با JS (نه CSS media query) کنترل میشه، پس مستقل از رفتار مرورگره ── */
     /* ستون‌بندی صریح: هر ردیف (قله+دره) توی یه div جدا با ۲ بچه — مطمئن‌تر از flex-wrap کل سایدبار */
@@ -407,13 +207,12 @@
       flex-direction: column;
       gap: 6px;
       padding: 8px;
-      padding-bottom: 28px;
       overflow-y: auto;
       flex: 1 1 auto;
       min-height: 0;
       width: 100%;
       border-right: none;
-      border-top: 1px solid var(--dvg-border);
+      border-top: 1px solid var(--border);
     }
     .sidebar.mobile-grid h2 { font-size: 0.62rem; padding-bottom: 4px; }
 
@@ -453,7 +252,7 @@
 
     .chart-wrap {
       position: relative;
-      border-bottom: 1px solid var(--dvg-border);
+      border-bottom: 1px solid var(--border);
     }
     .chart-wrap:last-child { border-bottom: none; }
 
@@ -468,13 +267,13 @@
     .loader.show { display: flex; }
     .spinner {
       width: 34px; height: 34px;
-      border: 3px solid var(--dvg-border);
-      border-top-color: var(--dvg-accent);
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loader p { color: var(--dvg-muted); font-size: 0.83rem; }
+    .loader p { color: var(--muted); font-size: 0.83rem; }
 
     /* ══════════════════════════════════════════════════════════
        موبایل
@@ -485,7 +284,7 @@
         gap: 6px;
         min-height: auto;
       }
-      #divergence-tab header h1 { font-size: 0.78rem; }
+      header h1 { font-size: 0.78rem; }
 
       .controls {
         width: 100%;
@@ -499,7 +298,7 @@
         padding: 5px 8px;
       }
       #zigzagInput { font-size: 16px; width: 42px; padding: 5px 4px; }
-      #divergence-tab label[for], #divergence-tab .controls label { font-size: 0.68rem; }
+      label[for], .controls label { font-size: 0.68rem; }
 
       .iv-group button, #loadBtn {
         padding: 5px 9px;
@@ -523,106 +322,13 @@
     }
 
     @media (max-width: 420px) {
-      #divergence-tab header h1 { display: none; }
+      header h1 { display: none; }
       .iv-group button, #loadBtn { padding: 5px 7px; font-size: 0.68rem; }
     }
-  
   </style>
 </head>
 <body>
 
-  <!-- ================= تب اول: رادار و لیست اصلی ================= -->
-  <div id="radar-tab" class="tab-content active">
-    <div class="box">
-      <h3>📈 قیمت زنده بازار (بایننس و نوبیتکس)</h3>
-      <div class="flex-group" style="margin-bottom: 15px;">
-        <input type="text" id="addTopCryptoInput" placeholder="افزودن ارز جدید دستی (مثال: XRP)" style="text-transform: uppercase; padding: 8px;">
-        <button class="btn-small" onclick="addToTopList()">➕ افزودن</button>
-      </div>
-      <div id="cryptoPriceListTop"></div>
-    </div>
-
-    <div class="box">
-      <h3>📌 تنظیم اعلان قیمت هدف (دستی)</h3>
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end;">
-        <div>
-          <label for="cryptoSelect">انتخاب ارز:</label>
-          <select id="cryptoSelect" style="margin-bottom:0; padding: 8px; font-size: 13px;"></select>
-        </div>
-        <div>
-          <label for="condition">شرایط اعلان:</label>
-          <select id="condition" style="margin-bottom:0; padding: 8px; font-size: 13px;">
-            <option value="above">بیشتر یا مساوی (>=)</option>
-            <option value="below">کمتر یا مساوی (<=)</option>
-          </select>
-        </div>
-        <div>
-          <label for="targetPrice">قیمت هدف:</label>
-          <input type="number" id="targetPrice" placeholder="مثلاً 3200 یا 68000" step="any" style="margin-bottom:0; padding: 8px; font-size: 13px;">
-        </div>
-      </div>
-      <button onclick="setAlert()" style="margin-top:15px; margin-bottom:0; padding: 10px; font-size: 13px;">ثبت و فعال‌سازی هشدار قیمت</button>
-    </div>
-
-    <div class="box">
-      <h3>⚙️ تنظیمات رادار زنده</h3>
-      <button onclick="requestNotificationPermission()" style="background:#6c5ce7; margin-bottom:15px; color:#fff; padding: 8px; font-size: 13px;">🔄 فعال‌سازی دسترسی نوتیفیکیشن سیستم</button>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-        <div>
-          <label>تایم فریم محاسبات کراس:</label>
-          <select id="intervalSelect" onchange="refreshAllData()" style="margin-bottom:0; padding: 8px; font-size: 13px;">
-            <option value="30m">۳۰ دقیقه (30m)</option>
-            <option value="1h" selected>۱ ساعت (1h)</option>
-            <option value="4h">۴ ساعت (4h)</option>
-            <option value="1d">روزانه (1d)</option>
-          </select>
-        </div>
-        <div>
-          <label>تغییر ارز دوم (انتخابی شما):</label>
-          <div class="flex-group" style="margin-bottom:0;">
-            <input type="text" id="customSymbolInput" placeholder="مثال: NEAR" style="text-transform: uppercase; padding: 8px;">
-            <button class="btn-small" onclick="changeCustomCrypto()">🔄 اعمال</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="dashboardContainer"></div>
-
-    <div class="box alert-box" id="alertsBox">
-      <h3>لیست هشدارهای قیمت (برای بازنشانی روی 🔴 ضربه بزنید)</h3>
-      <div class="alert-list" id="alertsList"></div>
-    </div>
-
-    <div class="box">
-      <h3>💾 بک‌آپ اطلاعات با فایل JSON</h3>
-      <div class="flex-group" style="margin-bottom:0; justify-content: flex-start; gap: 10px;">
-        <button class="btn-file btn-small" onclick="exportConfig()">📥 خروجی فایل تنظیمات</button>
-        <button class="btn-file btn-small" onclick="document.getElementById('fileInput').click()">📤 بارگذاری فایل تنظیمات</button>
-      </div>
-      <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="importConfig(event)">
-    </div>
-  </div>
-
-  <!-- ================= تب دوم: چارت تریدینگ ویو ================= -->
-  <div id="chart-tab" class="tab-content">
-    <div class="chart-container-inner">
-      <header class="chart-header">
-        <h1>Single Asset Dashboard</h1>
-        <div>
-          <select id="assetSelect" class="chart-select"></select>
-        </div>
-      </header>
-
-      <div class="chart-card" id="chartCard">
-        <h2 id="chartTitle">در حال بارگذاری...</h2>
-        <div id="mainChart"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= تب سوم: واگرایی RSI/MACD ================= -->
-  <div id="divergence-tab" class="tab-content">
 <header>
   <h1>📊 تحلیل تکنیکال</h1>
   <div class="controls">
@@ -639,7 +345,7 @@
       <button onclick="setIv('1d')"  id="btn-1d">1D</button>
     </div>
     <div style="display:flex; align-items:center; gap:5px;">
-      <label style="font-size:0.78rem; color:var(--dvg-muted);">حساسیت%</label>
+      <label style="font-size:0.78rem; color:var(--muted);">حساسیت%</label>
       <input id="zigzagInput" type="number" value="0.5" step="0.1" min="0.1" max="5" style="width:55px; direction:ltr;" onchange="zigzagPct = parseFloat(this.value) || 0.5" />
     </div>
     <button id="loadBtn" onclick="loadData()">بارگذاری</button>
@@ -653,8 +359,8 @@
     <div id="pivotCards"><p class="no-data">داده‌ای بارگذاری نشده</p></div>
   </aside>
 
-  <div class="charts-col" id="chartsCol" style="display:flex; flex-direction:column;">
-    <div class="chart-wrap" id="wrap-price" style="flex:0 0 62%; min-height:0; position:relative;">
+  <div class="charts-col" id="chartsCol">
+    <div class="chart-wrap" id="wrap-price">
       <div class="pane-legend" id="legend-price">
         <span class="lg-symbol" id="lg-symbol">BTCUSDT · 4H</span>
         <span class="lg-item">O<b id="lg-open" class="lg-val">—</b></span>
@@ -662,14 +368,23 @@
         <span class="lg-item">L<b id="lg-low"  class="lg-val">—</b></span>
         <span class="lg-item">C<b id="lg-close" class="lg-val">—</b></span>
       </div>
-      <div id="chart-price" style="width:100%; height:100%;"></div>
+      <div id="chart-price"></div>
     </div>
-    <div class="chart-wrap" id="wrap-rsi" style="flex:0 0 38%; min-height:0; position:relative;">
+    <div class="chart-wrap" id="wrap-rsi">
       <div class="pane-legend" id="legend-rsi">
         <span class="lg-symbol">RSI (14)</span>
         <b id="lg-rsi" class="lg-val">—</b>
       </div>
-      <div id="chart-rsi" style="width:100%; height:100%;"></div>
+      <div id="chart-rsi"></div>
+    </div>
+    <div class="chart-wrap" id="wrap-macd">
+      <div class="pane-legend" id="legend-macd">
+        <span class="lg-symbol">MACD (12,26,9)</span>
+        <span class="lg-item" style="color:#2962ff">MACD <b id="lg-macd" class="lg-val">—</b></span>
+        <span class="lg-item" style="color:#ff6d00">Signal <b id="lg-signal" class="lg-val">—</b></span>
+        <span class="lg-item">Hist <b id="lg-hist" class="lg-val">—</b></span>
+      </div>
+      <div id="chart-macd"></div>
     </div>
   </div>
 </div>
@@ -679,609 +394,13 @@
   <div class="spinner"></div>
   <p>در حال دریافت داده از بایننس...</p>
 </div>
-  </div>
-
-  <div class="global-nav">
-    <button class="tab-btn active" onclick="switchTab('radar-tab', this)">📈 رادار و هشدارها</button>
-    <button class="tab-btn" onclick="switchTab('chart-tab', this)">📊 چارت پیشرفته</button>
-    <button class="tab-btn" onclick="switchTab('divergence-tab', this)">📉 واگرایی RSI</button>
-  </div>
-
-<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 
 <script>
-const defaultTopCryptos = ["USDT", "BTC", "ETH", "SOL", "ADA", "CRV", "NEAR", "TON", "XRP", "SUI", "DOGE"];
-let topCryptoList = JSON.parse(localStorage.getItem('topCryptoList')) || defaultTopCryptos;
-let customCrypto = localStorage.getItem('customCryptoSymbol') || "NEAR";
-let activeAlerts = JSON.parse(localStorage.getItem('myAlerts')) || [];
-const workerUrl = "/api/proxy"; 
-
-let lastFiredAlerts = {};
-let prices = {};
-let mainWidget;
-
-const studies = ["BB@tv-basicstudies", "RSI@tv-basicstudies", "CCI@tv-basicstudies", "ROC@tv-basicstudies", "MACD@tv-basicstudies", "ADX@tv-basicstudies"];
-const studiesOverrides = {
-  "RSI.length": 14,
-  "RSI.plot.color": "#00ff00",
-  "RSI.levels": [0]
-};
-
-if (!topCryptoList.includes(customCrypto)) {
-  topCryptoList.push(customCrypto);
-  localStorage.setItem('topCryptoList', JSON.stringify(topCryptoList));
-}
-
-renderTopPricesUI();
-renderDashboardUI();
-updateSelectDropdowns();
-updateAlertsUI();
-fetchAllDataRoutine();
-setInterval(fetchAllDataRoutine, 5000); 
-
-function switchTab(tabId, btnElement) {
-  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-  
-  document.getElementById(tabId).classList.add('active');
-  btnElement.classList.add('active');
-  
-  if (tabId === 'chart-tab') {
-    buildChart();
-  }
-  if (tabId === 'divergence-tab') {
-    initDivergenceTab();
-  }
-}
-
-function updateSelectDropdowns() {
-  const radarSelect = document.getElementById('cryptoSelect');
-  const chartSelect = document.getElementById('assetSelect');
-  
-  if(radarSelect) {
-    radarSelect.innerHTML = '';
-    topCryptoList.forEach(sym => {
-      if(sym !== "USDT") {
-        radarSelect.innerHTML += `<option value="${sym}">${sym}</option>`;
-      } else {
-        radarSelect.innerHTML += `<option value="USDT">USDT (تومان)</option>`;
-      }
-    });
-  }
-  
-  if(chartSelect) {
-    const currentSelected = chartSelect.value || `${customCrypto}USDT`;
-    chartSelect.innerHTML = '';
-    topCryptoList.forEach(sym => {
-      if (sym === "USDT") return;
-      const optionValue = `${sym}USDT`;
-      const isSelected = (optionValue === currentSelected) ? 'selected' : '';
-      chartSelect.innerHTML += `<option value="${optionValue}" ${isSelected}>${sym}</option>`;
-    });
-  }
-}
-
-function buildChart() {
-  const chartSelect = document.getElementById('assetSelect');
-  let selectedAsset = (chartSelect && chartSelect.value) ? chartSelect.value : `${customCrypto}USDT`;
-  const currentInterval = document.getElementById('intervalSelect').value;
-  const intervalMap = { '30m': '30', '1h': '60', '4h': '240', '1d': 'D' };
-  const tvInterval = intervalMap[currentInterval] || '60';
-
-  if(mainWidget) document.getElementById('mainChart').innerHTML = '';
-  
-  mainWidget = new TradingView.widget({
-    container_id: 'mainChart',
-    symbol: `BINANCE:${selectedAsset}`,
-    interval: tvInterval,
-    width: '100%',
-    height: '100%',
-    theme: 'dark',
-    locale: 'fa',
-    timezone: 'Asia/Tehran',
-    style: '1',
-    hide_side_toolbar: false,
-    studies: studies,
-    studies_overrides: studiesOverrides,
-    enable_publishing: false,
-    allow_symbol_change: true
-  });
-  
-  document.getElementById('chartTitle').innerText = selectedAsset.replace('USDT', '') + '/USDT';
-}
-
-document.getElementById('assetSelect').addEventListener('change', e => {
-  buildChart();
-});
-
-function renderTopPricesUI() {
-  const container = document.getElementById('cryptoPriceListTop');
-  container.innerHTML = '';
-  topCryptoList.forEach(symbol => {
-    if (symbol === "USDT") {
-      container.innerHTML += `
-        <div class="crypto-row" id="top-row-USDT">
-          <div class="crypto-info"><span class="crypto-name">🇮🇷 USDT (تتر)</span></div>
-          <div class="price-top-container">
-            <span class="price-top" id="top-price-USDT">در حال دریافت...</span>
-            <span class="delete-top-btn" onclick="deleteFromTopList('USDT')" title="حذف">❌</span>
-          </div>
-        </div>`;
-    } else {
-      container.innerHTML += `
-        <div class="crypto-row" id="top-row-${symbol}">
-          <div class="crypto-info"><span class="crypto-name">🪙 ${symbol} / USDT</span></div>
-          <div class="price-top-container">
-            <span class="price-top" id="top-price-${symbol}">در حال دریافت...</span>
-            <span class="delete-top-btn" onclick="deleteFromTopList('${symbol}')" title="حذف">❌</span>
-          </div>
-        </div>`;
-    }
-  });
-}
-
-function addToTopList() {
-  const input = document.getElementById('addTopCryptoInput');
-  const symbol = input.value.trim().toUpperCase();
-  if (!symbol) return;
-  if (topCryptoList.includes(symbol)) return alert("موجود است.");
-  topCryptoList.push(symbol);
-  localStorage.setItem('topCryptoList', JSON.stringify(topCryptoList));
-  input.value = '';
-  renderTopPricesUI();
-  updateSelectDropdowns();
-  fetchTopPricesOnly();
-}
-
-function deleteFromTopList(symbol) {
-  if (symbol === "BTC") return alert("ارز BTC شاخص اصلی است.");
-  if (symbol === "USDT") return alert("ارز USDT شاخص اصلی تومان است.");
-  if (symbol === customCrypto) return alert(`ارز ${symbol} جفت اصلی رادار است.`);
-  topCryptoList = topCryptoList.filter(item => item !== symbol);
-  localStorage.setItem('topCryptoList', JSON.stringify(topCryptoList));
-  renderTopPricesUI();
-  updateSelectDropdowns();
-}
-
-function renderDashboardUI() {
-  const container = document.getElementById('dashboardContainer');
-  container.innerHTML = '';
-  ["BTC", customCrypto].forEach(symbol => {
-    container.innerHTML += `
-      <div class="crypto-card">
-        <div class="card-header">
-          <div><span class="crypto-title">🪙 ${symbol}/USDT ${symbol === 'BTC' ? '(ثابت)' : '(انتخابی)'}</span></div>
-          <div class="live-price" id="${symbol}-price">...</div>
-        </div>
-        <div class="grid-indicators" id="${symbol}-indicators">
-          <div style="color:var(--muted); font-size:13px;">در حال محاسبه داده‌ها...</div>
-        </div>
-        <div class="alert-log" id="${symbol}-alert-log"></div>
-      </div>`;
-  });
-}
-
-function changeCustomCrypto() {
-  const input = document.getElementById('customSymbolInput');
-  const symbol = input.value.trim().toUpperCase();
-  if (!symbol || symbol === "BTC" || symbol === "USDT") return alert("نماد معتبر وارد کنید.");
-  
-  activeAlerts = activeAlerts.filter(alert => alert.crypto !== customCrypto);
-  customCrypto = symbol;
-  localStorage.setItem('customCryptoSymbol', customCrypto);
-  localStorage.setItem('myAlerts', JSON.stringify(activeAlerts));
-  input.value = '';
-  
-  if (!topCryptoList.includes(customCrypto)) {
-    topCryptoList.push(customCrypto);
-    localStorage.setItem('topCryptoList', JSON.stringify(topCryptoList));
-  }
-  
-  renderTopPricesUI();
-  renderDashboardUI();
-  updateSelectDropdowns();
-  updateAlertsUI();
-  fetchAllDataRoutine();
-  
-  if(document.getElementById('chart-tab').classList.contains('active')){
-    buildChart();
-  }
-}
-
-function triggerSystemAlarm() {
-  try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const playTone = (freq, startTime, duration) => {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, startTime);
-      gain.gain.setValueAtTime(0.5, startTime);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(startTime);
-      osc.stop(startTime + duration);
-    };
-    playTone(987.77, audioCtx.currentTime, 0.15); 
-    playTone(1318.51, audioCtx.currentTime + 0.18, 0.2); 
-  } catch(e){}
-  if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
-}
-
-function requestNotificationPermission() {
-  Notification.requestPermission().then(p => { alert(p === 'granted' ? '✅ فعال شد.' : '❌ غیرفعال شد.'); });
-}
-
-function sendWebNotification(title, msg) {
-  triggerSystemAlarm();
-  if (Notification.permission === 'granted') {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.ready.then(reg => { reg.showNotification(title, { body: msg }); });
-    } else {
-      new Notification(title, { body: msg });
-    }
-  }
-  setTimeout(() => { alert(`🚨 ${title}\n${msg}`); }, 50);
-}
-
-async function fetchTopPricesOnly() {
-  for (const symbol of topCryptoList) {
-    if (symbol === "USDT") continue;
-    try {
-      const response = await fetch(`${workerUrl}/https://api.binance.com/api/v3/ticker/price?symbol=${symbol}USDT`);
-      const data = await response.json();
-      if(data && data.price) {
-        const currentPrice = parseFloat(data.price);
-        prices[symbol] = currentPrice;
-        const topPriceEl = document.getElementById(`top-price-${symbol}`);
-        if(topPriceEl) topPriceEl.innerText = '$' + currentPrice.toLocaleString(undefined, {minimumFractionDigits: currentPrice < 5 ? 4 : 2});
-      }
-    } catch(e){}
-  }
-
-  try {
-    const res = await fetch("https://apiv2.nobitex.ir/v2/trades/USDTIRT", {
-      method: "GET",
-      headers: { "User-Agent": "crypto-prices-api/1.0", "Accept": "application/json" }
-    });
-    const data = await res.json();
-    if (data && data.ok && data.prices && data.prices["USDT"]) {
-      const usdtPrice = parseFloat(data.prices["USDT"].price);
-      prices["USDT"] = usdtPrice;
-      const topPriceEl = document.getElementById(`top-price-USDT`);
-      if(topPriceEl) topPriceEl.innerText = usdtPrice.toLocaleString() + ' تومان';
-    } else {
-      fetchNobitexTether();
-    }
-  } catch(e) {
-    fetchNobitexTether();
-  }
-}
-
-async function fetchNobitexTether() {
-  try {
-    const response = await fetch("https://apiv2.nobitex.ir/v2/trades/USDTIRT");
-    const data = await response.json();
-    if (data && data.trades && data.trades.length > 0 && data.trades[0].price) {
-      const usdtPriceToman = parseFloat(data.trades[0].price) / 10;
-      prices["USDT"] = usdtPriceToman;
-      const topPriceEl = document.getElementById(`top-price-USDT`);
-      if(topPriceEl) topPriceEl.innerText = usdtPriceToman.toLocaleString() + ' تومان';
-    }
-  } catch(e) {
-    const topPriceEl = document.getElementById(`top-price-USDT`);
-    if(topPriceEl) topPriceEl.innerText = '❌ خطا';
-  }
-}
-
-async function fetchSingleCryptoData(symbol) {
-  const interval = document.getElementById('intervalSelect').value;
-  try {
-    const response = await fetch(`${workerUrl}/https://api.binance.com/api/v3/klines?symbol=${symbol}USDT&interval=${interval}&limit=120`);
-    const data = await response.json();
-    if(!Array.isArray(data)) return;
-
-    const highs = data.map(candle => parseFloat(candle[2]));
-    const lows = data.map(candle => parseFloat(candle[3]));
-    const closePrices = data.map(candle => parseFloat(candle[4]));
-    const currentPrice = closePrices[closePrices.length - 1];
-    prices[symbol] = currentPrice;
-
-    const priceEl = document.getElementById(`${symbol}-price`);
-    if(priceEl) priceEl.innerText = '$' + currentPrice.toLocaleString(undefined, {minimumFractionDigits: currentPrice < 5 ? 4 : 2});
-
-    const bbAll = calculateBollingerBandsArray(closePrices);
-    const rsiAll = calculateRSIWithMAArray(closePrices);
-    const macdAll = calculateMACDArray(closePrices);
-    const adxAll = calculateADXArray(highs, lows, closePrices, 14, 14);
-
-    const bb = bbAll[bbAll.length - 1];
-    const rsi = rsiAll[rsiAll.length - 1];
-    const macd = macdAll[macdAll.length - 1];
-    const adx = adxAll[adxAll.length - 1];
-
-    const bbPrev = bbAll[bbAll.length - 2];
-    const rsiPrev = rsiAll[rsiAll.length - 2];
-    const macdPrev = macdAll[macdAll.length - 2];
-    const adxPrev = adxAll[adxAll.length - 2];
-    const pricePrev = closePrices[closePrices.length - 2];
-
-    let alertTriggered = false;
-    let alertMsg = "";
-
-    if ((pricePrev <= bbPrev.middle && currentPrice > bb.middle) || (pricePrev >= bbPrev.middle && currentPrice < bb.middle)) {
-      alertMsg = "کراس قیمت با باند میانی بولینگر!"; alertTriggered = true;
-    } else if ((rsiPrev.rsi <= rsiPrev.rsiMa && rsi.rsi > rsi.rsiMa) || (rsiPrev.rsi >= rsiPrev.rsiMa && rsi.rsi < rsi.rsiMa)) {
-      alertMsg = "کراس خط RSI با RSI MA!"; alertTriggered = true;
-    } else if ((macdPrev.line <= macdPrev.signal && macd.line > macd.signal) || (macdPrev.line >= macdPrev.signal && macd.line < macd.signal)) {
-      alertMsg = "کراس خط MACD با خط سیگنال (Signal)!"; alertTriggered = true;
-    } else if ((adxPrev.diPlus <= adxPrev.diMinus && adx.diPlus > adx.diMinus) || (adxPrev.diPlus >= adxPrev.diMinus && adx.diPlus < adx.diMinus)) {
-      alertMsg = "کراس تقاطع +DI و -DI در اندیکاتور ADX!"; alertTriggered = true;
-    }
-
-    const logBox = document.getElementById(`${symbol}-alert-log`);
-    if (alertTriggered) {
-      const cacheKey = `${symbol}-${alertMsg}`;
-      if (!lastFiredAlerts[cacheKey] || Date.now() - lastFiredAlerts[cacheKey] > 60000) { 
-        lastFiredAlerts[cacheKey] = Date.now();
-        sendWebNotification(`تقاطع در ${symbol}`, alertMsg);
-        if(logBox) {
-          logBox.innerText = `🚨 ${alertMsg} (${new Date().toLocaleTimeString('fa-IR')})`;
-          logBox.style.display = 'block';
-        }
-      }
-    }
-
-    // تعیین وضعیت صعودی یا نزولی به همراه رنگ و آیکون SVG پویا
-    const isBBUp = currentPrice >= bb.middle;
-    const isRSIUp = rsi.rsi >= rsi.rsiMa;
-    const isMACDUp = macd.line >= macd.signal;
-    const isADXUp = adx.diPlus >= adx.diMinus;
-
-    const bbClass = isBBUp ? 'title-up' : 'title-down';
-    const rsiClass = isRSIUp ? 'title-up' : 'title-down';
-    const macdClass = isMACDUp ? 'title-up' : 'title-down';
-    const adxClass = isADXUp ? 'title-up' : 'title-down';
-
-    const upIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00d084" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>`;
-    const downIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff7675" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>`;
-
-    const indContainer = document.getElementById(`${symbol}-indicators`);
-    if(indContainer) {
-      indContainer.innerHTML = `
-        <div class="ind-section">
-          <div class="ind-title ${bbClass}"><span>🟢 بولینگر باند (20, 2)</span><span style="display:flex; align-items:center; gap:4px;">${isBBUp ? 'صعودی' : 'نزولی'} ${isBBUp ? upIcon : downIcon}</span></div>
-          <div class="ind-row"><span>Upper:</span><span>${bb.upper.toFixed(4)}</span></div>
-          <div class="ind-row"><span>Middle:</span><span>${bb.middle.toFixed(4)}</span></div>
-          <div class="ind-row"><span>Lower:</span><span>${bb.lower.toFixed(4)}</span></div>
-        </div>
-        <div class="ind-section">
-          <div class="ind-title ${rsiClass}"><span>🔵 شاخص RSI (14)</span><span style="display:flex; align-items:center; gap:4px;">${isRSIUp ? 'صعودی' : 'نزولی'} ${isRSIUp ? upIcon : downIcon}</span></div>
-          <div class="ind-row"><span>RSI:</span><span style="color:${rsi.rsi > 70 ? '#ff7675' : rsi.rsi < 30 ? '#00d084' : '#fff'}">${rsi.rsi.toFixed(2)}</span></div>
-          <div class="ind-row"><span>RSI MA:</span><span>${rsi.rsiMa.toFixed(2)}</span></div>
-        </div>
-        <div class="ind-section">
-          <div class="ind-title ${macdClass}"><span>🟡 مکدی (12, 26, 9)</span><span style="display:flex; align-items:center; gap:4px;">${isMACDUp ? 'صعودی' : 'نزولی'} ${isMACDUp ? upIcon : downIcon}</span></div>
-          <div class="ind-row"><span>MACD:</span><span>${macd.line.toFixed(4)}</span></div>
-          <div class="ind-row"><span>Signal:</span><span>${macd.signal.toFixed(4)}</span></div>
-          <div class="ind-row"><span>Hist:</span><span style="color:${macd.hist >= 0 ? '#00d084' : '#ff7675'}">${macd.hist.toFixed(4)}</span></div>
-        </div>
-        <div class="ind-section">
-          <div class="ind-title ${adxClass}"><span>📊 قدرت روند ADX (14)</span><span style="display:flex; align-items:center; gap:4px;">${isADXUp ? 'صعودی' : 'نزولی'} ${isADXUp ? upIcon : downIcon}</span></div>
-          <div class="ind-row"><span>ADX:</span><span>${adx.sig.toFixed(2)}</span></div>
-          <div class="ind-row"><span>+DI:</span><span style="color:#00d084">${adx.diPlus.toFixed(2)}</span></div>
-          <div class="ind-row"><span>-DI:</span><span style="color:#ff7675">${adx.diMinus.toFixed(2)}</span></div>
-        </div>`;
-    }
-  } catch (err) {}
-}
-
-function fetchAllDataRoutine() { 
-  fetchTopPricesOnly();
-  ["BTC", customCrypto].forEach(symbol => fetchSingleCryptoData(symbol)); 
-  setTimeout(checkPriceAlerts, 1200);
-}
-
-function refreshAllData() { 
-  renderDashboardUI(); 
-  updateSelectDropdowns();
-  fetchAllDataRoutine(); 
-  if(document.getElementById('chart-tab').classList.contains('active')) buildChart(); 
-}
-
-function setAlert() {
-  const crypto = document.getElementById('cryptoSelect').value;
-  const target = parseFloat(document.getElementById('targetPrice').value);
-  const cond = document.getElementById('condition').value;
-  if (!crypto || !target || isNaN(target)) return alert('اطلاعات معتبر وارد کنید.');
-  
-  activeAlerts.push({ id: Date.now(), crypto, target, cond, fired: false });
-  localStorage.setItem('myAlerts', JSON.stringify(activeAlerts));
-  document.getElementById('targetPrice').value = '';
-  updateAlertsUI();
-}
-
-function deleteAlert(id) { activeAlerts = activeAlerts.filter(item => item.id !== id); localStorage.setItem('myAlerts', JSON.stringify(activeAlerts)); updateAlertsUI(); }
-function resetAlert(id) { const alertItem = activeAlerts.find(item => item.id === id); if (alertItem) { alertItem.fired = false; localStorage.setItem('myAlerts', JSON.stringify(activeAlerts)); updateAlertsUI(); } }
-
-function updateAlertsUI() {
-  const box = document.getElementById('alertsBox');
-  const list = document.getElementById('alertsList');
-  if (activeAlerts.length === 0) { box.style.display = 'none'; return; }
-  box.style.display = 'block'; list.innerHTML = '';
-  activeAlerts.forEach(item => {
-    const isFired = item.fired === true;
-    const unit = item.crypto === "USDT" ? "تومان" : "$";
-    list.innerHTML += `
-      <div class="alert-item ${isFired ? 'alert-triggered' : ''}">
-        <span>🔹 <b>${item.crypto}</b> ${item.cond==='above'?'📌 >=':'📌 <='} ${item.target.toLocaleString()} ${unit} ${isFired ? `<span class="status-badge status-fired" onclick="resetAlert(${item.id})">🔴 رسیده</span>` : '<span class="status-badge status-active">🟢 فعال</span>'}</span>
-        <span class="delete-btn" onclick="deleteAlert(${item.id})">❌ حذف</span>
-      </div>`;
-  });
-}
-
-function checkPriceAlerts() {
-  if (activeAlerts.length === 0) return;
-  let changed = false;
-  activeAlerts.forEach(alertItem => {
-    if (alertItem.fired) return;
-    const currentPrice = prices[alertItem.crypto];
-    if (!currentPrice) return;
-    if ((alertItem.cond === 'above' && currentPrice >= alertItem.target) || (alertItem.cond === 'below' && currentPrice <= alertItem.target)) {
-      alertItem.fired = true; changed = true;
-      const unit = alertItem.crypto === "USDT" ? "تومان" : "$";
-      sendWebNotification(`🚨 هدف قیمتی ${alertItem.crypto}`, `به قیمت هدف ${alertItem.target.toLocaleString()} ${unit} رسید!`);
-    }
-  });
-  if (changed) { localStorage.setItem('myAlerts', JSON.stringify(activeAlerts)); updateAlertsUI(); }
-}
-
-function exportConfig() {
-  const backupData = { customCrypto: customCrypto, alerts: activeAlerts, topCryptoList: topCryptoList };
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-  const downloadAnchor = document.createElement('a');
-  downloadAnchor.setAttribute("href", dataStr); downloadAnchor.setAttribute("download", "crypto_radar_config.json");
-  document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove();
-}
-
-function importConfig(event) {
-  const file = event.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const importedData = JSON.parse(e.target.result);
-      if (importedData.customCrypto) customCrypto = importedData.customCrypto.toUpperCase();
-      if (importedData.alerts) activeAlerts = importedData.alerts;
-      if (importedData.topCryptoList) topCryptoList = importedData.topCryptoList;
-      
-      localStorage.setItem('customCryptoSymbol', customCrypto); 
-      localStorage.setItem('myAlerts', JSON.stringify(activeAlerts));
-      localStorage.setItem('topCryptoList', JSON.stringify(topCryptoList));
-      
-      renderTopPricesUI(); refreshAllData(); updateSelectDropdowns(); updateAlertsUI();
-      alert('📂 تنظیمات بازیابی شد!');
-    } catch (err) { alert('فایل نامعتبر است.'); }
-  };
-  reader.readAsText(file);
-}
-
-function calculateSMA(data, period) { let sma = []; for (let i = period - 1; i < data.length; i++) { sma.push(data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0) / period); } return sma; }
-function calculateEMA(data, period) { const k = 2 / (period + 1); let ema = [data[0]]; for (let i = 1; i < data.length; i++) { ema.push(data[i] * k + ema[i - 1] * (1 - k)); } return ema; }
-function calculateRMA(data, period) { let rma = [data[0]]; for (let i = 1; i < data.length; i++) { rma.push((data[i] + (period - 1) * rma[i - 1]) / period); } return rma; }
-
-function calculateBollingerBandsArray(prices, period = 20, stdDevMultiplier = 2) { 
-  const sma = calculateSMA(prices, period); 
-  let bbArray = []; let smaIdx = 0; 
-  for (let i = period - 1; i < prices.length; i++) { 
-    const slice = prices.slice(i - period + 1, i + 1); 
-    const mean = sma[smaIdx]; 
-    const variance = slice.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / period; 
-    const stdDev = Math.sqrt(variance); 
-    bbArray.push({ upper: mean + (stdDevMultiplier * stdDev), middle: mean, lower: mean - (stdDevMultiplier * stdDev) }); 
-    smaIdx++; 
-  } 
-  return bbArray; 
-}
-
-function calculateRSIWithMAArray(prices, rsiPeriod = 14, maPeriod = 14) { 
-  let gains = [], losses = []; 
-  for (let i = 1; i < prices.length; i++) { 
-    const diff = prices[i] - prices[i - 1]; 
-    gains.push(diff > 0 ? diff : 0); 
-    losses.push(diff < 0 ? -diff : 0); 
-  } 
-  let rsiValues = []; 
-  let avgGain = gains.slice(0, rsiPeriod).reduce((a, b) => a + b, 0) / rsiPeriod; 
-  let avgLoss = losses.slice(0, rsiPeriod).reduce((a, b) => a + b, 0) / rsiPeriod; 
-  rsiValues.push(100 - (100 / (1 + (avgGain / (avgLoss || 1))))); 
-  for (let i = rsiPeriod; i < gains.length; i++) { 
-    avgGain = ((avgGain * (rsiPeriod - 1)) + gains[i]) / rsiPeriod; 
-    avgLoss = ((avgLoss * (rsiPeriod - 1)) + losses[i]) / rsiPeriod; 
-    rsiValues.push(100 - (100 / (1 + (avgGain / (avgLoss || 1))))); 
-  } 
-  const rsiMA = calculateSMA(rsiValues, maPeriod); 
-  let results = []; let maIdx = 0; 
-  for(let i = maPeriod - 1; i < rsiValues.length; i++) { 
-    results.push({ rsi: rsiValues[i], rsiMa: rsiMA[maIdx] }); 
-    maIdx++; 
-  } 
-  return results; 
-}
-
-function calculateMACDArray(prices, shortPeriod = 12, longPeriod = 26, signalPeriod = 9) { 
-  const ema12 = calculateEMA(prices, shortPeriod); 
-  const ema26 = calculateEMA(prices, longPeriod); 
-  let macdLine = []; 
-  for(let i = 0; i < prices.length; i++) { 
-    macdLine.push(ema12[i] - ema26[i]); 
-  } 
-  const signalLine = calculateEMA(macdLine, signalPeriod); 
-  let results = []; 
-  for(let i = 0; i < prices.length; i++) { 
-    results.push({ line: macdLine[i], signal: signalLine[i], hist: macdLine[i] - signalLine[i] }); 
-  } 
-  return results; 
-}
-
-function calculateADXArray(highs, lows, closes, diLen = 14, sigLen = 14) {
-  let tr = [0];
-  let plusDM = [0];
-  let minusDM = [0];
-
-  for (let i = 1; i < highs.length; i++) {
-    const highDiff = highs[i] - highs[i - 1];
-    const lowDiff = lows[i - 1] - lows[i];
-    
-    const trueRange = Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i - 1]), Math.abs(lows[i] - closes[i - 1]));
-    tr.push(trueRange);
-
-    plusDM.push((highDiff > lowDiff && highDiff > 0) ? highDiff : 0);
-    minusDM.push((lowDiff > highDiff && lowDiff > 0) ? lowDiff : 0);
-  }
-
-  const smoothedTR = calculateRMA(tr, diLen);
-  const smoothedPlusDM = calculateRMA(plusDM, diLen);
-  const smoothedMinusDM = calculateRMA(minusDM, diLen);
-
-  let plusDI = [];
-  let minusDI = [];
-  let dx = [];
-
-  for (let i = 0; i < highs.length; i++) {
-    const trVal = smoothedTR[i] === 0 ? 1 : smoothedTR[i];
-    const pDI = 100 * (smoothedPlusDM[i] / trVal);
-    const mDI = 100 * (smoothedMinusDM[i] / trVal);
-    plusDI.push(pDI);
-    minusDI.push(mDI);
-
-    const sumDI = pDI + mDI;
-    const diffDI = Math.abs(pDI - mDI);
-    dx.push(sumDI === 0 ? 0 : 100 * (diffDI / sumDI));
-  }
-
-  const adxValues = calculateRMA(dx, sigLen);
-  let results = [];
-  for (let i = 0; i < highs.length; i++) {
-    results.push({
-      sig: adxValues[i] || 0,
-      diPlus: plusDI[i] || 0,
-      diMinus: minusDI[i] || 0
-    });
-  }
-  return results;
-}
-
-if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(err => {}); }); }
-</script>
-
-<script>
-// ═══════════ کد تب واگرایی RSI/MACD ═══════════
-
 // ─── Globals ────────────────────────────────────────────────────────────────
 let currentIv = '4h';
 
 // ─── لیست ارزها (۱۰ ارز برتر + ذخیره‌شده‌های کاربر با localStorage) ──────────
-const TOP_COINS = ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','ADAUSDT','DOGEUSDT','TRXUSDT','TONUSDT','AVAXUSDT'];
+const TOP_COINS = ['BTCUSDT','ETHUSDT','NEARUSDT','SOLUSDT','XRPUSDT','ADAUSDT','CRVUSDT','XLMUSDT','DOGEUSDT','TRXUSDT','TONUSDT','PEPEUSDT'];
 
 function getSavedSymbols() {
   try { return JSON.parse(localStorage.getItem('savedSymbols') || '[]'); }
@@ -1352,8 +471,8 @@ function applyResponsiveLayout() {
     main.style.overflow = 'hidden';
 
     chartsCol.style.order  = '1';
-    chartsCol.style.flex   = '0 0 70vh';
-    chartsCol.style.height = '70vh';
+    chartsCol.style.flex   = '0 0 62vh';
+    chartsCol.style.height = '62vh';
     chartsCol.style.overflow = 'hidden';
 
     sidebar.style.order = '2';
@@ -1376,10 +495,12 @@ function applyResponsiveLayout() {
 function calcHeights() {
   const col = document.getElementById('chartsCol');
   const total = col.clientHeight;
+  // حداقل ارتفاع تا اندیکاتورها خیلی فشرده نشن
   const minTotal = Math.max(total, 420);
   return {
-    price: Math.floor(minTotal * 0.62),
-    rsi:   Math.floor(minTotal * 0.38),
+    price: Math.floor(minTotal * 0.40),
+    rsi:   Math.floor(minTotal * 0.34),
+    macd:  Math.floor(minTotal * 0.26),
   };
 }
 
@@ -1391,12 +512,15 @@ function resizeChartsNow() {
 
   const priceEl = document.getElementById('chart-price');
   const rsiEl   = document.getElementById('chart-rsi');
+  const macdEl  = document.getElementById('chart-macd');
 
   priceEl.style.height = h.price + 'px';
   rsiEl.style.height   = h.rsi + 'px';
+  macdEl.style.height  = h.macd + 'px';
 
   priceChart.resize(priceEl.clientWidth, h.price);
   rsiChart.resize(rsiEl.clientWidth, h.rsi);
+  macdChart.resize(macdEl.clientWidth, h.macd);
 }
 
 let resizeTimer = null;
@@ -1428,7 +552,7 @@ function initCharts() {
     upColor: '#26a69a', downColor: '#ef5350',
     borderUpColor: '#26a69a', borderDownColor: '#ef5350',
     wickUpColor: '#26a69a', wickDownColor: '#ef5350',
-    priceFormat: { type: 'price', precision: 2, minMove: 0.01 },
+    priceFormat: { type: 'price', precision: 2, minMove: 0.01 }, // ← تعداد رقم اعشار قیمت اینجا
   });
 
   // RSI
@@ -1438,8 +562,16 @@ function initCharts() {
   rsiOB = rsiChart.addLineSeries({ color: '#ef5350', lineWidth: 1, lineStyle: 2 });
   rsiOS = rsiChart.addLineSeries({ color: '#26a69a', lineWidth: 1, lineStyle: 2 });
 
-  // ── Sync timescales (قیمت ↔ RSI) ──
-  const allCharts = [priceChart, rsiChart];
+  // MACD
+  document.getElementById('chart-macd').style.height = h.macd + 'px';
+  macdChart = LightweightCharts.createChart(document.getElementById('chart-macd'), { ...base, height: h.macd });
+  macdLineSeries   = macdChart.addLineSeries({ color: '#2962ff', lineWidth: 1.5 });
+  macdSignalSeries = macdChart.addLineSeries({ color: '#ff6d00', lineWidth: 1.5 });
+  macdHistSeries   = macdChart.addHistogramSeries({ priceFormat: { type: 'price', precision: 4 } });
+
+  // ── Sync timescales (robust) ──
+  const allCharts = [priceChart, rsiChart, macdChart];
+
   allCharts.forEach(src => {
     src.timeScale().subscribeVisibleLogicalRangeChange(range => {
       if (isSyncing || !range) return;
@@ -1453,16 +585,39 @@ function initCharts() {
     });
   });
 
-  // ── Crosshair sync + legend ──
+  // ── Crosshair sync + tooltip ──
+  function syncCrosshair(src, targets, getTooltip) {
+    src.subscribeCrosshairMove(param => {
+      // Sync crosshair to other charts
+      if (param.time) {
+        targets.forEach(t => {
+          t.setCrosshairPosition(
+            param.seriesData?.values()?.next()?.value?.value ?? 0,
+            param.time,
+            t.series?.[0]
+          );
+        });
+      } else {
+        targets.forEach(t => t.clearCrosshairPosition());
+      }
+      // Update tooltip bar
+      if (param.time && getTooltip) getTooltip(param);
+    });
+  }
+
+  // crosshair on price chart drives legend
   priceChart.subscribeCrosshairMove(param => {
     if (!param.time) { showLastLegend(); return; }
     const idx = globalCandles.findIndex(c => c.time === param.time);
     if (idx === -1) return;
     updateLegendByIndex(idx);
+
+    // sync crosshair position on rsi and macd charts
     if (!isSyncing) {
       isSyncing = true;
-      const rsi = globalRsi[idx];
+      const rsi = globalRsi[idx], ml = globalMacdL[idx];
       if (rsi != null) { try { rsiChart.setCrosshairPosition(rsi, param.time, rsiSeries); } catch(e){} }
+      if (ml  != null) { try { macdChart.setCrosshairPosition(ml, param.time, macdLineSeries); } catch(e){} }
       isSyncing = false;
     }
   });
@@ -1472,6 +627,18 @@ function initCharts() {
     if (isSyncing) return;
     isSyncing = true;
     try { priceChart.setCrosshairPosition(0, param.time, candleSeries); } catch(e){}
+    try { macdChart.setCrosshairPosition(0, param.time, macdLineSeries); } catch(e){}
+    isSyncing = false;
+    const idx = globalCandles.findIndex(c => c.time === param.time);
+    if (idx !== -1) updateLegendByIndex(idx);
+  });
+
+  macdChart.subscribeCrosshairMove(param => {
+    if (!param.time) { if (!isSyncing) showLastLegend(); return; }
+    if (isSyncing) return;
+    isSyncing = true;
+    try { priceChart.setCrosshairPosition(0, param.time, candleSeries); } catch(e){}
+    try { rsiChart.setCrosshairPosition(0, param.time, rsiSeries); } catch(e){}
     isSyncing = false;
     const idx = globalCandles.findIndex(c => c.time === param.time);
     if (idx !== -1) updateLegendByIndex(idx);
@@ -1500,6 +667,12 @@ function updateLegendByIndex(idx) {
   const rsiEl = document.getElementById('lg-rsi');
   rsiEl.textContent = fmt(rsi);
   rsiEl.className = 'lg-val' + (rsi >= 70 ? ' dn' : rsi <= 30 ? ' up' : '');
+
+  document.getElementById('lg-macd').textContent   = fmt(ml);
+  document.getElementById('lg-signal').textContent = fmt(sl);
+  const histEl = document.getElementById('lg-hist');
+  histEl.textContent = fmt(hl);
+  histEl.className = 'lg-val ' + (hl >= 0 ? 'up' : 'dn');
 }
 
 function showLastLegend() {
@@ -1688,74 +861,85 @@ async function loadData() {
 
     const { peaks, valleys } = calcZigZag(candles, zigzagPct);
 
-    // ── تعداد رقم اعشار بر اساس قیمت: زیر ۱ دلار → ۴ رقم، بالاتر → ۲ رقم (برای نمایش کارت‌ها) ──
+    // ── تعداد رقم اعشار بر اساس قیمت: زیر ۱ دلار → ۴ رقم، بالاتر → ۲ رقم ──
     const lastPrice = closes[closes.length - 1];
-    lastPricePrecision = lastPrice < 1 ? 4 : 2;
+    const isSmallPrice = lastPrice < 1;
+    lastPricePrecision = isSmallPrice ? 4 : 2;
+    candleSeries.applyOptions({
+      priceFormat: {
+        type: 'price',
+        precision: lastPricePrecision,
+        minMove:   isSmallPrice ? 0.0001 : 0.01,
+      }
+    });
+
+    // ── Candlestick ──
+    candleSeries.setData(candles);
+
+    // رفع باگ مهم: بعد از تغییر ارز، محور قیمت گاهی رنج قیمت قبلی رو نگه می‌داشت
+    // (مثلاً از ارزی با قیمت ۰.۲ به ارزی با قیمت ۰.۰۷ سوییچ می‌کردی، کندل‌ها بیرون از دید می‌رفتن)
+    priceChart.priceScale('right').applyOptions({ autoScale: true });
+
+    // Markers
+    const markers = [];
+    peaks.slice(-3).forEach((i, idx, arr) => {
+      const label = idx === arr.length - 1 ? 'قله' : `قله-${arr.length - idx}`;
+      markers.push({ time: times[i], position: 'aboveBar', color: '#ef5350', shape: 'arrowDown', text: label });
+    });
+    valleys.slice(-3).forEach((i, idx, arr) => {
+      const label = idx === arr.length - 1 ? 'دره' : `دره-${arr.length - idx}`;
+      markers.push({ time: times[i], position: 'belowBar', color: '#26a69a', shape: 'arrowUp', text: label });
+    });
 
     const divergence = detectDivergence({ candles, rsiArr });
 
-    if (priceChart) {
-      // ── اعشار پویا بر اساس قیمت ──
-      const isSmallPrice = lastPrice < 1;
-      candleSeries.applyOptions({
-        priceFormat: { type: 'price', precision: lastPricePrecision, minMove: isSmallPrice ? 0.0001 : 0.01 }
-      });
+    // همه واگرایی‌های اخیر رو روی چارت علامت بزن، نه فقط آخری
+    divergence.allBearish.forEach(d =>
+      markers.push({ time: times[d.currentIdx], position: 'aboveBar', color: '#ff1744', shape: 'arrowDown', text: '⚠ نزولی' })
+    );
+    divergence.allBullish.forEach(d =>
+      markers.push({ time: times[d.currentIdx], position: 'belowBar', color: '#00e676', shape: 'arrowUp', text: '⚠ صعودی' })
+    );
+    markers.sort((a,b) => a.time - b.time);
+    candleSeries.setMarkers(markers);
 
-      // ── کندل ──
-      candleSeries.setData(candles);
-      priceChart.priceScale('right').applyOptions({ autoScale: true });
+    // ── RSI ──
+    // همه بازه رو پوشش بده تا timescale یکی باشه
+    rsiSeries.setData(times.map((t,i) => rsiArr[i]!=null ? {time:t, value:rsiArr[i]} : null).filter(Boolean));
+    rsiOB.setData(times.map(t => ({time:t, value:70})));
+    rsiOS.setData(times.map(t => ({time:t, value:30})));
 
-      // ── مارکر قله/دره + واگرایی روی چارت قیمت ──
-      const priceMarkers = [];
-      peaks.slice(-3).forEach((i, idx, arr) => {
-        const label = idx === arr.length - 1 ? 'قله' : `قله-${arr.length - idx}`;
-        priceMarkers.push({ time: times[i], position: 'aboveBar', color: '#ef5350', shape: 'arrowDown', text: label });
-      });
-      valleys.slice(-3).forEach((i, idx, arr) => {
-        const label = idx === arr.length - 1 ? 'دره' : `دره-${arr.length - idx}`;
-        priceMarkers.push({ time: times[i], position: 'belowBar', color: '#26a69a', shape: 'arrowUp', text: label });
-      });
-      divergence.allBearish.forEach(d =>
-        priceMarkers.push({ time: times[d.currentIdx], position: 'aboveBar', color: '#ff1744', shape: 'arrowDown', text: '⚠ نزولی' })
-      );
-      divergence.allBullish.forEach(d =>
-        priceMarkers.push({ time: times[d.currentIdx], position: 'belowBar', color: '#00e676', shape: 'arrowUp', text: '⚠ صعودی' })
-      );
-      priceMarkers.sort((a,b) => a.time - b.time);
-      candleSeries.setMarkers(priceMarkers);
+    // نقاط پیوت شناسایی‌شده روی RSI (برای اطمینان بصری)
+    const rsiMarkers = [];
+    divergence.rsiHighs.forEach(i => rsiMarkers.push({ time: times[i], position: 'aboveBar', color: '#ffc107', shape: 'circle' }));
+    divergence.rsiLows.forEach(i  => rsiMarkers.push({ time: times[i], position: 'belowBar', color: '#ffc107', shape: 'circle' }));
+    rsiMarkers.sort((a,b) => a.time - b.time);
+    rsiSeries.setMarkers(rsiMarkers);
 
-      // ── RSI: خط + خط‌های ۷۰/۳۰ + نقاط زرد پیوت + مارکر واگرایی ──
-      rsiSeries.setData(times.map((t,i) => rsiArr[i]!=null ? {time:t, value:rsiArr[i]} : null).filter(Boolean));
-      rsiOB.setData(times.map(t => ({time:t, value:70})));
-      rsiOS.setData(times.map(t => ({time:t, value:30})));
-
-      const rsiMarkers = [];
-      divergence.rsiHighs.forEach(i => rsiMarkers.push({ time: times[i], position: 'aboveBar', color: '#ffc107', shape: 'circle' }));
-      divergence.rsiLows.forEach(i  => rsiMarkers.push({ time: times[i], position: 'belowBar', color: '#ffc107', shape: 'circle' }));
-      divergence.allBearish.forEach(d =>
-        rsiMarkers.push({ time: times[d.currentIdx], position: 'aboveBar', color: '#ff1744', shape: 'arrowDown', text: '⚠ نزولی' })
-      );
-      divergence.allBullish.forEach(d =>
-        rsiMarkers.push({ time: times[d.currentIdx], position: 'belowBar', color: '#00e676', shape: 'arrowUp', text: '⚠ صعودی' })
-      );
-      rsiMarkers.sort((a,b) => a.time - b.time);
-      rsiSeries.setMarkers(rsiMarkers);
-
-      // Legend
-      document.getElementById('lg-symbol').textContent = `${symbol} · ${currentIv.toUpperCase()}`;
-      showLastLegend();
-
-      // زوم پیش‌فرض: فقط آخرین کندل‌ها (نه له‌شدن همه ۳۰۰ تا)
-      resizeChartsNow();
-      const barsToShow = window.innerWidth <= 768 ? 55 : 120;
-      priceChart.timeScale().setVisibleLogicalRange({
-        from: Math.max(0, candles.length - barsToShow),
-        to:   candles.length + 3,
-      });
-    }
+    // ── MACD ──
+    macdLineSeries.setData(times.map((t,i)   => ml[i]!=null ? {time:t,value:ml[i]} : null).filter(Boolean));
+    macdSignalSeries.setData(times.map((t,i) => sl[i]!=null ? {time:t,value:sl[i]} : null).filter(Boolean));
+    macdHistSeries.setData(times.map((t,i)   => hl[i]!=null ? {time:t,value:hl[i],color:hl[i]>=0?'#26a69a':'#ef5350'} : null).filter(Boolean));
 
     // ── Sidebar ──
     renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence });
+
+    // Legend: نماد + تایم‌فریم + مقادیر آخرین کندل (پیش‌فرض بدون crosshair)
+    document.getElementById('lg-symbol').textContent = `${symbol} · ${currentIv.toUpperCase()}`;
+    showLastLegend();
+
+    // اندازه چارت‌ها رو دوباره حساب کن (کیبورد موبایل ممکنه ارتفاع صفحه رو عوض کرده باشه)
+    resizeChartsNow();
+
+    // به‌جای fitContent (که همه ۳۰۰ کندل رو له می‌کنه تو صفحه)، فقط آخرین کندل‌های اخیر با زوم مناسب نشون داده میشه
+    rsiChart.priceScale('right').applyOptions({ autoScale: true });
+    macdChart.priceScale('right').applyOptions({ autoScale: true });
+    const barsToShow = window.innerWidth <= 768 ? 55 : 120;
+    const totalBars = candles.length;
+    priceChart.timeScale().setVisibleLogicalRange({
+      from: Math.max(0, totalBars - barsToShow),
+      to:   totalBars + 3,
+    });
 
     document.getElementById('status').textContent = `${symbol} · ${currentIv} · ${candles.length} کندل`;
   } catch(e) {
@@ -1839,22 +1023,12 @@ function renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence }) 
   document.getElementById('pivotCards').innerHTML = html || '<p class="no-data">Pivot پیدا نشد</p>';
 }
 
-// ─── Boot — این تب اول مخفیه، پس فقط وقتی کاربر روش کلیک کرد اجرا میشه (نه موقع لود صفحه) ──
-let dvgTabInited = false;
-
-function initDivergenceTab() {
-  applyResponsiveLayout();
-  if (!dvgTabInited) {
-    populateSymbolDropdown();
-    initCharts();
-    dvgTabInited = true;
-    loadData(); // اولین باری که تب باز میشه، خودکار BTCUSDT رو بارگذاری کن
-  } else {
-    // دفعات بعدی که برمی‌گردیم رو این تب: چون قبلاً مخفی بوده، اندازه چارت‌ها دوباره حساب بشه
-    resizeChartsNow();
-  }
-}
-window.addEventListener('resize', () => { if (dvgTabInited) applyResponsiveLayout(); });
+// ─── Boot ────────────────────────────────────────────────────────────────────
+applyResponsiveLayout();
+initCharts();
+populateSymbolDropdown();
+// لایه محافظ: دوباره روی window.load هم اجرا میشه، برای اطمینان بیشتر
+window.addEventListener('load', applyResponsiveLayout);
 </script>
 </body>
 </html>
