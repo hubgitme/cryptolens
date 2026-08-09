@@ -654,12 +654,19 @@
   </aside>
 
   <div class="charts-col" id="chartsCol" style="display:flex; flex-direction:column;">
-    <div class="chart-wrap" id="wrap-price" style="flex:0 0 68%; min-height:0;">
-      <div id="dvg-mainChart" style="width:100%; height:100%;"></div>
+    <div class="chart-wrap" id="wrap-price" style="flex:0 0 62%; min-height:0; position:relative;">
+      <div class="pane-legend" id="legend-price">
+        <span class="lg-symbol" id="lg-symbol">BTCUSDT · 4H</span>
+        <span class="lg-item">O<b id="lg-open" class="lg-val">—</b></span>
+        <span class="lg-item">H<b id="lg-high" class="lg-val">—</b></span>
+        <span class="lg-item">L<b id="lg-low"  class="lg-val">—</b></span>
+        <span class="lg-item">C<b id="lg-close" class="lg-val">—</b></span>
+      </div>
+      <div id="chart-price" style="width:100%; height:100%;"></div>
     </div>
-    <div class="chart-wrap" id="wrap-rsi" style="flex:0 0 32%; min-height:0; position:relative;">
+    <div class="chart-wrap" id="wrap-rsi" style="flex:0 0 38%; min-height:0; position:relative;">
       <div class="pane-legend" id="legend-rsi">
-        <span class="lg-symbol">RSI (14) — نقاط زرد = پیوت‌های واگرایی</span>
+        <span class="lg-symbol">RSI (14)</span>
         <b id="lg-rsi" class="lg-val">—</b>
       </div>
       <div id="chart-rsi" style="width:100%; height:100%;"></div>
@@ -1369,12 +1376,10 @@ function applyResponsiveLayout() {
 function calcHeights() {
   const col = document.getElementById('chartsCol');
   const total = col.clientHeight;
-  // حداقل ارتفاع تا اندیکاتورها خیلی فشرده نشن
   const minTotal = Math.max(total, 420);
   return {
-    price: Math.floor(minTotal * 0.40),
-    rsi:   Math.floor(minTotal * 0.34),
-    macd:  Math.floor(minTotal * 0.26),
+    price: Math.floor(minTotal * 0.62),
+    rsi:   Math.floor(minTotal * 0.38),
   };
 }
 
@@ -1386,15 +1391,12 @@ function resizeChartsNow() {
 
   const priceEl = document.getElementById('chart-price');
   const rsiEl   = document.getElementById('chart-rsi');
-  const macdEl  = document.getElementById('chart-macd');
 
   priceEl.style.height = h.price + 'px';
   rsiEl.style.height   = h.rsi + 'px';
-  macdEl.style.height  = h.macd + 'px';
 
   priceChart.resize(priceEl.clientWidth, h.price);
   rsiChart.resize(rsiEl.clientWidth, h.rsi);
-  macdChart.resize(macdEl.clientWidth, h.macd);
 }
 
 let resizeTimer = null;
@@ -1426,7 +1428,7 @@ function initCharts() {
     upColor: '#26a69a', downColor: '#ef5350',
     borderUpColor: '#26a69a', borderDownColor: '#ef5350',
     wickUpColor: '#26a69a', wickDownColor: '#ef5350',
-    priceFormat: { type: 'price', precision: 2, minMove: 0.01 }, // ← تعداد رقم اعشار قیمت اینجا
+    priceFormat: { type: 'price', precision: 2, minMove: 0.01 },
   });
 
   // RSI
@@ -1436,16 +1438,8 @@ function initCharts() {
   rsiOB = rsiChart.addLineSeries({ color: '#ef5350', lineWidth: 1, lineStyle: 2 });
   rsiOS = rsiChart.addLineSeries({ color: '#26a69a', lineWidth: 1, lineStyle: 2 });
 
-  // MACD
-  document.getElementById('chart-macd').style.height = h.macd + 'px';
-  macdChart = LightweightCharts.createChart(document.getElementById('chart-macd'), { ...base, height: h.macd });
-  macdLineSeries   = macdChart.addLineSeries({ color: '#2962ff', lineWidth: 1.5 });
-  macdSignalSeries = macdChart.addLineSeries({ color: '#ff6d00', lineWidth: 1.5 });
-  macdHistSeries   = macdChart.addHistogramSeries({ priceFormat: { type: 'price', precision: 4 } });
-
-  // ── Sync timescales (robust) ──
-  const allCharts = [priceChart, rsiChart, macdChart];
-
+  // ── Sync timescales (قیمت ↔ RSI) ──
+  const allCharts = [priceChart, rsiChart];
   allCharts.forEach(src => {
     src.timeScale().subscribeVisibleLogicalRangeChange(range => {
       if (isSyncing || !range) return;
@@ -1459,39 +1453,16 @@ function initCharts() {
     });
   });
 
-  // ── Crosshair sync + tooltip ──
-  function syncCrosshair(src, targets, getTooltip) {
-    src.subscribeCrosshairMove(param => {
-      // Sync crosshair to other charts
-      if (param.time) {
-        targets.forEach(t => {
-          t.setCrosshairPosition(
-            param.seriesData?.values()?.next()?.value?.value ?? 0,
-            param.time,
-            t.series?.[0]
-          );
-        });
-      } else {
-        targets.forEach(t => t.clearCrosshairPosition());
-      }
-      // Update tooltip bar
-      if (param.time && getTooltip) getTooltip(param);
-    });
-  }
-
-  // crosshair on price chart drives legend
+  // ── Crosshair sync + legend ──
   priceChart.subscribeCrosshairMove(param => {
     if (!param.time) { showLastLegend(); return; }
     const idx = globalCandles.findIndex(c => c.time === param.time);
     if (idx === -1) return;
     updateLegendByIndex(idx);
-
-    // sync crosshair position on rsi and macd charts
     if (!isSyncing) {
       isSyncing = true;
-      const rsi = globalRsi[idx], ml = globalMacdL[idx];
+      const rsi = globalRsi[idx];
       if (rsi != null) { try { rsiChart.setCrosshairPosition(rsi, param.time, rsiSeries); } catch(e){} }
-      if (ml  != null) { try { macdChart.setCrosshairPosition(ml, param.time, macdLineSeries); } catch(e){} }
       isSyncing = false;
     }
   });
@@ -1501,18 +1472,6 @@ function initCharts() {
     if (isSyncing) return;
     isSyncing = true;
     try { priceChart.setCrosshairPosition(0, param.time, candleSeries); } catch(e){}
-    try { macdChart.setCrosshairPosition(0, param.time, macdLineSeries); } catch(e){}
-    isSyncing = false;
-    const idx = globalCandles.findIndex(c => c.time === param.time);
-    if (idx !== -1) updateLegendByIndex(idx);
-  });
-
-  macdChart.subscribeCrosshairMove(param => {
-    if (!param.time) { if (!isSyncing) showLastLegend(); return; }
-    if (isSyncing) return;
-    isSyncing = true;
-    try { priceChart.setCrosshairPosition(0, param.time, candleSeries); } catch(e){}
-    try { rsiChart.setCrosshairPosition(0, param.time, rsiSeries); } catch(e){}
     isSyncing = false;
     const idx = globalCandles.findIndex(c => c.time === param.time);
     if (idx !== -1) updateLegendByIndex(idx);
@@ -1541,12 +1500,6 @@ function updateLegendByIndex(idx) {
   const rsiEl = document.getElementById('lg-rsi');
   rsiEl.textContent = fmt(rsi);
   rsiEl.className = 'lg-val' + (rsi >= 70 ? ' dn' : rsi <= 30 ? ' up' : '');
-
-  document.getElementById('lg-macd').textContent   = fmt(ml);
-  document.getElementById('lg-signal').textContent = fmt(sl);
-  const histEl = document.getElementById('lg-hist');
-  histEl.textContent = fmt(hl);
-  histEl.className = 'lg-val ' + (hl >= 0 ? 'up' : 'dn');
 }
 
 function showLastLegend() {
@@ -1741,8 +1694,37 @@ async function loadData() {
 
     const divergence = detectDivergence({ candles, rsiArr });
 
-    // ── پنل RSI: خط RSI + خط‌های ۷۰/۳۰ + نقاط زرد پیوت + مارکر واگرایی ──
-    if (rsiPanelInited) {
+    if (priceChart) {
+      // ── اعشار پویا بر اساس قیمت ──
+      const isSmallPrice = lastPrice < 1;
+      candleSeries.applyOptions({
+        priceFormat: { type: 'price', precision: lastPricePrecision, minMove: isSmallPrice ? 0.0001 : 0.01 }
+      });
+
+      // ── کندل ──
+      candleSeries.setData(candles);
+      priceChart.priceScale('right').applyOptions({ autoScale: true });
+
+      // ── مارکر قله/دره + واگرایی روی چارت قیمت ──
+      const priceMarkers = [];
+      peaks.slice(-3).forEach((i, idx, arr) => {
+        const label = idx === arr.length - 1 ? 'قله' : `قله-${arr.length - idx}`;
+        priceMarkers.push({ time: times[i], position: 'aboveBar', color: '#ef5350', shape: 'arrowDown', text: label });
+      });
+      valleys.slice(-3).forEach((i, idx, arr) => {
+        const label = idx === arr.length - 1 ? 'دره' : `دره-${arr.length - idx}`;
+        priceMarkers.push({ time: times[i], position: 'belowBar', color: '#26a69a', shape: 'arrowUp', text: label });
+      });
+      divergence.allBearish.forEach(d =>
+        priceMarkers.push({ time: times[d.currentIdx], position: 'aboveBar', color: '#ff1744', shape: 'arrowDown', text: '⚠ نزولی' })
+      );
+      divergence.allBullish.forEach(d =>
+        priceMarkers.push({ time: times[d.currentIdx], position: 'belowBar', color: '#00e676', shape: 'arrowUp', text: '⚠ صعودی' })
+      );
+      priceMarkers.sort((a,b) => a.time - b.time);
+      candleSeries.setMarkers(priceMarkers);
+
+      // ── RSI: خط + خط‌های ۷۰/۳۰ + نقاط زرد پیوت + مارکر واگرایی ──
       rsiSeries.setData(times.map((t,i) => rsiArr[i]!=null ? {time:t, value:rsiArr[i]} : null).filter(Boolean));
       rsiOB.setData(times.map(t => ({time:t, value:70})));
       rsiOS.setData(times.map(t => ({time:t, value:30})));
@@ -1759,11 +1741,14 @@ async function loadData() {
       rsiMarkers.sort((a,b) => a.time - b.time);
       rsiSeries.setMarkers(rsiMarkers);
 
-      const lastRsi = rsiArr[rsiArr.length - 1];
-      document.getElementById('lg-rsi').textContent = lastRsi != null ? lastRsi.toFixed(2) : '—';
+      // Legend
+      document.getElementById('lg-symbol').textContent = `${symbol} · ${currentIv.toUpperCase()}`;
+      showLastLegend();
 
+      // زوم پیش‌فرض: فقط آخرین کندل‌ها (نه له‌شدن همه ۳۰۰ تا)
+      resizeChartsNow();
       const barsToShow = window.innerWidth <= 768 ? 55 : 120;
-      rsiChart.timeScale().setVisibleLogicalRange({
+      priceChart.timeScale().setVisibleLogicalRange({
         from: Math.max(0, candles.length - barsToShow),
         to:   candles.length + 3,
       });
@@ -1771,9 +1756,6 @@ async function loadData() {
 
     // ── Sidebar ──
     renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence });
-
-    // ── چارت واقعی TradingView (شامل RSI/MACD توکار) ──
-    buildDvgChart(symbol, currentIv);
 
     document.getElementById('status').textContent = `${symbol} · ${currentIv} · ${candles.length} کندل`;
   } catch(e) {
@@ -1859,82 +1841,17 @@ function renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence }) 
 
 // ─── Boot — این تب اول مخفیه، پس فقط وقتی کاربر روش کلیک کرد اجرا میشه (نه موقع لود صفحه) ──
 let dvgTabInited = false;
-// ─── چارت واقعی TradingView برای تب واگرایی (همون ویجت تب دوم، کانتینر و interval جدا) ──
-let dvgWidget = null;
-function buildDvgChart(symbol, iv) {
-  const ivMap = { '1h': '60', '4h': '240', '1d': 'D' };
-  const tvInterval = ivMap[iv] || '240';
-
-  // اندیکاتورهای این تب مستقل از تب دوم‌ان — چون خودمون پایین یه پنل RSI اختصاصی داریم، اینجا خالی گذاشتیم
-  // اگه خواستی اضافه کنی: مثلاً ["MACD@tv-basicstudies"]
-  const dvgStudies = [];
-
-  if (dvgWidget) document.getElementById('dvg-mainChart').innerHTML = '';
-
-  dvgWidget = new TradingView.widget({
-    container_id: 'dvg-mainChart',
-    symbol: `BINANCE:${symbol}`,
-    interval: tvInterval,
-    width: '100%',
-    height: '100%',
-    theme: 'dark',
-    locale: 'fa',
-    timezone: 'Asia/Tehran',
-    style: '1',
-    hide_side_toolbar: false,
-    studies: dvgStudies,
-    enable_publishing: false,
-    allow_symbol_change: true,
-  });
-}
-
-// ─── پنل RSI مستقل (زیر ویجت TradingView) — برای نمایش بصری نقاط واگرایی ──
-let rsiPanelInited = false;
-function initRsiPanel() {
-  if (rsiPanelInited) return;
-  const el = document.getElementById('chart-rsi');
-  rsiChart = LightweightCharts.createChart(el, {
-    layout: { background: { color: '#0b0e17' }, textColor: '#6b7280' },
-    grid: { vertLines: { color: '#1e2535' }, horzLines: { color: '#1e2535' } },
-    crosshair: { mode: LightweightCharts.CrosshairMode.Magnet },
-    timeScale: { borderColor: '#1e2535', timeVisible: true, rightOffset: 5, barSpacing: 9 },
-    rightPriceScale: { borderColor: '#1e2535' },
-    handleScroll: true,
-    handleScale: true,
-    width: el.clientWidth,
-    height: el.clientHeight,
-  });
-  rsiSeries = rsiChart.addLineSeries({ color: '#ffc107', lineWidth: 1.5 });
-  rsiOB = rsiChart.addLineSeries({ color: '#ef5350', lineWidth: 1, lineStyle: 2 });
-  rsiOS = rsiChart.addLineSeries({ color: '#26a69a', lineWidth: 1, lineStyle: 2 });
-
-  rsiChart.subscribeCrosshairMove(param => {
-    if (!param.time) return;
-    const idx = globalCandles.findIndex(c => c.time === param.time);
-    if (idx === -1 || globalRsi[idx] == null) return;
-    document.getElementById('lg-rsi').textContent = globalRsi[idx].toFixed(2);
-  });
-
-  rsiPanelInited = true;
-}
-
-function resizeRsiPanel() {
-  if (!rsiPanelInited) return;
-  const el = document.getElementById('chart-rsi');
-  rsiChart.resize(el.clientWidth, el.clientHeight);
-}
-window.addEventListener('resize', () => { if (dvgTabInited) resizeRsiPanel(); });
 
 function initDivergenceTab() {
   applyResponsiveLayout();
   if (!dvgTabInited) {
     populateSymbolDropdown();
-    initRsiPanel();
+    initCharts();
     dvgTabInited = true;
     loadData(); // اولین باری که تب باز میشه، خودکار BTCUSDT رو بارگذاری کن
   } else {
-    // دفعات بعدی که برمی‌گردیم رو این تب: چون قبلاً مخفی بوده، پنل RSI باید اندازه‌اش دوباره حساب بشه
-    resizeRsiPanel();
+    // دفعات بعدی که برمی‌گردیم رو این تب: چون قبلاً مخفی بوده، اندازه چارت‌ها دوباره حساب بشه
+    resizeChartsNow();
   }
 }
 window.addEventListener('resize', () => { if (dvgTabInited) applyResponsiveLayout(); });
