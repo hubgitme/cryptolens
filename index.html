@@ -247,7 +247,7 @@
       display: flex;
       flex-direction: column;
       min-width: 0;
-      overflow: hidden;
+      overflow: hidden auto;
     }
 
     .chart-wrap {
@@ -325,6 +325,27 @@
       header h1 { display: none; }
       .iv-group button, #loadBtn { padding: 5px 7px; font-size: 0.68rem; }
     }
+
+    /* ── پنل اندیکاتورها / پشتیبان‌گیری ── */
+    .ind-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:1000;
+      align-items:flex-start; justify-content:center; padding:16px 8px; overflow-y:auto; }
+    .ind-overlay.show { display:flex; }
+    .ind-modal { background:var(--surface); border:1px solid var(--border); border-radius:12px;
+      width:100%; max-width:580px; padding:16px; display:flex; flex-direction:column; gap:12px; }
+    .ind-head { display:flex; align-items:center; justify-content:space-between; }
+    .ind-head h3 { font-size:.95rem; color:#fff; }
+    .ind-sec { border-top:1px solid var(--border); padding-top:10px; }
+    .ind-sec h4 { font-size:.74rem; color:var(--muted); margin-bottom:8px; }
+    .ind-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; font-size:.8rem; }
+    .ind-row .nm { min-width:84px; font-weight:600; color:#fff; direction:ltr; text-align:right; }
+    .ind-row label { display:flex; align-items:center; gap:4px; color:var(--muted); }
+    .ind-row input[type=number] { width:64px; direction:ltr; }
+    .ind-row input[type=color] { width:34px; height:28px; padding:0; border:none; background:none; }
+    .ind-row input[type=checkbox] { accent-color:var(--accent); width:16px; height:16px; }
+    .ind-add { display:flex; gap:6px; flex-wrap:wrap; }
+    .ind-modal textarea { width:100%; height:64px; direction:ltr; font-size:.72rem; margin-top:8px;
+      background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px; resize:vertical; }
+    .ind-msg { font-size:.78rem; color:var(--green); min-height:1em; }
   </style>
 </head>
 <body>
@@ -346,8 +367,9 @@
     </div>
     <div style="display:flex; align-items:center; gap:5px;">
       <label style="font-size:0.78rem; color:var(--muted);">حساسیت%</label>
-      <input id="zigzagInput" type="number" value="0.5" step="0.1" min="0.1" max="5" style="width:55px; direction:ltr;" onchange="zigzagPct = parseFloat(this.value) || 0.5" />
+      <input id="zigzagInput" type="number" value="0.5" step="0.1" min="0.1" max="5" style="width:55px; direction:ltr;" onchange="zigzagPct = parseFloat(this.value) || 0.5; saveSettings()" />
     </div>
+    <button id="indBtn" onclick="openInd()">📈 اندیکاتورها</button>
     <button id="loadBtn" onclick="loadData()">بارگذاری</button>
   </div>
   <span id="status">آماده</span>
@@ -368,18 +390,19 @@
         <span class="lg-item">L<b id="lg-low"  class="lg-val">—</b></span>
         <span class="lg-item">C<b id="lg-close" class="lg-val">—</b></span>
       </div>
+      <div class="pane-legend" id="legend-ov" style="top:26px; flex-wrap:wrap; max-width:92%;"></div>
       <div id="chart-price"></div>
     </div>
     <div class="chart-wrap" id="wrap-rsi">
       <div class="pane-legend" id="legend-rsi">
-        <span class="lg-symbol">RSI (14)</span>
+        <span class="lg-symbol" id="lg-rsi-title">RSI (14)</span>
         <b id="lg-rsi" class="lg-val">—</b>
       </div>
       <div id="chart-rsi"></div>
     </div>
     <div class="chart-wrap" id="wrap-macd">
       <div class="pane-legend" id="legend-macd">
-        <span class="lg-symbol">MACD (12,26,9)</span>
+        <span class="lg-symbol" id="lg-macd-title">MACD (12,26,9)</span>
         <span class="lg-item" style="color:#2962ff">MACD <b id="lg-macd" class="lg-val">—</b></span>
         <span class="lg-item" style="color:#ff6d00">Signal <b id="lg-signal" class="lg-val">—</b></span>
         <span class="lg-item">Hist <b id="lg-hist" class="lg-val">—</b></span>
@@ -389,6 +412,7 @@
   </div>
 </div>
 
+<div class="ind-overlay" id="indOverlay" onclick="if(event.target===this)closeInd()"><div class="ind-modal" id="indModal"></div></div>
 <div class="loader" id="loader">
 
   <div class="spinner"></div>
@@ -450,12 +474,417 @@ let globalCandles = [], globalRsi = [], globalMacdL = [], globalMacdS = [], glob
 let lastPricePrecision = 2;
 let isSyncing = false;
 
+// ═══════════ تنظیمات، اندیکاتورها و پشتیبان‌گیری ═══════════
+const LS_KEY = 'ta_settings_v1';
+const OV_TYPES = { sma: 'SMA', ema: 'EMA', bb: 'Bollinger', vwap: 'VWAP' };
+const OV_COLORS = ['#f59e0b', '#3b82f6', '#a855f7', '#14b8a6', '#ec4899', '#84cc16'];
+const SYMBOL_RE = /^[A-Za-z0-9]{2,20}$/;
+let ovSeq = 0;
+let allCharts = [];
+let lastCandles = [], lastSymbol = '';
+let overlaySeries = [], overlayDefs = [], volSeries = null;
+const extraPanes = {}, extraData = {};
+
+function defaultSettings() {
+  return {
+    v: 1, symbol: 'BTCUSDT', iv: '4h', zigzag: 0.5,
+    overlays: [], volume: { on: false },
+    rsi:   { on: true, period: 14, ob: 70, os: 30 },
+    macd:  { on: true, fast: 12, slow: 26, sig: 9 },
+    stoch: { on: false, k: 14, d: 3, smooth: 3 },
+    atr:   { on: false, period: 14 },
+    customIndicators: []   // جای اندیکاتورهای کدنویسی‌شده (مرحله بعد)
+  };
+}
+let S = defaultSettings();
+
+function toNum(v, def, min, max) { v = parseFloat(v); return isFinite(v) ? Math.min(max, Math.max(min, v)) : def; }
+function toInt(v, def, min, max) { return Math.round(toNum(v, def, min, max)); }
+function toBool(v, def) { return typeof v === 'boolean' ? v : def; }
+
+// هر ورودی بیرونی (localStorage یا فایل پشتیبان) قبل از استفاده اینجا پاک‌سازی میشه
+function sanitizeSettings(raw) {
+  const o = defaultSettings();
+  if (!raw || typeof raw !== 'object') return o;
+  if (typeof raw.symbol === 'string' && SYMBOL_RE.test(raw.symbol)) o.symbol = raw.symbol.toUpperCase();
+  if (['1h', '4h', '1d'].includes(raw.iv)) o.iv = raw.iv;
+  o.zigzag = toNum(raw.zigzag, 0.5, 0.1, 5);
+  if (Array.isArray(raw.overlays)) {
+    o.overlays = raw.overlays.slice(0, 12).filter(x => x && OV_TYPES[x.type]).map((x, i) => ({
+      id: 'ov' + (++ovSeq), type: x.type, on: toBool(x.on, true),
+      period: toInt(x.period, 20, 1, 500), mult: toNum(x.mult, 2, 0.1, 10),
+      color: /^#[0-9a-fA-F]{6}$/.test(x.color) ? x.color : OV_COLORS[i % OV_COLORS.length]
+    }));
+  }
+  o.volume.on = toBool(raw.volume && raw.volume.on, false);
+  const r = raw.rsi || {};
+  o.rsi = { on: toBool(r.on, true), period: toInt(r.period, 14, 2, 200), ob: toNum(r.ob, 70, 50, 100), os: toNum(r.os, 30, 0, 50) };
+  if (o.rsi.os >= o.rsi.ob) { o.rsi.ob = 70; o.rsi.os = 30; }
+  const m = raw.macd || {};
+  o.macd = { on: toBool(m.on, true), fast: toInt(m.fast, 12, 2, 200), slow: toInt(m.slow, 26, 3, 400), sig: toInt(m.sig, 9, 1, 200) };
+  if (o.macd.fast >= o.macd.slow) { o.macd.fast = 12; o.macd.slow = 26; }
+  const s = raw.stoch || {};
+  o.stoch = { on: toBool(s.on, false), k: toInt(s.k, 14, 2, 200), d: toInt(s.d, 3, 1, 50), smooth: toInt(s.smooth, 3, 1, 50) };
+  const a = raw.atr || {};
+  o.atr = { on: toBool(a.on, false), period: toInt(a.period, 14, 2, 200) };
+  if (Array.isArray(raw.customIndicators)) o.customIndicators = raw.customIndicators.slice(0, 50);
+  return o;
+}
+function saveSettings() {
+  const sym = document.getElementById('symbolInput').value.trim().toUpperCase();
+  if (SYMBOL_RE.test(sym)) S.symbol = sym;
+  S.iv = currentIv; S.zigzag = zigzagPct;
+  try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {}
+}
+function applySettingsToUI() {
+  document.getElementById('symbolInput').value = S.symbol;
+  zigzagPct = S.zigzag;
+  document.getElementById('zigzagInput').value = S.zigzag;
+  setIv(S.iv);
+}
+function loadSettings() {
+  try { const raw = JSON.parse(localStorage.getItem(LS_KEY)); if (raw) S = sanitizeSettings(raw); } catch (e) {}
+  applySettingsToUI();
+}
+function msg(t) {
+  document.getElementById('status').textContent = t;
+  const el = document.getElementById('indMsg'); if (el) el.textContent = t;
+}
+
+// ─── محاسبات اندیکاتورها ────────────────────────────────────────────────────
+function toSeries(times, vals) { return times.map((t, i) => vals[i] != null ? { time: t, value: vals[i] } : null).filter(Boolean); }
+function calcSMA(a, p) {
+  const out = new Array(a.length).fill(null);
+  for (let i = p - 1; i < a.length; i++) {
+    let s = 0, ok = true;
+    for (let j = i - p + 1; j <= i; j++) { if (a[j] == null) { ok = false; break; } s += a[j]; }
+    if (ok) out[i] = s / p;
+  }
+  return out;
+}
+function calcEMA(a, p) {
+  const k = 2 / (p + 1), out = new Array(a.length).fill(null), sma = calcSMA(a, p);
+  let prev = null;
+  for (let i = p - 1; i < a.length; i++) {
+    if (prev == null) { prev = sma[i]; if (prev == null) continue; }
+    else prev = a[i] * k + prev * (1 - k);
+    out[i] = prev;
+  }
+  return out;
+}
+function calcBB(closes, p, mult) {
+  const mid = calcSMA(closes, p), up = [], lo = [];
+  mid.forEach((m, i) => {
+    if (m == null) { up.push(null); lo.push(null); return; }
+    let v = 0; for (let j = i - p + 1; j <= i; j++) v += (closes[j] - m) ** 2;
+    const sd = Math.sqrt(v / p);
+    up.push(m + mult * sd); lo.push(m - mult * sd);
+  });
+  return { mid, up, lo };
+}
+function calcVWAP(c, iv) {   // ریست روزانه (برای 1D ماهانه)
+  let pv = 0, vv = 0, key = null;
+  return c.map(x => {
+    const d = new Date(x.time * 1000);
+    const k = d.getUTCFullYear() + '-' + d.getUTCMonth() + (iv === '1d' ? '' : '-' + d.getUTCDate());
+    if (k !== key) { key = k; pv = 0; vv = 0; }
+    pv += (x.high + x.low + x.close) / 3 * x.volume; vv += x.volume;
+    return vv ? pv / vv : null;
+  });
+}
+function calcStoch(c, kp, dp, sm) {
+  const raw = c.map((_, i) => {
+    if (i < kp - 1) return null;
+    let hh = -Infinity, ll = Infinity;
+    for (let j = i - kp + 1; j <= i; j++) { hh = Math.max(hh, c[j].high); ll = Math.min(ll, c[j].low); }
+    return hh === ll ? 50 : (c[i].close - ll) / (hh - ll) * 100;
+  });
+  const k = sm > 1 ? calcSMA(raw, sm) : raw;
+  return { k, d: calcSMA(k, dp) };
+}
+function calcATR(c, p) {
+  const out = new Array(c.length).fill(null);
+  if (c.length < p) return out;
+  const tr = c.map((x, i) => i === 0 ? x.high - x.low :
+    Math.max(x.high - x.low, Math.abs(x.high - c[i - 1].close), Math.abs(x.low - c[i - 1].close)));
+  let a = 0; for (let i = 0; i < p; i++) a += tr[i];
+  a /= p; out[p - 1] = a;
+  for (let i = p; i < c.length; i++) { a = (a * (p - 1) + tr[i]) / p; out[i] = a; }
+  return out;
+}
+
+// ─── Chart helpers (مشترک بین پنل‌های اصلی و پنل‌های اضافه) ─────────────────
+function baseChartOptions() {
+  return {
+    layout: { background: { color: '#0b0e17' }, textColor: '#6b7280' },
+    grid: { vertLines: { color: '#1e2535' }, horzLines: { color: '#1e2535' } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Magnet },
+    timeScale: { borderColor: '#1e2535', timeVisible: true, rightOffset: 5, barSpacing: 9 },
+    rightPriceScale: { borderColor: '#1e2535' },
+    handleScroll: true,
+    handleScale: true,
+  };
+}
+function hookSync(src) {
+  src.timeScale().subscribeVisibleLogicalRangeChange(range => {
+    if (isSyncing || !range) return;
+    isSyncing = true;
+    allCharts.forEach(t => { if (t !== src) { try { t.timeScale().setVisibleLogicalRange(range); } catch (e) {} } });
+    isSyncing = false;
+  });
+}
+
+// ─── Overlay روی نمودار قیمت (SMA/EMA/Bollinger/VWAP/Volume) ─────────────────
+function renderOverlays(candles, times) {
+  overlaySeries.forEach(s => { try { priceChart.removeSeries(s); } catch (e) {} });
+  overlaySeries = []; overlayDefs = [];
+  if (volSeries) { try { priceChart.removeSeries(volSeries); } catch (e) {} volSeries = null; }
+  const closes = candles.map(c => c.close);
+  const line = (vals, color, w, style) => {
+    const s = priceChart.addLineSeries({ color, lineWidth: w || 1.5, lineStyle: style || 0,
+      priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+    s.setData(toSeries(times, vals)); overlaySeries.push(s);
+  };
+  S.overlays.filter(o => o.on).forEach(o => {
+    if (o.type === 'sma' || o.type === 'ema') {
+      const v = o.type === 'sma' ? calcSMA(closes, o.period) : calcEMA(closes, o.period);
+      line(v, o.color);
+      overlayDefs.push({ label: `${OV_TYPES[o.type]} ${o.period} `, color: o.color, vals: v });
+    } else if (o.type === 'bb') {
+      const b = calcBB(closes, o.period, o.mult);
+      line(b.up, o.color, 1); line(b.lo, o.color, 1); line(b.mid, o.color, 1, 2);
+      overlayDefs.push({ label: `BB ${o.period},${o.mult} `, color: o.color, vals: b.mid });
+    } else if (o.type === 'vwap') {
+      const v = calcVWAP(candles, currentIv);
+      line(v, o.color);
+      overlayDefs.push({ label: 'VWAP ', color: o.color, vals: v });
+    }
+  });
+  if (S.volume.on) {
+    volSeries = priceChart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'vol',
+      lastValueVisible: false, priceLineVisible: false });
+    volSeries.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+    volSeries.setData(candles.map(c => ({ time: c.time, value: c.volume,
+      color: c.close >= c.open ? 'rgba(38,166,154,0.45)' : 'rgba(239,83,80,0.45)' })));
+    overlayDefs.push({ label: 'Vol ', color: '#6b7280', vals: candles.map(c => c.volume), compact: true });
+  }
+}
+function updateOverlayLegend(idx) {
+  const el = document.getElementById('legend-ov');
+  if (!el) return;
+  el.innerHTML = overlayDefs.map(d => {
+    const v = d.vals[idx];
+    const t = v == null ? '—' : v.toLocaleString('en-US',
+      d.compact ? { notation: 'compact', maximumFractionDigits: 2 } : { maximumFractionDigits: lastPricePrecision });
+    return `<span class="lg-item" style="color:${d.color}">${d.label}<b class="lg-val">${t}</b></span>`;
+  }).join('');
+}
+
+// ─── پنل‌های اضافه (Stochastic / ATR) — با روشن/خاموش کردن ساخته یا حذف میشن ──
+const fx = v => v != null ? (Math.abs(v) < 1 ? v.toPrecision(4) : v.toFixed(2)) : '—';
+const EXTRA_DEFS = {
+  stoch: {
+    title: () => `Stoch (${S.stoch.k},${S.stoch.d},${S.stoch.smooth})`,
+    build(ch) {
+      const k = ch.addLineSeries({ color: '#2962ff', lineWidth: 1.5, priceLineVisible: false });
+      const d = ch.addLineSeries({ color: '#ff6d00', lineWidth: 1.5, priceLineVisible: false });
+      [80, 20].forEach(p => k.createPriceLine({ price: p, color: '#6b7280', lineWidth: 1, lineStyle: 2, axisLabelVisible: false }));
+      return { k, d };
+    },
+    compute: c => calcStoch(c, S.stoch.k, S.stoch.d, S.stoch.smooth),
+    fill(sr, data, t) { sr.k.setData(toSeries(t, data.k)); sr.d.setData(toSeries(t, data.d)); },
+    legend: (data, i) => `<span style="color:#2962ff">%K ${fx(data.k[i])}</span> <span style="color:#ff6d00">%D ${fx(data.d[i])}</span>`
+  },
+  atr: {
+    title: () => `ATR (${S.atr.period})`,
+    build(ch) { return { a: ch.addLineSeries({ color: '#ffc107', lineWidth: 1.5, priceLineVisible: false }) }; },
+    compute: c => ({ a: calcATR(c, S.atr.period) }),
+    fill(sr, data, t) { sr.a.setData(toSeries(t, data.a)); },
+    legend: (data, i) => `<span style="color:#ffc107">${fx(data.a[i])}</span>`
+  }
+};
+function syncExtraPane(key, on) {
+  if (on && !extraPanes[key]) {
+    const wrap = document.createElement('div');
+    wrap.className = 'chart-wrap'; wrap.id = 'wrap-' + key;
+    wrap.innerHTML = `<div class="pane-legend"><span class="lg-symbol" id="lg-${key}-title"></span><span class="lg-item" id="lg-${key}-vals"></span></div><div id="chart-${key}"></div>`;
+    document.getElementById('chartsCol').appendChild(wrap);
+    const el = document.getElementById('chart-' + key);
+    el.style.height = '140px';
+    const chart = LightweightCharts.createChart(el, { ...baseChartOptions(), height: 140 });
+    const series = EXTRA_DEFS[key].build(chart);
+    extraPanes[key] = { chart, wrap, series };
+    allCharts.push(chart); hookSync(chart);
+    chart.subscribeCrosshairMove(param => {
+      if (!param.time) { if (!isSyncing) showLastLegend(); return; }
+      const idx = globalCandles.findIndex(c => c.time === param.time);
+      if (idx !== -1) updateLegendByIndex(idx);
+    });
+    const r = priceChart && priceChart.timeScale().getVisibleLogicalRange();
+    if (r) { try { chart.timeScale().setVisibleLogicalRange(r); } catch (e) {} }
+  } else if (!on && extraPanes[key]) {
+    const p = extraPanes[key];
+    allCharts = allCharts.filter(c => c !== p.chart);
+    p.chart.remove(); p.wrap.remove();
+    delete extraPanes[key]; delete extraData[key];
+  }
+  if (extraPanes[key]) document.getElementById(`lg-${key}-title`).textContent = EXTRA_DEFS[key].title();
+}
+function renderExtras(candles, times) {
+  Object.keys(extraPanes).forEach(k => {
+    const def = EXTRA_DEFS[k];
+    extraData[k] = def.compute(candles);
+    def.fill(extraPanes[k].series, extraData[k], times);
+    document.getElementById(`lg-${k}-title`).textContent = def.title();
+  });
+}
+function updateExtraLegends(idx) {
+  Object.keys(extraPanes).forEach(k => {
+    if (!extraData[k]) return;
+    document.getElementById(`lg-${k}-vals`).innerHTML = EXTRA_DEFS[k].legend(extraData[k], idx);
+  });
+}
+function applyIndicatorVisibility() {
+  document.getElementById('wrap-rsi').style.display = S.rsi.on ? '' : 'none';
+  document.getElementById('wrap-macd').style.display = S.macd.on ? '' : 'none';
+  document.getElementById('lg-rsi-title').textContent = `RSI (${S.rsi.period})`;
+  document.getElementById('lg-macd-title').textContent = `MACD (${S.macd.fast},${S.macd.slow},${S.macd.sig})`;
+  syncExtraPane('stoch', S.stoch.on);
+  syncExtraPane('atr', S.atr.on);
+  resizeChartsNow();
+}
+
+// ─── پنل تنظیمات اندیکاتورها ────────────────────────────────────────────────
+function onIndChange() {
+  saveSettings(); applyIndicatorVisibility(); renderPanel();
+  if (lastCandles.length) renderAll(false);
+}
+function addOv(type) {
+  if (S.overlays.length >= 12) return msg('حداکثر ۱۲ اندیکاتور');
+  S.overlays.push({ id: 'ov' + (++ovSeq), type, on: true, period: type === 'vwap' ? 1 : 20, mult: 2,
+    color: OV_COLORS[S.overlays.length % OV_COLORS.length] });
+  onIndChange();
+}
+function delOv(id) { S.overlays = S.overlays.filter(o => o.id !== id); onIndChange(); }
+function updOv(id, prop, val) {
+  const o = S.overlays.find(x => x.id === id); if (!o) return;
+  if (prop === 'on') o.on = !!val;
+  else if (prop === 'period') o.period = toInt(val, o.period, 1, 500);
+  else if (prop === 'mult') o.mult = toNum(val, o.mult, 0.1, 10);
+  else if (prop === 'color' && /^#[0-9a-fA-F]{6}$/.test(val)) o.color = val;
+  onIndChange();
+}
+function updPane(key, prop, val) {
+  S[key][prop] = prop === 'on' ? !!val : val;
+  S = sanitizeSettings(S);
+  onIndChange();
+}
+function openInd() { renderPanel(); document.getElementById('indOverlay').classList.add('show'); }
+function closeInd() { document.getElementById('indOverlay').classList.remove('show'); }
+function fld(key, prop, label, attrs) {
+  return `<label>${label}<input type="number" ${attrs || ''} value="${S[key][prop]}" onchange="updPane('${key}','${prop}',this.value)"></label>`;
+}
+function paneRow(key, title, fields) {
+  return `<div class="ind-row"><input type="checkbox" ${S[key].on ? 'checked' : ''} onchange="updPane('${key}','on',this.checked)"><span class="nm">${title}</span>${fields || ''}</div>`;
+}
+function renderPanel() {
+  const ovRows = S.overlays.map(o => `<div class="ind-row">
+      <input type="checkbox" ${o.on ? 'checked' : ''} onchange="updOv('${o.id}','on',this.checked)">
+      <span class="nm">${OV_TYPES[o.type]}</span>
+      ${o.type === 'vwap' ? '' : `<label>دوره<input type="number" min="1" max="500" value="${o.period}" onchange="updOv('${o.id}','period',this.value)"></label>`}
+      ${o.type === 'bb' ? `<label>ضریب<input type="number" step="0.1" min="0.1" max="10" value="${o.mult}" onchange="updOv('${o.id}','mult',this.value)"></label>` : ''}
+      <input type="color" value="${o.color}" onchange="updOv('${o.id}','color',this.value)">
+      <button onclick="delOv('${o.id}')" title="حذف">🗑</button></div>`).join('')
+    || '<p class="no-data">هنوز اندیکاتوری روی نمودار قیمت اضافه نشده</p>';
+  document.getElementById('indModal').innerHTML = `
+    <div class="ind-head"><h3>📈 اندیکاتورها و تنظیمات</h3><button onclick="closeInd()">✕</button></div>
+    <div class="ind-sec"><h4>روی نمودار قیمت</h4>${ovRows}
+      <div class="ind-add">
+        <button onclick="addOv('ema')">+ EMA</button><button onclick="addOv('sma')">+ SMA</button>
+        <button onclick="addOv('bb')">+ Bollinger</button><button onclick="addOv('vwap')">+ VWAP</button>
+      </div>
+      <div class="ind-row" style="margin-top:10px">${'' }
+        <input type="checkbox" ${S.volume.on ? 'checked' : ''} onchange="updPane('volume','on',this.checked)"><span class="nm">Volume</span>
+      </div>
+    </div>
+    <div class="ind-sec"><h4>پنل‌های جدا</h4>
+      ${paneRow('rsi', 'RSI', fld('rsi', 'period', 'دوره', 'min="2" max="200"') + fld('rsi', 'ob', 'اشباع خرید', 'min="50" max="100"') + fld('rsi', 'os', 'اشباع فروش', 'min="0" max="50"'))}
+      ${paneRow('macd', 'MACD', fld('macd', 'fast', 'سریع', 'min="2"') + fld('macd', 'slow', 'کند', 'min="3"') + fld('macd', 'sig', 'سیگنال', 'min="1"'))}
+      ${paneRow('stoch', 'Stochastic', fld('stoch', 'k', 'K', 'min="2"') + fld('stoch', 'd', 'D', 'min="1"') + fld('stoch', 'smooth', 'نرم‌سازی', 'min="1"'))}
+      ${paneRow('atr', 'ATR', fld('atr', 'period', 'دوره', 'min="2" max="200"'))}
+    </div>
+    <div class="ind-sec"><h4>پشتیبان‌گیری و بازیابی (تنظیمات، اندیکاتورها، ارزهای ذخیره‌شده)</h4>
+      <div class="ind-add">
+        <button onclick="downloadBackup()">⬇ دانلود فایل پشتیبان</button>
+        <button onclick="document.getElementById('restoreFile').click()">⬆ بازیابی از فایل</button>
+        <button onclick="copyBackup()">📋 کپی متن پشتیبان</button>
+        <button onclick="resetSettings()">↺ بازنشانی</button>
+      </div>
+      <input type="file" id="restoreFile" accept=".json,application/json" hidden onchange="restoreFromFile(this)">
+      <textarea id="restoreText" placeholder="یا متن پشتیبان را اینجا بچسبانید..."></textarea>
+      <div class="ind-add" style="margin-top:6px"><button onclick="restoreFromText(document.getElementById('restoreText').value)">بازیابی از متن</button></div>
+      <div class="ind-msg" id="indMsg"></div>
+    </div>`;
+}
+
+// ─── پشتیبان‌گیری / بازیابی ─────────────────────────────────────────────────
+function buildBackup() {
+  saveSettings();
+  return { app: 'ta-dashboard', version: 1, exportedAt: new Date().toISOString(),
+           settings: S, savedSymbols: getSavedSymbols() };
+}
+function downloadBackup() {
+  const blob = new Blob([JSON.stringify(buildBackup(), null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ta-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  msg('✅ فایل پشتیبان دانلود شد');
+}
+function copyBackup() {
+  const json = JSON.stringify(buildBackup());
+  const fallback = () => { const t = document.getElementById('restoreText'); t.value = json; t.select(); msg('متن در کادر پایین قرار گرفت؛ کپی کنید'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json).then(() => msg('✅ کپی شد'), fallback);
+  else fallback();
+}
+function restoreFromText(text) {
+  let data;
+  try { data = JSON.parse(text); } catch (e) { return msg('❌ متن/فایل JSON معتبر نیست'); }
+  if (!data || data.app !== 'ta-dashboard' || !data.settings) return msg('❌ این فایل، پشتیبان این برنامه نیست');
+  if (!confirm('تنظیمات فعلی با پشتیبان جایگزین شود؟')) return;
+  S = sanitizeSettings(data.settings);
+  if (Array.isArray(data.savedSymbols)) {
+    const clean = [...new Set(data.savedSymbols.filter(s => typeof s === 'string' && SYMBOL_RE.test(s)).map(s => s.toUpperCase()))].slice(0, 100);
+    setSavedSymbols(clean); populateSymbolDropdown();
+  }
+  applySettingsToUI(); saveSettings(); applyIndicatorVisibility(); renderPanel();
+  if (lastCandles.length) renderAll(false);
+  msg('✅ بازیابی انجام شد');
+}
+function restoreFromFile(inp) {
+  const f = inp.files[0]; if (!f) return;
+  if (f.size > 2e6) { inp.value = ''; return msg('❌ فایل خیلی بزرگ است'); }
+  const r = new FileReader();
+  r.onload = () => restoreFromText(String(r.result));
+  r.readAsText(f); inp.value = '';
+}
+function resetSettings() {
+  if (!confirm('همه تنظیمات اندیکاتورها به حالت پیش‌فرض برگردد؟ (ارزهای ذخیره‌شده حفظ می‌شوند)')) return;
+  const keep = { symbol: S.symbol, iv: S.iv, zigzag: S.zigzag };
+  S = sanitizeSettings(Object.assign(defaultSettings(), keep));
+  saveSettings(); applyIndicatorVisibility(); renderPanel();
+  if (lastCandles.length) renderAll(false);
+  msg('↺ بازنشانی شد');
+}
+
 // ─── Interval ───────────────────────────────────────────────────────────────
 function setIv(iv) {
   currentIv = iv;
   ['1h','4h','1d'].forEach(i =>
     document.getElementById('btn-' + i).classList.toggle('active', i === iv)
   );
+  saveSettings();
 }
 
 // ─── چیدمان موبایل — مستقل از CSS media query، مستقیم با JS اعمال میشه ──────
@@ -473,7 +902,7 @@ function applyResponsiveLayout() {
     chartsCol.style.order  = '1';
     chartsCol.style.flex   = '0 0 62vh';
     chartsCol.style.height = '62vh';
-    chartsCol.style.overflow = 'hidden';
+    chartsCol.style.overflow = 'hidden auto';
 
     sidebar.style.order = '2';
     sidebar.classList.add('mobile-grid');
@@ -492,37 +921,36 @@ function applyResponsiveLayout() {
 }
 
 // ─── Chart heights ──────────────────────────────────────────────────────────
-function calcHeights() {
-  const col = document.getElementById('chartsCol');
-  const total = col.clientHeight;
-  // حداقل ارتفاع تا اندیکاتورها خیلی فشرده نشن
-  const minTotal = Math.max(total, 420);
-  return {
-    price: Math.floor(minTotal * 0.40),
-    rsi:   Math.floor(minTotal * 0.34),
-    macd:  Math.floor(minTotal * 0.26),
-  };
+function visiblePaneKeys() {
+  const k = ['price'];
+  if (S.rsi.on) k.push('rsi');
+  if (S.macd.on) k.push('macd');
+  Object.keys(extraPanes).forEach(x => k.push(x));
+  return k;
 }
-
+function calcHeights() {
+  const total = Math.max(document.getElementById('chartsCol').clientHeight, 420);
+  const keys = visiblePaneKeys();
+  const wt = k => k === 'price' ? 4 : 2.6;
+  const sum = keys.reduce((s, k) => s + wt(k), 0);
+  const out = {};
+  keys.forEach(k => { out[k] = Math.max(k === 'price' ? 240 : 120, Math.floor(total * wt(k) / sum)); });
+  return out;
+}
 // ─── Resize — چارت‌ها رو موقع چرخش/تغییر سایز صفحه دوباره اندازه می‌کنه ──
 function resizeChartsNow() {
   applyResponsiveLayout();
   if (!priceChart) return;
   const h = calcHeights();
-
-  const priceEl = document.getElementById('chart-price');
-  const rsiEl   = document.getElementById('chart-rsi');
-  const macdEl  = document.getElementById('chart-macd');
-
-  priceEl.style.height = h.price + 'px';
-  rsiEl.style.height   = h.rsi + 'px';
-  macdEl.style.height  = h.macd + 'px';
-
-  priceChart.resize(priceEl.clientWidth, h.price);
-  rsiChart.resize(rsiEl.clientWidth, h.rsi);
-  macdChart.resize(macdEl.clientWidth, h.macd);
+  const items = [['price', priceChart], ['rsi', rsiChart], ['macd', macdChart]]
+    .concat(Object.keys(extraPanes).map(k => [k, extraPanes[k].chart]));
+  items.forEach(([k, ch]) => {
+    if (h[k] == null) return;
+    const el = document.getElementById('chart-' + k);
+    el.style.height = h[k] + 'px';
+    ch.resize(el.clientWidth, h[k]);
+  });
 }
-
 let resizeTimer = null;
 function handleResize() {
   clearTimeout(resizeTimer);
@@ -535,16 +963,7 @@ window.addEventListener('orientationchange', handleResize);
 function initCharts() {
   const h = calcHeights();
 
-  const base = {
-    layout: { background: { color: '#0b0e17' }, textColor: '#6b7280' },
-    grid: { vertLines: { color: '#1e2535' }, horzLines: { color: '#1e2535' } },
-    crosshair: { mode: LightweightCharts.CrosshairMode.Magnet },
-    timeScale: { borderColor: '#1e2535', timeVisible: true, rightOffset: 5, barSpacing: 9 },
-    rightPriceScale: { borderColor: '#1e2535' },
-    handleScroll: true,
-    handleScale: true,
-  };
-
+  const base = baseChartOptions();
   // Price (candlestick)
   document.getElementById('chart-price').style.height = h.price + 'px';
   priceChart = LightweightCharts.createChart(document.getElementById('chart-price'), { ...base, height: h.price });
@@ -569,22 +988,8 @@ function initCharts() {
   macdSignalSeries = macdChart.addLineSeries({ color: '#ff6d00', lineWidth: 1.5 });
   macdHistSeries   = macdChart.addHistogramSeries({ priceFormat: { type: 'price', precision: 4 } });
 
-  // ── Sync timescales (robust) ──
-  const allCharts = [priceChart, rsiChart, macdChart];
-
-  allCharts.forEach(src => {
-    src.timeScale().subscribeVisibleLogicalRangeChange(range => {
-      if (isSyncing || !range) return;
-      isSyncing = true;
-      allCharts.forEach(t => {
-        if (t !== src) {
-          try { t.timeScale().setVisibleLogicalRange(range); } catch(e) {}
-        }
-      });
-      isSyncing = false;
-    });
-  });
-
+  allCharts = [priceChart, rsiChart, macdChart];
+  allCharts.forEach(hookSync);
   // ── Crosshair sync + tooltip ──
   function syncCrosshair(src, targets, getTooltip) {
     src.subscribeCrosshairMove(param => {
@@ -666,13 +1071,15 @@ function updateLegendByIndex(idx) {
 
   const rsiEl = document.getElementById('lg-rsi');
   rsiEl.textContent = fmt(rsi);
-  rsiEl.className = 'lg-val' + (rsi >= 70 ? ' dn' : rsi <= 30 ? ' up' : '');
+  rsiEl.className = 'lg-val' + (rsi >= S.rsi.ob ? ' dn' : rsi <= S.rsi.os ? ' up' : '');
 
   document.getElementById('lg-macd').textContent   = fmt(ml);
   document.getElementById('lg-signal').textContent = fmt(sl);
   const histEl = document.getElementById('lg-hist');
   histEl.textContent = fmt(hl);
   histEl.className = 'lg-val ' + (hl >= 0 ? 'up' : 'dn');
+  updateOverlayLegend(idx);
+  updateExtraLegends(idx);
 }
 
 function showLastLegend() {
@@ -813,6 +1220,7 @@ async function loadData() {
   // موبایل: کیبورد رو ببند و اندازه چارت‌ها رو دوباره حساب کن، چون کیبورد ارتفاع صفحه رو موقتاً عوض می‌کنه
   document.activeElement && document.activeElement.blur();
 
+  saveSettings();
   document.getElementById('loader').classList.add('show');
   document.getElementById('loadBtn').disabled = true;
   document.getElementById('status').textContent = 'در حال دریافت...';
@@ -822,12 +1230,25 @@ async function loadData() {
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'خطا در دریافت داده');
 
-    const candles = json.data;
+    lastCandles = json.data; lastSymbol = symbol;
+    renderAll(true);
+  } catch(e) {
+    document.getElementById('status').textContent = '❌ ' + e.message;
+  } finally {
+    document.getElementById('loader').classList.remove('show');
+    document.getElementById('loadBtn').disabled = false;
+  }
+}
+
+function renderAll(resetView) {
+  const symbol = lastSymbol, candles = lastCandles;
+  if (!candles.length) return;
+  try {
 
     const closes = candles.map(c => c.close);
     const times  = candles.map(c => c.time);
-    const rsiArr = calcRSI(closes);
-    const { ml, sl, hl } = calcMACD(closes);
+    const rsiArr = calcRSI(closes, S.rsi.period);
+    const { ml, sl, hl } = calcMACD(closes, S.macd.fast, S.macd.slow, S.macd.sig);
 
     // Store globally for tooltip
     globalCandles = candles;
@@ -883,8 +1304,8 @@ async function loadData() {
     // ── RSI ──
     // همه بازه رو پوشش بده تا timescale یکی باشه
     rsiSeries.setData(times.map((t,i) => rsiArr[i]!=null ? {time:t, value:rsiArr[i]} : null).filter(Boolean));
-    rsiOB.setData(times.map(t => ({time:t, value:70})));
-    rsiOS.setData(times.map(t => ({time:t, value:30})));
+    rsiOB.setData(times.map(t => ({time:t, value:S.rsi.ob})));
+    rsiOS.setData(times.map(t => ({time:t, value:S.rsi.os})));
 
     // مارکر سیگنال واگرایی روی RSI هم
     const rsiMarkers = [];
@@ -904,6 +1325,8 @@ async function loadData() {
     macdSignalSeries.setData(times.map((t,i) => sl[i]!=null ? {time:t,value:sl[i]} : null).filter(Boolean));
     macdHistSeries.setData(times.map((t,i)   => hl[i]!=null ? {time:t,value:hl[i],color:hl[i]>=0?'#26a69a':'#ef5350'} : null).filter(Boolean));
 
+    renderOverlays(candles, times);
+    renderExtras(candles, times);
     // ── Sidebar ──
     renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence });
 
@@ -917,29 +1340,26 @@ async function loadData() {
     // به‌جای fitContent (که همه ۳۰۰ کندل رو له می‌کنه تو صفحه)، فقط آخرین کندل‌های اخیر با زوم مناسب نشون داده میشه
     rsiChart.priceScale('right').applyOptions({ autoScale: true });
     macdChart.priceScale('right').applyOptions({ autoScale: true });
+    if (resetView) {
     const barsToShow = window.innerWidth <= 768 ? 55 : 120;
     const totalBars = candles.length;
     priceChart.timeScale().setVisibleLogicalRange({
       from: Math.max(0, totalBars - barsToShow),
       to:   totalBars + 3,
     });
-
+    }
     document.getElementById('status').textContent = `${symbol} · ${currentIv} · ${candles.length} کندل`;
   } catch(e) {
     document.getElementById('status').textContent = '❌ ' + e.message;
-  } finally {
-    document.getElementById('loader').classList.remove('show');
-    document.getElementById('loadBtn').disabled = false;
   }
 }
-
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 function renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence }) {
   const fmt  = v => v?.toLocaleString('en-US', {maximumFractionDigits:2}) ?? '—';
   const fmtD = t => new Date(t*1000).toLocaleDateString('fa-IR');
 
-  const rsiClass = v => v==null?'':v>=70?'rsi-ob':v<=30?'rsi-os':'rsi-n';
-  const rsiLbl   = v => v==null?'—':v>=70?'اشباع خرید':v<=30?'اشباع فروش':'خنثی';
+  const rsiClass = v => v==null?'':v>=S.rsi.ob?'rsi-ob':v<=S.rsi.os?'rsi-os':'rsi-n';
+  const rsiLbl   = v => v==null?'—':v>=S.rsi.ob?'اشباع خرید':v<=S.rsi.os?'اشباع فروش':'خنثی';
   const macdClass = i => ml[i]==null||sl[i]==null?'':ml[i]>sl[i]?'macd-bull':'macd-bear';
   const macdLbl   = i => ml[i]==null||sl[i]==null?'—':ml[i]>sl[i]?'صعودی':'نزولی';
 
@@ -1008,8 +1428,10 @@ function renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence }) 
 
 // ─── Boot ────────────────────────────────────────────────────────────────────
 applyResponsiveLayout();
+loadSettings();
 initCharts();
 populateSymbolDropdown();
+applyIndicatorVisibility();
 // لایه محافظ: دوباره روی window.load هم اجرا میشه، برای اطمینان بیشتر
 window.addEventListener('load', applyResponsiveLayout);
 </script>
