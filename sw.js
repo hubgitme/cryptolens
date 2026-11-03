@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crypto-alert-v2'; // تغییر ورژن برای ریست کردن کش‌های قدیمی
+const CACHE_NAME = 'crypto-lenz-v2'; // تغییر ورژن برای ریست کردن کش‌های قدیمی
 
 const ASSETS = [
   './',
