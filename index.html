@@ -27,6 +27,7 @@
       color: var(--text);
       font-family: var(--font);
       height: 100vh;
+      height: 100dvh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -192,6 +193,13 @@
     }
 
     .charts-col { scrollbar-gutter: stable; }
+    .charts-pad { height: max(80px, env(safe-area-inset-bottom)); flex-shrink: 0; }
+    .grip { position:absolute; left:0; right:0; bottom:-6px; height:12px; cursor:ns-resize; z-index:9; touch-action:none; }
+    .grip::before { content:''; position:absolute; left:50%; top:4px; width:40px; height:4px; margin-left:-20px; border-radius:2px; background:var(--border); }
+    .grip:hover::before { background:var(--accent); }
+    .pane-btns { pointer-events:auto; display:inline-flex; gap:2px; }
+    .pane-btns button { padding:0 6px; font-size:.72rem; line-height:1.4; background:transparent; border:none; color:var(--muted); cursor:pointer; }
+    .pane-btns button:hover { color:#fff; }
     .charts-col > * { flex-shrink: 0; }
     .splitter { height:14px; display:flex; align-items:center; justify-content:center; font-size:9px; color:var(--muted); background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border); cursor:ns-resize; touch-action:none; user-select:none; }
     .splitter:hover { background:var(--border); }
@@ -252,7 +260,7 @@
       <button onclick="chooseIv('1h')"  id="btn-1h">1H</button>
       <button onclick="chooseIv('4h')"  id="btn-4h" class="active">4H</button>
       <button onclick="chooseIv('1d')"  id="btn-1d">1D</button>
-          <button onclick="chooseIv('1w')"  id="btn-1w">1W</button>
+       <button onclick="chooseIv('1w')"  id="btn-1w">1W</button>
     </div>
     <button id="indBtn" onclick="openInd()">📈 اندیکاتورها</button>
     <button id="loadBtn" onclick="loadData()" title="بروزرسانی داده">🔄</button>
@@ -272,6 +280,8 @@
   <span class="sep"></span>
   <input type="color" id="drawColor" value="#f59e0b" onchange="onDrawColor(this.value)" title="رنگ">
   <button id="magnetBtn" onclick="toggleMagnet()" title="چسبیدن به OHLC">🧲</button>
+  <button id="lockBtn" onclick="toggleLockSelected()" disabled>🔒 قفل</button>
+  <button id="lockAllBtn" onclick="toggleLockAll()" title="قفل همه‌ی رسم‌ها">🔐 قفل همه</button>
   <button onclick="deleteSelected()">🗑 انتخابی</button>
   <button onclick="undoDrawing()">↶</button>
   <button onclick="clearDrawings()">🧹 همه</button>
@@ -295,23 +305,23 @@
       <div class="pane-legend" id="legend-ov" style="top:26px; flex-wrap:wrap; max-width:92%;"></div>
       <div id="chart-price"></div>
     </div>
-    <div class="splitter" id="splitter" title="بکشید تا اندازه‌ی چارت تغییر کند (دابل‌کلیک: پیش‌فرض)">⋯ اندیکاتورها ⋯</div>
     <div class="chart-wrap" id="wrap-rsi">
       <div class="pane-legend" id="legend-rsi">
-        <span class="lg-symbol" id="lg-rsi-title">RSI (14)</span>
+        <span class="lg-symbol" id="lg-rsi-title">RSI (14)</span><span class="pane-btns"><button onclick="openInd()" title="تنظیمات">⚙</button><button onclick="closePane('rsi')" title="حذف از چارت">✕</button></span>
         <b id="lg-rsi" class="lg-val">—</b>
       </div>
       <div id="chart-rsi"></div>
     </div>
     <div class="chart-wrap" id="wrap-macd">
       <div class="pane-legend" id="legend-macd">
-        <span class="lg-symbol" id="lg-macd-title">MACD (12,26,9)</span>
+        <span class="lg-symbol" id="lg-macd-title">MACD (12,26,9)</span><span class="pane-btns"><button onclick="openInd()" title="تنظیمات">⚙</button><button onclick="closePane('macd')" title="حذف از چارت">✕</button></span>
         <span class="lg-item" style="color:#2962ff">MACD <b id="lg-macd" class="lg-val">—</b></span>
         <span class="lg-item" style="color:#ff6d00">Signal <b id="lg-signal" class="lg-val">—</b></span>
         <span class="lg-item">Hist <b id="lg-hist" class="lg-val">—</b></span>
       </div>
       <div id="chart-macd"></div>
     </div>
+    <div id="chartsPad" class="charts-pad"></div>
   </div>
 </div>
 
@@ -415,7 +425,7 @@ const extraPanes = {}, extraData = {};
 
 function defaultSettings() {
   return {
-    v: 2, symbol: 'BTCUSDT', iv: '4h', limit: 500, priceH: 0, magnet: true, drawColor: '#f59e0b',
+    v: 2, symbol: 'BTCUSDT', iv: '4h', limit: 500, paneH: {}, lockAll: false, magnet: true, drawColor: '#f59e0b',
     fibLevels: [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.272, 1.618],
     overlays: [], volume: { on: false },
     rsi:   { on: true, period: 14, ob: 70, os: 30 },
@@ -439,7 +449,12 @@ function sanitizeSettings(raw, imported) {
   if (['1h', '4h', '1d'].includes(raw.iv)) o.iv = raw.iv;
   o.limit = [300, 500, 1000].includes(+raw.limit) ? +raw.limit : 500;
   o.magnet = toBool(raw.magnet, true);
-  o.priceH = toInt(raw.priceH, 0, 0, 2000); if (o.priceH && o.priceH < 200) o.priceH = 200;
+  o.paneH = {};
+  if (raw.paneH && typeof raw.paneH === 'object') Object.keys(raw.paneH).slice(0, 40).forEach(k => {
+    if (/^\w{1,40}$/.test(k) && k !== '__proto__') { const v = toInt(raw.paneH[k], 0, 0, 2000); if (v >= 80) o.paneH[k] = v; }
+  });
+  if (!o.paneH.price && raw.priceH >= 200) o.paneH.price = toInt(raw.priceH, 0, 0, 2000);
+  o.lockAll = toBool(raw.lockAll, false);
   if (/^#[0-9a-fA-F]{6}$/.test(raw.drawColor)) o.drawColor = raw.drawColor;
   if (Array.isArray(raw.fibLevels)) {
     const f = raw.fibLevels.map(parseFloat).filter(x => isFinite(x) && x >= -10 && x <= 20).slice(0, 15);
@@ -756,6 +771,7 @@ function renderPanel() {
         <label><input type="checkbox" ${S.magnet ? 'checked' : ''} onchange="updSetting('magnet',this.checked)">Magnet (چسبیدن به OHLC)</label>
       </div>
       <div class="ind-row"><label style="flex:1">سطوح فیبوناچی<input type="text" style="flex:1;direction:ltr" value="${S.fibLevels.join(', ')}" onchange="updSetting('fibLevels',this.value)"></label></div>
+      <div class="ind-row"><button onclick="resetLayout()">↺ بازنشانی اندازه‌ی پنل‌ها</button></div>
     </div>
     <div class="ind-sec"><h4>پشتیبان‌گیری و بازیابی (تنظیمات، اندیکاتورها، اسکریپت‌ها، رسم‌ها، ارزهای ذخیره‌شده)</h4>
       <div class="ind-add">
@@ -818,7 +834,7 @@ function restoreFromFile(inp) {
 }
 function resetSettings() {
   if (!confirm('تنظیمات اندیکاتورهای آماده به پیش‌فرض برگردد؟ (اسکریپت‌ها، رسم‌ها و ارزهای ذخیره‌شده حفظ می‌شوند)')) return;
-  const keep = { symbol: S.symbol, iv: S.iv, limit: S.limit, magnet: S.magnet, drawColor: S.drawColor, fibLevels: S.fibLevels, customIndicators: S.customIndicators };
+  const keep = { symbol: S.symbol, iv: S.iv, limit: S.limit, magnet: S.magnet, drawColor: S.drawColor, fibLevels: S.fibLevels, paneH: S.paneH, lockAll: S.lockAll, customIndicators: S.customIndicators };
   S = sanitizeSettings(Object.assign(defaultSettings(), keep));
   saveSettings(); applyIndicatorVisibility();
   if (lastCandles.length) renderAll(false);
@@ -852,22 +868,21 @@ function visiblePaneKeys() {
 function calcHeights() {
   const colH = Math.max(document.getElementById('chartsCol').clientHeight, 300);
   const out = {};
-  out.price = chartMax ? colH - 14 : (S.priceH || Math.max(300, Math.round(colH * 0.62)));
-  visiblePaneKeys().forEach(k => { if (k !== 'price') out[k] = 170; });
+  out.price = chartMax ? colH - 4 : (S.paneH.price || Math.max(300, Math.round(colH * 0.62)));
+  visiblePaneKeys().forEach(k => { if (k !== 'price') out[k] = S.paneH[k] || 180; });
   return out;
 }
 // ─── Resize — چارت‌ها رو موقع چرخش/تغییر سایز صفحه دوباره اندازه می‌کنه ──
 function resizeChartsNow() {
   applyResponsiveLayout();
   if (!priceChart) return;
-  const h = calcHeights();
-  const items = [['price', priceChart], ['rsi', rsiChart], ['macd', macdChart]]
-    .concat(Object.keys(extraPanes).map(k => [k, extraPanes[k].chart]));
-  items.forEach(([k, ch]) => {
+  updateTimeAxes();
+  const h = calcHeights(), m = allPaneCharts();
+  Object.keys(m).forEach(k => {
     if (h[k] == null) return;
     const el = document.getElementById('chart-' + k);
     el.style.height = h[k] + 'px';
-    ch.resize(el.clientWidth, h[k]);
+    m[k].resize(el.clientWidth, h[k]);
   });
 }
 let resizeTimer = null;
@@ -1114,11 +1129,11 @@ function renderAll(resetView) {
 function makePane(key) {
   const wrap = document.createElement('div');
   wrap.className = 'chart-wrap'; wrap.id = 'wrap-' + key;
-  wrap.innerHTML = `<div class="pane-legend"><span class="lg-symbol" id="lg-${key}-title"></span><span class="lg-item" id="lg-${key}-vals"></span></div><div id="chart-${key}"></div>`;
-  document.getElementById('chartsCol').appendChild(wrap);
+  wrap.innerHTML = `<div class="pane-legend"><span class="lg-symbol" id="lg-${key}-title"></span><span class="pane-btns"><button onclick="openInd()" title="تنظیمات">⚙</button><button onclick="closePane('${key}')" title="حذف از چارت">✕</button></span><span class="lg-item" id="lg-${key}-vals"></span></div><div id="chart-${key}"></div>`;
+  document.getElementById('chartsCol').insertBefore(wrap, document.getElementById('chartsPad'));
   const el = document.getElementById('chart-' + key);
-  el.style.height = '140px';
-  const chart = LightweightCharts.createChart(el, { ...baseChartOptions(), ...PANE_INTERACT, height: 140 });
+  el.style.height = '180px';
+  const chart = LightweightCharts.createChart(el, { ...baseChartOptions(), ...PANE_INTERACT, height: 180 });
   allCharts.push(chart); hookSync(chart);
   chart.subscribeCrosshairMove(param => {
     if (!param.time) { if (!isSyncing) showLastLegend(); return; }
@@ -1127,6 +1142,7 @@ function makePane(key) {
   });
   const r = priceChart && priceChart.timeScale().getVisibleLogicalRange();
   if (r) { try { chart.timeScale().setVisibleLogicalRange(r); } catch (e) {} }
+  addGrip(wrap, key);
   return { chart, wrap };
 }
 
@@ -1180,7 +1196,7 @@ function sanitizeDrawings(raw) {
   Object.keys(raw).slice(0, 200).forEach(sym => {
     if (!SYMBOL_RE.test(sym) || !Array.isArray(raw[sym])) return;
     const list = raw[sym].slice(0, 100).filter(d => d && DRAW_DEFS[d.type] && Array.isArray(d.pts)).map(d => ({
-      id: newDrawId(), type: d.type,
+      id: newDrawId(), type: d.type, locked: d.locked === true,
       color: /^#[0-9a-fA-F]{6}$/.test(d.color) ? d.color : '#f59e0b',
       pts: d.pts.filter(p => p && isFinite(p.t) && isFinite(p.p)).slice(0, DRAW_DEFS[d.type].n).map(p => ({ t: +p.t, p: +p.p }))
     })).filter(d => d.pts.length >= (d.type === 'hline' ? 1 : 2));
@@ -1241,8 +1257,14 @@ function refreshToolbar() {
   document.querySelectorAll('#toolbar [data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === drawTool));
   const hint = document.getElementById('drawHint'), done = document.getElementById('drawDone');
   if (!hint) return;
-  if (drawTool === 'cursor') hint.textContent = selectedId ? 'انتخاب شد — نقاط را بکشید، یا Delete' : '';
-  else { const d = DRAW_DEFS[drawTool]; hint.textContent = draft ? `${d.hint}: نقطه ${draft.pts.length + 1} از ${d.n}` : `${d.hint}: روی چارت کلیک کنید`; }
+  const sd = curDrawings().find(x => x.id === selectedId);
+  const lb = document.getElementById('lockBtn'), la = document.getElementById('lockAllBtn');
+  if (lb) { lb.disabled = !sd; lb.textContent = sd && sd.locked ? '🔓 باز کردن قفل' : '🔒 قفل'; lb.classList.toggle('active', !!(sd && sd.locked)); }
+  if (la) la.classList.toggle('active', !!S.lockAll);
+  if (drawTool === 'cursor') {
+    hint.textContent = sd ? ((sd.locked || S.lockAll) ? 'قفل است — برای جابجایی قفل را باز کنید' : 'بکشید تا جابجا شود؛ نقطه‌ها را هم می‌توان کشید')
+      : (S.lockAll ? 'همه‌ی رسم‌ها قفل‌اند' : 'برای ویرایش، روی رسم کلیک کنید');
+  } else { const d = DRAW_DEFS[drawTool]; hint.textContent = draft ? `${d.hint}: نقطه ${draft.pts.length + 1} از ${d.n}` : `${d.hint}: روی چارت کلیک کنید`; }
   done.style.display = draft && draft.pts.length >= 2 && DRAW_DEFS[draft.type].n > 2 ? '' : 'none';
 }
 function updateMagnetBtn() { const b = document.getElementById('magnetBtn'); if (b) b.classList.toggle('active', !!S.magnet); }
@@ -1304,8 +1326,10 @@ function fmtPrice(p) { return p.toLocaleString('en-US', { maximumFractionDigits:
 function svgLine(x1, y1, x2, y2, col, w, dash) { return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${w}"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`; }
 function svgText(x, y, t, col, anchor) { return `<text x="${x}" y="${y}" fill="${col}" font-size="11" text-anchor="${anchor}" stroke="#0b0e17" stroke-width="3" paint-order="stroke">${t}</text>`; }
 function drawOne(d, P, W, sel) {
-  const c = d.color, sw = sel ? 2.6 : 1.6, canHit = drawTool === 'cursor' && !d.temp;
-  const HS = 'fill="none" stroke="transparent" stroke-width="16" style="pointer-events:stroke;cursor:move;touch-action:none"';
+  const c = d.color, sw = sel ? 2.6 : 1.6, locked = !!d.locked || S.lockAll;
+  // فقط رسمِ انتخاب‌شده و بدون قفل، رویداد می‌گیرد؛ بقیه کشیدنِ چارت را مختل نمی‌کنند
+  const canHit = drawTool === 'cursor' && !d.temp && sel && !locked;
+  const HS = 'fill="none" stroke="transparent" stroke-width="26" style="pointer-events:stroke;cursor:move;touch-action:none"';
   const hl = (x1, y1, x2, y2) => canHit ? `<line class="dm" data-id="${d.id}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${HS}/>` : '';
   let s = `<g opacity="${d.temp ? 0.7 : 1}">`;
   if (d.type === 'hline') {
@@ -1315,14 +1339,19 @@ function drawOne(d, P, W, sel) {
   } else if (d.type === 'trend') {
     s += svgLine(P[0].x, P[0].y, P[1].x, P[1].y, c, sw) + hl(P[0].x, P[0].y, P[1].x, P[1].y);
   } else if (d.type === 'fib') {
-    const xl = Math.min(P[0].x, P[1].x);
-    s += svgLine(P[0].x, P[0].y, P[1].x, P[1].y, '#6b7280', 1, '3 3') + hl(P[0].x, P[0].y, P[1].x, P[1].y);
+    const xl = Math.min(P[0].x, P[1].x), ys = [];
+    s += svgLine(P[0].x, P[0].y, P[1].x, P[1].y, '#6b7280', 1, '3 3');
     S.fibLevels.forEach((l, i) => {
       const price = d.pts[1].p + (d.pts[0].p - d.pts[1].p) * l, y = candleSeries.priceToCoordinate(price);
       if (y == null) return;
+      ys.push(y);
       const col = FIB_COLORS[i % FIB_COLORS.length];
-      s += svgLine(xl, y, W, y, col, sel ? 1.6 : 1) + svgText(xl + 4, y - 3, `${l} (${fmtPrice(price)})`, col, 'start') + hl(xl, y, W, y);
+      s += svgLine(xl, y, W, y, col, sel ? 1.6 : 1) + svgText(xl + 4, y - 3, `${l} (${fmtPrice(price)})`, col, 'start');
     });
+    if (canHit && ys.length) {   // کل ناحیه‌ی فیبو قابل گرفتن است
+      const y0 = Math.min(...ys, P[0].y, P[1].y), y1 = Math.max(...ys, P[0].y, P[1].y);
+      s += `<rect class="dm" data-id="${d.id}" x="${xl}" y="${y0}" width="${Math.max(10, W - xl)}" height="${Math.max(10, y1 - y0)}" fill="transparent" style="pointer-events:all;cursor:move;touch-action:none"/>`;
+    }
   } else {
     const labels = DRAW_DEFS[d.type].labels, pts = P.map(q => q.x + ',' + q.y).join(' ');
     s += `<polyline points="${pts}" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linejoin="round"/>`;
@@ -1333,7 +1362,13 @@ function drawOne(d, P, W, sel) {
       s += `<circle cx="${q.x}" cy="${cy}" r="9" fill="#0b0e17" stroke="${c}" stroke-width="1.3"/><text x="${q.x}" y="${cy + 4}" fill="${c}" font-size="11" font-weight="700" text-anchor="middle">${labels[i] || ''}</text>`;
     });
   }
-  if (sel) P.forEach((q, i) => { s += `<circle class="dh" data-id="${d.id}" data-hi="${i}" cx="${q.x}" cy="${q.y}" r="8" fill="#fff" fill-opacity=".9" stroke="${c}" stroke-width="2" style="pointer-events:all;cursor:move;touch-action:none"/>`; });
+  if (sel && !d.temp) {
+    if (locked) s += svgText(P[0].x + 8, P[0].y - 8, '🔒', c, 'start');
+    else if (drawTool === 'cursor') P.forEach((q, i) => {
+      s += `<circle cx="${q.x}" cy="${q.y}" r="7" fill="#fff" fill-opacity=".92" stroke="${c}" stroke-width="2" style="pointer-events:none"/>`;
+      s += `<circle class="dh" data-id="${d.id}" data-hi="${i}" cx="${q.x}" cy="${q.y}" r="22" fill="transparent" style="pointer-events:all;cursor:move;touch-action:none"/>`;
+    });
+  }
   return s + '</g>';
 }
 function drawingsSVG(W) {
@@ -1673,18 +1708,47 @@ function toggleChartMax() {
   chartMax = !chartMax; updateMaxBtn(); resizeChartsNow();
   document.getElementById('chartsCol').scrollTop = 0; drawVersion++;
 }
-function initSplitter() {
-  const sp = document.getElementById('splitter');
-  sp.addEventListener('pointerdown', e => {
-    const startY = e.clientY, startH = calcHeights().price;
+
+function allPaneCharts() {
+  const m = { price: priceChart, rsi: rsiChart, macd: macdChart };
+  Object.keys(extraPanes).forEach(k => { m[k] = extraPanes[k].chart; });
+  return m;
+}
+
+function updateTimeAxes() {
+  const m = allPaneCharts();
+  const order = [...document.querySelectorAll('#chartsCol > .chart-wrap')]
+    .filter(w => w.style.display !== 'none').map(w => w.id.replace(/^wrap-/, '')).filter(k => m[k]);
+  order.forEach((k, i) => { try { m[k].applyOptions({ timeScale: { visible: i === order.length - 1 } }); } catch (e) {} });
+}
+
+// ═══════════ قفل رسم‌ها، پنل‌های ثابت مثل TradingView ═══════════
+function toggleLockSelected() {
+  const sd = curDrawings().find(x => x.id === selectedId); if (!sd) return;
+  sd.locked = !sd.locked; saveDrawings(); drawVersion++; refreshToolbar();
+}
+function toggleLockAll() { S.lockAll = !S.lockAll; saveSettings(); drawVersion++; refreshToolbar(); }
+function closePane(key) {
+  if (['rsi', 'macd', 'stoch', 'atr'].includes(key)) S[key].on = false;
+  else { const sc = S.customIndicators.find(s => 'cs_' + s.id === key); if (sc) sc.on = false; }
+  onIndChange();
+}
+function addGrip(wrap, key) {
+  const g = document.createElement('div');
+  g.className = 'grip'; g.title = 'بکشید تا ارتفاع تغییر کند (دابل‌کلیک: پیش‌فرض)';
+  wrap.appendChild(g);
+  g.addEventListener('pointerdown', e => {
+    const startY = e.clientY, startH = calcHeights()[key] || 180;
     dragShield(e, 'ns-resize', ev => {
-      chartMax = false; updateMaxBtn();
-      S.priceH = Math.max(200, Math.min(2000, Math.round(startH + ev.clientY - startY)));
+      if (key === 'price') { chartMax = false; updateMaxBtn(); }
+      S.paneH[key] = Math.max(key === 'price' ? 200 : 80, Math.min(1500, Math.round(startH + ev.clientY - startY)));
       resizeChartsNow();
     }, () => { saveSettings(); drawVersion++; });
   });
-  sp.addEventListener('dblclick', () => { S.priceH = 0; chartMax = false; updateMaxBtn(); resizeChartsNow(); saveSettings(); drawVersion++; });
+  g.addEventListener('dblclick', () => { delete S.paneH[key]; if (key === 'price') { chartMax = false; updateMaxBtn(); } resizeChartsNow(); saveSettings(); drawVersion++; });
 }
+function initGrips() { ['price', 'rsi', 'macd'].forEach(k => addGrip(document.getElementById('wrap-' + k), k)); }
+function resetLayout() { S.paneH = {}; chartMax = false; updateMaxBtn(); saveSettings(); resizeChartsNow(); drawVersion++; msg('↺ اندازه‌ی پنل‌ها بازنشانی شد'); }
 
 // ─── Boot ────────────────────────────────────────────────────────────────────
 applyResponsiveLayout();
@@ -1693,7 +1757,7 @@ initCharts();
 populateSymbolDropdown();
 applyIndicatorVisibility();
 initDrawings();
-initSplitter();
+initGrips();
 updateMaxBtn();
 loadData();   // بارگذاری خودکار هنگام باز شدن صفحه
 // لایه محافظ: دوباره روی window.load هم اجرا میشه، برای اطمینان بیشتر
