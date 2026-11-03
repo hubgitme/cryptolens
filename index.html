@@ -106,141 +106,7 @@
       overflow: hidden;
     }
 
-    /* ── Sidebar ── */
-    .sidebar {
-      width: 260px;
-      flex-shrink: 0;
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      overflow-y: auto;
-    }
-    .sidebar h2 {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--muted);
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    /* Signal card */
-    .signal-card {
-      border-radius: var(--radius);
-      padding: 11px 13px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      font-size: 0.78rem;
-      border: 1px solid var(--border);
-    }
-    .signal-card.bearish { background: rgba(239,83,80,0.07);  border-color: rgba(239,83,80,0.4); }
-    .signal-card.bullish { background: rgba(38,166,154,0.07); border-color: rgba(38,166,154,0.4); }
-    .signal-card.neutral { background: var(--bg); color: var(--muted); text-align: center; padding: 12px; }
-
-    /* نوار وضعیت فشرده (واگرایی خنثی + RSI فعلی)، کنار هم توی pivot-row */
-    .status-bar {
-      padding: 6px 8px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      font-size: 0.66rem;
-      font-weight: 600;
-      text-align: center;
-      line-height: 1.3;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .status-bar.neutral { color: var(--muted); }
-    .status-bar.rsi-ob { background: rgba(239,83,80,0.12); border-color: rgba(239,83,80,0.4); color: var(--red); }
-    .status-bar.rsi-os { background: rgba(38,166,154,0.12); border-color: rgba(38,166,154,0.4); color: var(--green); }
-    .status-bar.rsi-n  { color: var(--muted); }
-    .status-bar.bearish { background: rgba(239,83,80,0.1);  border-color: rgba(239,83,80,0.4);  color: var(--red); }
-    .status-bar.bullish { background: rgba(38,166,154,0.1); border-color: rgba(38,166,154,0.4); color: var(--green); }
-    .sidebar.mobile-grid .pivot-row .status-bar { flex: 1 1 0; min-width: 0; box-sizing: border-box; }
-    .signal-title { font-weight: 700; font-size: 0.82rem; color: #fff; }
-    .signal-desc  { color: var(--muted); font-size: 0.72rem; margin-bottom: 3px; }
-    .signal-row   { display: flex; gap: 6px; color: var(--muted); }
-    .signal-row span:first-child { flex-shrink: 0; }
-    .signal-row span:last-child { color: var(--text); font-weight: 600; }
-    em.up { color: var(--green); font-style: normal; }
-    em.dn { color: var(--red);   font-style: normal; }
-
-    /* Pivot card */
-    .pivot-card {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 11px 13px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      font-size: 0.78rem;
-    }
-    .pivot-card .ptype { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-    .pivot-card.peak   .ptype { color: var(--red); }
-    .pivot-card.valley .ptype { color: var(--green); }
-    .pivot-card .price-val { font-size: 1.1rem; font-weight: 700; color: #fff; direction: ltr; }
-    .pivot-card .row { display: flex; gap: 6px; color: var(--muted); }
-    .pivot-card .row span:first-child { flex-shrink: 0; }
-    .pivot-card .row span:last-child { color: var(--text); font-weight: 600; }
-
-    .badge {
-      display: inline-block; padding: 1px 6px; border-radius: 4px;
-      font-size: 0.7rem; font-weight: 700;
-    }
-    .rsi-ob { background: rgba(239,83,80,0.18);  color: var(--red); }
-    .rsi-os { background: rgba(38,166,154,0.18); color: var(--green); }
-    .rsi-n  { background: rgba(107,114,128,0.15); color: var(--muted); }
-    .macd-bull { background: rgba(38,166,154,0.18); color: var(--green); }
-    .macd-bear { background: rgba(239,83,80,0.18);  color: var(--red); }
-
-    .no-data { color: var(--muted); font-size: 0.8rem; text-align: center; padding: 16px 0; }
-
-    /* ── این کلاس با JS (نه CSS media query) کنترل میشه، پس مستقل از رفتار مرورگره ── */
-    /* ستون‌بندی صریح: هر ردیف (قله+دره) توی یه div جدا با ۲ بچه — مطمئن‌تر از flex-wrap کل سایدبار */
-    .sidebar.mobile-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding: 8px;
-      overflow-y: auto;
-      flex: 1 1 auto;
-      min-height: 0;
-      width: 100%;
-      border-right: none;
-      border-top: 1px solid var(--border);
-    }
-    .sidebar.mobile-grid h2 { font-size: 0.62rem; padding-bottom: 4px; }
-
-    /* ردیف جفتی قله|دره — فقط تو حالت موبایل فعاله */
-    .sidebar.mobile-grid .pivot-row {
-      display: flex;
-      gap: 6px;
-      width: 100%;
-    }
-    .sidebar.mobile-grid .pivot-row .pivot-card {
-      flex: 1 1 0;
-      min-width: 0;
-      box-sizing: border-box;
-    }
-
-    .sidebar.mobile-grid .signal-card,
-    .sidebar.mobile-grid .pivot-card {
-      padding: 7px 9px;
-      font-size: 0.66rem;
-      gap: 3px;
-      box-sizing: border-box;
-    }
-    .sidebar.mobile-grid .signal-title { font-size: 0.7rem; }
-    .sidebar.mobile-grid .signal-desc  { font-size: 0.6rem; }
-    .sidebar.mobile-grid .price-val    { font-size: 0.88rem !important; }
-    .sidebar.mobile-grid .ptype        { font-size: 0.58rem !important; }
-    .sidebar.mobile-grid .badge        { font-size: 0.58rem; padding: 0 4px; }
-
+    .no-data { color: var(--muted); font-size: .78rem; margin-bottom: 8px; }
     /* ── Charts column ── */
     .charts-col {
       flex: 1;
@@ -297,7 +163,6 @@
         font-size: 16px;
         padding: 5px 8px;
       }
-      #zigzagInput { font-size: 16px; width: 42px; padding: 5px 4px; }
       label[for], .controls label { font-size: 0.68rem; }
 
       .iv-group button, #loadBtn {
@@ -326,12 +191,31 @@
       .iv-group button, #loadBtn { padding: 5px 7px; font-size: 0.68rem; }
     }
 
+    .toolbar { display:flex; gap:6px; align-items:center; padding:5px 12px; background:var(--surface); border-bottom:1px solid var(--border); overflow-x:auto; white-space:nowrap; flex-shrink:0; }
+    .toolbar button { padding:4px 10px; font-size:.78rem; flex-shrink:0; }
+    .toolbar button.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .toolbar input[type=color] { width:30px; height:26px; padding:0; border:none; background:none; flex-shrink:0; }
+    .toolbar .sep { width:1px; height:20px; background:var(--border); margin:0 2px; flex-shrink:0; }
+    #drawHint { font-size:.72rem; color:var(--muted); }
+    .draw-svg { position:absolute; left:0; top:0; pointer-events:none; z-index:5; direction:ltr; overflow:hidden; }
+    .tag { font-size:.68rem; padding:1px 6px; border-radius:4px; background:rgba(41,98,255,.18); color:#7aa2ff; }
+    .ind-row.sub { padding-inline-start:26px; }
+    .ind-err { color:var(--red); font-size:.74rem; margin:-4px 0 8px; direction:ltr; text-align:left; white-space:pre-wrap; }
+    .ind-modal textarea.code-ed { height:320px; font-family:Consolas,monospace; font-size:.78rem; line-height:1.5; tab-size:2; white-space:pre; }
+    .code-doc { font-size:.72rem; color:var(--muted); direction:ltr; text-align:left; white-space:pre-wrap; margin-top:6px; }
+    .bt-card { border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:10px; }
+    .bt-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:6px; margin:8px 0; }
+    .bt-grid div { background:var(--bg); border-radius:6px; padding:6px 8px; font-size:.72rem; color:var(--muted); }
+    .bt-grid b { display:block; font-size:.88rem; color:var(--text); }
+    .bt-up { color:var(--green) !important; } .bt-dn { color:var(--red) !important; }
+    .bt-tbl { max-height:180px; overflow:auto; font-size:.7rem; direction:ltr; }
+    .bt-tbl table { width:100%; border-collapse:collapse; } .bt-tbl td, .bt-tbl th { padding:3px 6px; border-bottom:1px solid var(--border); text-align:left; }
     /* ── پنل اندیکاتورها / پشتیبان‌گیری ── */
     .ind-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:1000;
       align-items:flex-start; justify-content:center; padding:16px 8px; overflow-y:auto; }
     .ind-overlay.show { display:flex; }
     .ind-modal { background:var(--surface); border:1px solid var(--border); border-radius:12px;
-      width:100%; max-width:580px; padding:16px; display:flex; flex-direction:column; gap:12px; }
+      width:100%; max-width:680px; padding:16px; display:flex; flex-direction:column; gap:12px; }
     .ind-head { display:flex; align-items:center; justify-content:space-between; }
     .ind-head h3 { font-size:.95rem; color:#fff; }
     .ind-sec { border-top:1px solid var(--border); padding-top:10px; }
@@ -365,21 +249,31 @@
       <button onclick="setIv('4h')"  id="btn-4h" class="active">4H</button>
       <button onclick="setIv('1d')"  id="btn-1d">1D</button>
     </div>
-    <div style="display:flex; align-items:center; gap:5px;">
-      <label style="font-size:0.78rem; color:var(--muted);">حساسیت%</label>
-      <input id="zigzagInput" type="number" value="0.5" step="0.1" min="0.1" max="5" style="width:55px; direction:ltr;" onchange="zigzagPct = parseFloat(this.value) || 0.5; saveSettings()" />
-    </div>
     <button id="indBtn" onclick="openInd()">📈 اندیکاتورها</button>
     <button id="loadBtn" onclick="loadData()">بارگذاری</button>
   </div>
   <span id="status">آماده</span>
 </header>
 
+<div class="toolbar" id="toolbar">
+  <button data-tool="cursor" class="active" onclick="setTool('cursor')" title="انتخاب / جابجایی">🖱 انتخاب</button>
+  <span class="sep"></span>
+  <button data-tool="trend" onclick="setTool('trend')">╱ روند</button>
+  <button data-tool="hline" onclick="setTool('hline')">─ افقی</button>
+  <button data-tool="fib" onclick="setTool('fib')">Fib</button>
+  <button data-tool="ewi" onclick="setTool('ewi')">الیوت 1-5</button>
+  <button data-tool="ewc" onclick="setTool('ewc')">الیوت ABC</button>
+  <button id="drawDone" onclick="finishDraftEarly()" style="display:none">✔ اتمام</button>
+  <span class="sep"></span>
+  <input type="color" id="drawColor" value="#f59e0b" onchange="onDrawColor(this.value)" title="رنگ">
+  <button id="magnetBtn" onclick="toggleMagnet()" title="چسبیدن به OHLC">🧲</button>
+  <button onclick="deleteSelected()">🗑 انتخابی</button>
+  <button onclick="undoDrawing()">↶</button>
+  <button onclick="clearDrawings()">🧹 همه</button>
+  <span id="drawHint"></span>
+</div>
 <div class="main">
-  <aside class="sidebar">
-    <h2>سیگنال واگرایی</h2>
-    <div id="pivotCards"><p class="no-data">داده‌ای بارگذاری نشده</p></div>
-  </aside>
+  
 
   <div class="charts-col" id="chartsCol">
     <div class="chart-wrap" id="wrap-price">
@@ -390,6 +284,7 @@
         <span class="lg-item">L<b id="lg-low"  class="lg-val">—</b></span>
         <span class="lg-item">C<b id="lg-close" class="lg-val">—</b></span>
       </div>
+      <svg id="drawSvg" class="draw-svg" width="0" height="0"></svg>
       <div class="pane-legend" id="legend-ov" style="top:26px; flex-wrap:wrap; max-width:92%;"></div>
       <div id="chart-price"></div>
     </div>
@@ -413,6 +308,32 @@
 </div>
 
 <div class="ind-overlay" id="indOverlay" onclick="if(event.target===this)closeInd()"><div class="ind-modal" id="indModal"></div></div>
+<div class="ind-overlay" id="edOverlay" style="z-index:1100"><div class="ind-modal" style="max-width:780px">
+  <div class="ind-head"><h3>✎ ویرایشگر اسکریپت</h3><button onclick="closeEditor()">✕</button></div>
+  <div class="ind-row"><input id="edName" type="text" placeholder="نام" style="flex:1">
+    <select onchange="loadTemplate(this.value); this.value=''"><option value="">نمونه‌ها…</option>
+      <option value="ema_cross">اندیکاتور: تقاطع EMA</option><option value="rsi_sma">اندیکاتور: RSI + SMA</option>
+      <option value="strat_ema">استراتژی: تقاطع EMA</option><option value="strat_rsi">استراتژی: برگشت RSI</option></select></div>
+  <textarea id="edCode" class="code-ed" spellcheck="false" onkeydown="edKey(event)"></textarea>
+  <details><summary style="cursor:pointer;font-size:.78rem;color:var(--muted)">راهنمای API</summary><pre class="code-doc">متغیرها (آرایه هم‌طول کندل‌ها): open high low close volume time
+ta.sma(src,len)  ta.ema(src,len)  ta.rsi(src,len)  ta.atr(len)
+ta.bb(src,len,mult) -> {mid,up,lo}     ta.macd(src,fast,slow,sig) -> {macd,signal,hist}
+ta.stoch(k,d,smooth) -> {k,d}          ta.vwap()
+ta.highest(src,len)  ta.lowest(src,len)  ta.change(src,n)
+ta.crossover(a,b)  ta.crossunder(a,b)  ta.gt(a,b)  ta.lt(a,b)  ta.and(..)  ta.or(..)  ta.not(a)   (a و b آرایه یا عدد)
+
+indicator(title, {overlay:true|false})      strategy(title, {fee:0.1, overlay:false})   fee = درصد کارمزد هر طرف
+input(name, default)      -> پارامتر قابل ویرایش در پنل
+plot(values, title, color, 'line'|'histogram')       hline(price, color)
+longEntry(boolArr) longExit(boolArr) shortEntry(boolArr) shortExit(boolArr)
+stopLoss(percent) takeProfit(percent)
+
+سیگنال در بسته‌شدن کندل بررسی و در قیمت باز کندل بعد اجرا می‌شود.
+هشدار: کد در مرورگر شما اجرا می‌شود (sandbox کامل نیست)؛ فقط کد مورد اعتماد اجرا کنید.</pre></details>
+  <div class="ind-err" id="edErr"></div>
+  <div class="ind-add"><button onclick="saveEditor(false)" style="background:var(--accent);color:#fff">ذخیره و اجرا</button>
+    <button id="edForce" onclick="saveEditor(true)" style="display:none">ذخیره با وجود خطا</button><button onclick="closeEditor()">لغو</button></div>
+</div></div>
 <div class="loader" id="loader">
 
   <div class="spinner"></div>
@@ -467,7 +388,6 @@ function saveCurrentSymbol() {
   document.getElementById('status').textContent = `✅ ${symbol} ذخیره شد`;
 }
 
-let zigzagPct = 0.5; // درصد حساسیت تشخیص دره/قله
 let priceChart, rsiChart, macdChart;
 let candleSeries, rsiSeries, rsiOB, rsiOS, macdLineSeries, macdSignalSeries, macdHistSeries;
 let globalCandles = [], globalRsi = [], globalMacdL = [], globalMacdS = [], globalMacdH = [];
@@ -487,13 +407,14 @@ const extraPanes = {}, extraData = {};
 
 function defaultSettings() {
   return {
-    v: 1, symbol: 'BTCUSDT', iv: '4h', zigzag: 0.5,
+    v: 2, symbol: 'BTCUSDT', iv: '4h', limit: 500, magnet: true, drawColor: '#f59e0b',
+    fibLevels: [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.272, 1.618],
     overlays: [], volume: { on: false },
     rsi:   { on: true, period: 14, ob: 70, os: 30 },
     macd:  { on: true, fast: 12, slow: 26, sig: 9 },
     stoch: { on: false, k: 14, d: 3, smooth: 3 },
     atr:   { on: false, period: 14 },
-    customIndicators: []   // جای اندیکاتورهای کدنویسی‌شده (مرحله بعد)
+    customIndicators: []
   };
 }
 let S = defaultSettings();
@@ -503,12 +424,18 @@ function toInt(v, def, min, max) { return Math.round(toNum(v, def, min, max)); }
 function toBool(v, def) { return typeof v === 'boolean' ? v : def; }
 
 // هر ورودی بیرونی (localStorage یا فایل پشتیبان) قبل از استفاده اینجا پاک‌سازی میشه
-function sanitizeSettings(raw) {
+function sanitizeSettings(raw, imported) {
   const o = defaultSettings();
   if (!raw || typeof raw !== 'object') return o;
   if (typeof raw.symbol === 'string' && SYMBOL_RE.test(raw.symbol)) o.symbol = raw.symbol.toUpperCase();
   if (['1h', '4h', '1d'].includes(raw.iv)) o.iv = raw.iv;
-  o.zigzag = toNum(raw.zigzag, 0.5, 0.1, 5);
+  o.limit = [300, 500, 1000].includes(+raw.limit) ? +raw.limit : 500;
+  o.magnet = toBool(raw.magnet, true);
+  if (/^#[0-9a-fA-F]{6}$/.test(raw.drawColor)) o.drawColor = raw.drawColor;
+  if (Array.isArray(raw.fibLevels)) {
+    const f = raw.fibLevels.map(parseFloat).filter(x => isFinite(x) && x >= -10 && x <= 20).slice(0, 15);
+    if (f.length) o.fibLevels = f;
+  }
   if (Array.isArray(raw.overlays)) {
     o.overlays = raw.overlays.slice(0, 12).filter(x => x && OV_TYPES[x.type]).map((x, i) => ({
       id: 'ov' + (++ovSeq), type: x.type, on: toBool(x.on, true),
@@ -527,20 +454,20 @@ function sanitizeSettings(raw) {
   o.stoch = { on: toBool(s.on, false), k: toInt(s.k, 14, 2, 200), d: toInt(s.d, 3, 1, 50), smooth: toInt(s.smooth, 3, 1, 50) };
   const a = raw.atr || {};
   o.atr = { on: toBool(a.on, false), period: toInt(a.period, 14, 2, 200) };
-  if (Array.isArray(raw.customIndicators)) o.customIndicators = raw.customIndicators.slice(0, 50);
+  o.customIndicators = sanitizeScripts(raw.customIndicators, imported);
   return o;
 }
 function saveSettings() {
   const sym = document.getElementById('symbolInput').value.trim().toUpperCase();
   if (SYMBOL_RE.test(sym)) S.symbol = sym;
-  S.iv = currentIv; S.zigzag = zigzagPct;
+  S.iv = currentIv;
   try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {}
 }
 function applySettingsToUI() {
   document.getElementById('symbolInput').value = S.symbol;
-  zigzagPct = S.zigzag;
-  document.getElementById('zigzagInput').value = S.zigzag;
   setIv(S.iv);
+  const dc = document.getElementById('drawColor'); if (dc) dc.value = S.drawColor;
+  updateMagnetBtn();
 }
 function loadSettings() {
   try { const raw = JSON.parse(localStorage.getItem(LS_KEY)); if (raw) S = sanitizeSettings(raw); } catch (e) {}
@@ -705,33 +632,13 @@ const EXTRA_DEFS = {
 };
 function syncExtraPane(key, on) {
   if (on && !extraPanes[key]) {
-    const wrap = document.createElement('div');
-    wrap.className = 'chart-wrap'; wrap.id = 'wrap-' + key;
-    wrap.innerHTML = `<div class="pane-legend"><span class="lg-symbol" id="lg-${key}-title"></span><span class="lg-item" id="lg-${key}-vals"></span></div><div id="chart-${key}"></div>`;
-    document.getElementById('chartsCol').appendChild(wrap);
-    const el = document.getElementById('chart-' + key);
-    el.style.height = '140px';
-    const chart = LightweightCharts.createChart(el, { ...baseChartOptions(), height: 140 });
-    const series = EXTRA_DEFS[key].build(chart);
-    extraPanes[key] = { chart, wrap, series };
-    allCharts.push(chart); hookSync(chart);
-    chart.subscribeCrosshairMove(param => {
-      if (!param.time) { if (!isSyncing) showLastLegend(); return; }
-      const idx = globalCandles.findIndex(c => c.time === param.time);
-      if (idx !== -1) updateLegendByIndex(idx);
-    });
-    const r = priceChart && priceChart.timeScale().getVisibleLogicalRange();
-    if (r) { try { chart.timeScale().setVisibleLogicalRange(r); } catch (e) {} }
-  } else if (!on && extraPanes[key]) {
-    const p = extraPanes[key];
-    allCharts = allCharts.filter(c => c !== p.chart);
-    p.chart.remove(); p.wrap.remove();
-    delete extraPanes[key]; delete extraData[key];
-  }
+    const p = makePane(key); p.series = EXTRA_DEFS[key].build(p.chart); extraPanes[key] = p;
+  } else if (!on && extraPanes[key]) removePane(key);
   if (extraPanes[key]) document.getElementById(`lg-${key}-title`).textContent = EXTRA_DEFS[key].title();
 }
 function renderExtras(candles, times) {
-  Object.keys(extraPanes).forEach(k => {
+  Object.keys(EXTRA_DEFS).forEach(k => {
+    if (!extraPanes[k]) return;
     const def = EXTRA_DEFS[k];
     extraData[k] = def.compute(candles);
     def.fill(extraPanes[k].series, extraData[k], times);
@@ -740,8 +647,10 @@ function renderExtras(candles, times) {
 }
 function updateExtraLegends(idx) {
   Object.keys(extraPanes).forEach(k => {
-    if (!extraData[k]) return;
-    document.getElementById(`lg-${k}-vals`).innerHTML = EXTRA_DEFS[k].legend(extraData[k], idx);
+    const el = document.getElementById(`lg-${k}-vals`), p = extraPanes[k];
+    if (!el) return;
+    if (p.custom) el.innerHTML = p.custom.map(pl => `<span style="color:${pl.color}">${escHtml(pl.name)} ${fx(pl.values[idx])}</span>`).join(' ');
+    else if (extraData[k]) el.innerHTML = EXTRA_DEFS[k].legend(extraData[k], idx);
   });
 }
 function applyIndicatorVisibility() {
@@ -756,8 +665,9 @@ function applyIndicatorVisibility() {
 
 // ─── پنل تنظیمات اندیکاتورها ────────────────────────────────────────────────
 function onIndChange() {
-  saveSettings(); applyIndicatorVisibility(); renderPanel();
+  saveSettings(); applyIndicatorVisibility();
   if (lastCandles.length) renderAll(false);
+  renderPanel();
 }
 function addOv(type) {
   if (S.overlays.length >= 12) return msg('حداکثر ۱۲ اندیکاتور');
@@ -796,6 +706,17 @@ function renderPanel() {
       <input type="color" value="${o.color}" onchange="updOv('${o.id}','color',this.value)">
       <button onclick="delOv('${o.id}')" title="حذف">🗑</button></div>`).join('')
     || '<p class="no-data">هنوز اندیکاتوری روی نمودار قیمت اضافه نشده</p>';
+  const scRows = S.customIndicators.map(sc => {
+    const info = scriptInfo[sc.id] || {};
+    const kind = info.kind === 'strategy' ? 'استراتژی' : info.kind === 'indicator' ? 'اندیکاتور' : '—';
+    const params = (info.inputs || []).map(inp => inputField(sc, inp)).join('');
+    return `<div class="ind-row">
+      <input type="checkbox" ${sc.on ? 'checked' : ''} onchange="updScript('${sc.id}',this.checked)">
+      <span class="nm" style="direction:rtl;text-align:right">${escHtml(sc.name)}</span><span class="tag">${kind}</span>
+      <button onclick="openEditor('${sc.id}')">✎ ویرایش</button><button onclick="delScript('${sc.id}')">🗑</button></div>
+      ${params ? `<div class="ind-row sub">${params}</div>` : ''}
+      ${info.error ? `<div class="ind-err">${escHtml(info.error)}</div>` : ''}`;
+  }).join('') || '<p class="no-data">هنوز اسکریپتی ننوشته‌اید</p>';
   document.getElementById('indModal').innerHTML = `
     <div class="ind-head"><h3>📈 اندیکاتورها و تنظیمات</h3><button onclick="closeInd()">✕</button></div>
     <div class="ind-sec"><h4>روی نمودار قیمت</h4>${ovRows}
@@ -803,7 +724,7 @@ function renderPanel() {
         <button onclick="addOv('ema')">+ EMA</button><button onclick="addOv('sma')">+ SMA</button>
         <button onclick="addOv('bb')">+ Bollinger</button><button onclick="addOv('vwap')">+ VWAP</button>
       </div>
-      <div class="ind-row" style="margin-top:10px">${'' }
+      <div class="ind-row" style="margin-top:10px">
         <input type="checkbox" ${S.volume.on ? 'checked' : ''} onchange="updPane('volume','on',this.checked)"><span class="nm">Volume</span>
       </div>
     </div>
@@ -813,12 +734,26 @@ function renderPanel() {
       ${paneRow('stoch', 'Stochastic', fld('stoch', 'k', 'K', 'min="2"') + fld('stoch', 'd', 'D', 'min="1"') + fld('stoch', 'smooth', 'نرم‌سازی', 'min="1"'))}
       ${paneRow('atr', 'ATR', fld('atr', 'period', 'دوره', 'min="2" max="200"'))}
     </div>
-    <div class="ind-sec"><h4>پشتیبان‌گیری و بازیابی (تنظیمات، اندیکاتورها، ارزهای ذخیره‌شده)</h4>
+    <div class="ind-sec"><h4>اسکریپت‌های من (اندیکاتور و استراتژی با کد)</h4>${scRows}
+      <div class="ind-add">
+        <button onclick="openEditor(null,'ema_cross')">+ اندیکاتور جدید</button>
+        <button onclick="openEditor(null,'strat_ema')">+ استراتژی جدید</button>
+      </div>
+    </div>
+    ${btReport()}
+    <div class="ind-sec"><h4>داده و ابزارهای رسم</h4>
+      <div class="ind-row">
+        <label>تعداد کندل<select onchange="updSetting('limit',this.value)">${[300, 500, 1000].map(n => `<option value="${n}" ${S.limit === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+        <label><input type="checkbox" ${S.magnet ? 'checked' : ''} onchange="updSetting('magnet',this.checked)">Magnet (چسبیدن به OHLC)</label>
+      </div>
+      <div class="ind-row"><label style="flex:1">سطوح فیبوناچی<input type="text" style="flex:1;direction:ltr" value="${S.fibLevels.join(', ')}" onchange="updSetting('fibLevels',this.value)"></label></div>
+    </div>
+    <div class="ind-sec"><h4>پشتیبان‌گیری و بازیابی (تنظیمات، اندیکاتورها، اسکریپت‌ها، رسم‌ها، ارزهای ذخیره‌شده)</h4>
       <div class="ind-add">
         <button onclick="downloadBackup()">⬇ دانلود فایل پشتیبان</button>
         <button onclick="document.getElementById('restoreFile').click()">⬆ بازیابی از فایل</button>
         <button onclick="copyBackup()">📋 کپی متن پشتیبان</button>
-        <button onclick="resetSettings()">↺ بازنشانی</button>
+        <button onclick="resetSettings()">↺ بازنشانی اندیکاتورها</button>
       </div>
       <input type="file" id="restoreFile" accept=".json,application/json" hidden onchange="restoreFromFile(this)">
       <textarea id="restoreText" placeholder="یا متن پشتیبان را اینجا بچسبانید..."></textarea>
@@ -830,8 +765,8 @@ function renderPanel() {
 // ─── پشتیبان‌گیری / بازیابی ─────────────────────────────────────────────────
 function buildBackup() {
   saveSettings();
-  return { app: 'ta-dashboard', version: 1, exportedAt: new Date().toISOString(),
-           settings: S, savedSymbols: getSavedSymbols() };
+  return { app: 'ta-dashboard', version: 2, exportedAt: new Date().toISOString(),
+           settings: S, savedSymbols: getSavedSymbols(), drawings: pruneDrawings() };
 }
 function downloadBackup() {
   const blob = new Blob([JSON.stringify(buildBackup(), null, 2)], { type: 'application/json' });
@@ -853,14 +788,17 @@ function restoreFromText(text) {
   try { data = JSON.parse(text); } catch (e) { return msg('❌ متن/فایل JSON معتبر نیست'); }
   if (!data || data.app !== 'ta-dashboard' || !data.settings) return msg('❌ این فایل، پشتیبان این برنامه نیست');
   if (!confirm('تنظیمات فعلی با پشتیبان جایگزین شود؟')) return;
-  S = sanitizeSettings(data.settings);
+  S = sanitizeSettings(data.settings, true);
+  const nScripts = S.customIndicators.length;
   if (Array.isArray(data.savedSymbols)) {
     const clean = [...new Set(data.savedSymbols.filter(s => typeof s === 'string' && SYMBOL_RE.test(s)).map(s => s.toUpperCase()))].slice(0, 100);
     setSavedSymbols(clean); populateSymbolDropdown();
   }
-  applySettingsToUI(); saveSettings(); applyIndicatorVisibility(); renderPanel();
+  if (data.drawings) { allDrawings = sanitizeDrawings(data.drawings); saveDrawings(); }
+  applySettingsToUI(); saveSettings(); applyIndicatorVisibility(); drawVersion++;
   if (lastCandles.length) renderAll(false);
-  msg('✅ بازیابی انجام شد');
+  renderPanel();
+  msg('✅ بازیابی انجام شد' + (nScripts ? ` — ${nScripts} اسکریپت غیرفعال وارد شد؛ کدها را مرور و سپس فعال کنید` : ''));
 }
 function restoreFromFile(inp) {
   const f = inp.files[0]; if (!f) return;
@@ -870,11 +808,12 @@ function restoreFromFile(inp) {
   r.readAsText(f); inp.value = '';
 }
 function resetSettings() {
-  if (!confirm('همه تنظیمات اندیکاتورها به حالت پیش‌فرض برگردد؟ (ارزهای ذخیره‌شده حفظ می‌شوند)')) return;
-  const keep = { symbol: S.symbol, iv: S.iv, zigzag: S.zigzag };
+  if (!confirm('تنظیمات اندیکاتورهای آماده به پیش‌فرض برگردد؟ (اسکریپت‌ها، رسم‌ها و ارزهای ذخیره‌شده حفظ می‌شوند)')) return;
+  const keep = { symbol: S.symbol, iv: S.iv, limit: S.limit, magnet: S.magnet, drawColor: S.drawColor, fibLevels: S.fibLevels, customIndicators: S.customIndicators };
   S = sanitizeSettings(Object.assign(defaultSettings(), keep));
-  saveSettings(); applyIndicatorVisibility(); renderPanel();
+  saveSettings(); applyIndicatorVisibility();
   if (lastCandles.length) renderAll(false);
+  renderPanel();
   msg('↺ بازنشانی شد');
 }
 
@@ -890,34 +829,7 @@ function setIv(iv) {
 // ─── چیدمان موبایل — مستقل از CSS media query، مستقیم با JS اعمال میشه ──────
 // (بعضی مرورگرها/وب‌ویوها عرض واقعی صفحه رو درست به CSS گزارش نمی‌دن)
 function applyResponsiveLayout() {
-  const isMobile = window.innerWidth <= 768;
-  const main      = document.querySelector('.main');
-  const chartsCol = document.getElementById('chartsCol');
-  const sidebar   = document.querySelector('.sidebar');
-
-  if (isMobile) {
-    main.style.flexDirection = 'column';
-    main.style.overflow = 'hidden';
-
-    chartsCol.style.order  = '1';
-    chartsCol.style.flex   = '0 0 62vh';
-    chartsCol.style.height = '62vh';
-    chartsCol.style.overflow = 'hidden auto';
-
-    sidebar.style.order = '2';
-    sidebar.classList.add('mobile-grid');
-  } else {
-    main.style.flexDirection = '';
-    main.style.overflow = '';
-
-    chartsCol.style.order  = '';
-    chartsCol.style.flex   = '';
-    chartsCol.style.height = '';
-    chartsCol.style.overflow = '';
-
-    sidebar.style.order = '';
-    sidebar.classList.remove('mobile-grid');
-  }
+  // چیدمان فقط با CSS کنترل میشه
 }
 
 // ─── Chart heights ──────────────────────────────────────────────────────────
@@ -1122,96 +1034,6 @@ function calcMACD(closes, fast=12, slow=26, sig=9) {
   return { ml, sl, hl };
 }
 
-// ─── ZigZag Pivots (بر اساس قیمت بسته شدن، نه سایه کندل) ─────────────────────
-function calcZigZag(candles, deviationPct = 0.5) {
-  const pivots = [];
-  if (candles.length < 2) return pivots;
-
-  let direction = 0; // 0=unknown, 1=up-tracking(looking for high), -1=down-tracking
-  let anchorIdx = 0;
-  let anchorPrice = candles[0].close;
-
-  for (let i = 1; i < candles.length; i++) {
-    const cp = candles[i].close;
-
-    if (direction === 0) {
-      const upPct   = (cp - anchorPrice) / anchorPrice * 100;
-      const downPct = (anchorPrice - cp) / anchorPrice * 100;
-      if (upPct >= deviationPct) {
-        pivots.push({ idx: 0, type: 'low', price: candles[0].close });
-        direction = 1; anchorPrice = cp; anchorIdx = i;
-      } else if (downPct >= deviationPct) {
-        pivots.push({ idx: 0, type: 'high', price: candles[0].close });
-        direction = -1; anchorPrice = cp; anchorIdx = i;
-      }
-      continue;
-    }
-
-    if (direction === 1) {
-      if (cp >= anchorPrice) { anchorPrice = cp; anchorIdx = i; }
-      const retrace = (anchorPrice - cp) / anchorPrice * 100;
-      if (retrace >= deviationPct) {
-        pivots.push({ idx: anchorIdx, type: 'high', price: anchorPrice });
-        direction = -1; anchorPrice = cp; anchorIdx = i;
-      }
-    } else {
-      if (cp <= anchorPrice) { anchorPrice = cp; anchorIdx = i; }
-      const retrace = (cp - anchorPrice) / anchorPrice * 100;
-      if (retrace >= deviationPct) {
-        pivots.push({ idx: anchorIdx, type: 'low', price: anchorPrice });
-        direction = 1; anchorPrice = cp; anchorIdx = i;
-      }
-    }
-  }
-
-  const peaks   = pivots.filter(p => p.type === 'high').map(p => p.idx);
-  const valleys = pivots.filter(p => p.type === 'low').map(p => p.idx);
-  return { peaks, valleys };
-}
-
-// ─── Divergence — تعریف جدید:
-// نزولی: کلوز فعلی >= کلوز آخرین قله   و   RSI فعلی < RSI آخرین دره
-// صعودی: کلوز فعلی <= کلوز آخرین دره   و   RSI فعلی > RSI آخرین قله
-function detectDivergence({ candles, rsiArr, peaks, valleys }) {
-  const result = { bearish: null, bullish: null };
-
-  if (!peaks.length || !valleys.length) return result;
-
-  const lastIdx = candles.length - 1;
-  const currentClose = candles[lastIdx].close;
-  const currentRsi   = rsiArr[lastIdx];
-  if (currentRsi == null) return result;
-
-  const lastPeakIdx   = peaks[peaks.length - 1];
-  const lastValleyIdx = valleys[valleys.length - 1];
-  const peakClose   = candles[lastPeakIdx].close;
-  const peakRsi     = rsiArr[lastPeakIdx];
-  const valleyClose = candles[lastValleyIdx].close;
-  const valleyRsi   = rsiArr[lastValleyIdx];
-
-  // نزولی
-  if (valleyRsi != null && currentClose >= peakClose && currentRsi < valleyRsi) {
-    result.bearish = {
-      peakIdx: lastPeakIdx, valleyIdx: lastValleyIdx, currentIdx: lastIdx,
-      peakClose, currentClose, valleyRsi, currentRsi,
-      priceDiff: ((currentClose - peakClose) / peakClose * 100).toFixed(2),
-      rsiDiff: (currentRsi - valleyRsi).toFixed(2),
-    };
-  }
-
-  // صعودی
-  if (peakRsi != null && currentClose <= valleyClose && currentRsi > peakRsi) {
-    result.bullish = {
-      peakIdx: lastPeakIdx, valleyIdx: lastValleyIdx, currentIdx: lastIdx,
-      valleyClose, currentClose, peakRsi, currentRsi,
-      priceDiff: ((currentClose - valleyClose) / valleyClose * 100).toFixed(2),
-      rsiDiff: (currentRsi - peakRsi).toFixed(2),
-    };
-  }
-
-  return result;
-}
-
 // ─── Load ────────────────────────────────────────────────────────────────────
 async function loadData() {
   const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
@@ -1226,7 +1048,7 @@ async function loadData() {
   document.getElementById('status').textContent = 'در حال دریافت...';
 
   try {
-    const res = await fetch(`/api/klines?symbol=${symbol}&interval=${currentIv}&limit=300`);
+    const res = await fetch(`/api/klines?symbol=${symbol}&interval=${currentIv}&limit=${S.limit}`);
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'خطا در دریافت داده');
 
@@ -1244,186 +1066,559 @@ function renderAll(resetView) {
   const symbol = lastSymbol, candles = lastCandles;
   if (!candles.length) return;
   try {
-
-    const closes = candles.map(c => c.close);
-    const times  = candles.map(c => c.time);
+    const closes = candles.map(c => c.close), times = candles.map(c => c.time);
     const rsiArr = calcRSI(closes, S.rsi.period);
     const { ml, sl, hl } = calcMACD(closes, S.macd.fast, S.macd.slow, S.macd.sig);
-
-    // Store globally for tooltip
-    globalCandles = candles;
-    globalRsi  = rsiArr;
-    globalMacdL = ml;
-    globalMacdS = sl;
-    globalMacdH = hl;
-
-    const { peaks, valleys } = calcZigZag(candles, zigzagPct);
-
-    // ── تعداد رقم اعشار بر اساس قیمت: زیر ۱ دلار → ۴ رقم، بالاتر → ۲ رقم ──
-    const lastPrice = closes[closes.length - 1];
-    const isSmallPrice = lastPrice < 1;
-    lastPricePrecision = isSmallPrice ? 4 : 2;
-    candleSeries.applyOptions({
-      priceFormat: {
-        type: 'price',
-        precision: lastPricePrecision,
-        minMove:   isSmallPrice ? 0.0001 : 0.01,
-      }
-    });
-
-    // ── Candlestick ──
+    globalCandles = candles; globalRsi = rsiArr; globalMacdL = ml; globalMacdS = sl; globalMacdH = hl;
+    const small = closes[closes.length - 1] < 1;
+    lastPricePrecision = small ? 4 : 2;
+    candleSeries.applyOptions({ priceFormat: { type: 'price', precision: lastPricePrecision, minMove: small ? 0.0001 : 0.01 } });
     candleSeries.setData(candles);
-
-    // رفع باگ مهم: بعد از تغییر ارز، محور قیمت گاهی رنج قیمت قبلی رو نگه می‌داشت
-    // (مثلاً از ارزی با قیمت ۰.۲ به ارزی با قیمت ۰.۰۷ سوییچ می‌کردی، کندل‌ها بیرون از دید می‌رفتن)
     priceChart.priceScale('right').applyOptions({ autoScale: true });
-
-    // Markers
-    const markers = [];
-    peaks.slice(-3).forEach((i, idx, arr) => {
-      const label = idx === arr.length - 1 ? 'قله' : `قله-${arr.length - idx}`;
-      markers.push({ time: times[i], position: 'aboveBar', color: '#ef5350', shape: 'arrowDown', text: label });
-    });
-    valleys.slice(-3).forEach((i, idx, arr) => {
-      const label = idx === arr.length - 1 ? 'دره' : `دره-${arr.length - idx}`;
-      markers.push({ time: times[i], position: 'belowBar', color: '#26a69a', shape: 'arrowUp', text: label });
-    });
-
-    const divergence = detectDivergence({ candles, rsiArr, peaks, valleys });
-
-    // سیگنال واگرایی فعلی (اگه پیدا شده باشه) رو روی چارت علامت بزن
-    if (divergence.bearish) {
-      markers.push({ time: times[divergence.bearish.currentIdx], position: 'aboveBar', color: '#ff1744', shape: 'arrowDown', text: '⚠ نزولی' });
-    }
-    if (divergence.bullish) {
-      markers.push({ time: times[divergence.bullish.currentIdx], position: 'belowBar', color: '#00e676', shape: 'arrowUp', text: '⚠ صعودی' });
-    }
-    markers.sort((a,b) => a.time - b.time);
-    candleSeries.setMarkers(markers);
-
-    // ── RSI ──
-    // همه بازه رو پوشش بده تا timescale یکی باشه
-    rsiSeries.setData(times.map((t,i) => rsiArr[i]!=null ? {time:t, value:rsiArr[i]} : null).filter(Boolean));
-    rsiOB.setData(times.map(t => ({time:t, value:S.rsi.ob})));
-    rsiOS.setData(times.map(t => ({time:t, value:S.rsi.os})));
-
-    // مارکر سیگنال واگرایی روی RSI هم
-    const rsiMarkers = [];
-    if (divergence.bearish) {
-      rsiMarkers.push({ time: times[divergence.bearish.currentIdx], position: 'aboveBar', color: '#ff1744', shape: 'arrowDown', text: '⚠ نزولی' });
-      rsiMarkers.push({ time: times[divergence.bearish.valleyIdx], position: 'belowBar', color: '#ffc107', shape: 'circle' });
-    }
-    if (divergence.bullish) {
-      rsiMarkers.push({ time: times[divergence.bullish.currentIdx], position: 'belowBar', color: '#00e676', shape: 'arrowUp', text: '⚠ صعودی' });
-      rsiMarkers.push({ time: times[divergence.bullish.peakIdx], position: 'aboveBar', color: '#ffc107', shape: 'circle' });
-    }
-    rsiMarkers.sort((a,b) => a.time - b.time);
-    rsiSeries.setMarkers(rsiMarkers);
-
-    // ── MACD ──
-    macdLineSeries.setData(times.map((t,i)   => ml[i]!=null ? {time:t,value:ml[i]} : null).filter(Boolean));
-    macdSignalSeries.setData(times.map((t,i) => sl[i]!=null ? {time:t,value:sl[i]} : null).filter(Boolean));
-    macdHistSeries.setData(times.map((t,i)   => hl[i]!=null ? {time:t,value:hl[i],color:hl[i]>=0?'#26a69a':'#ef5350'} : null).filter(Boolean));
-
+    rsiSeries.setData(toSeries(times, rsiArr));
+    rsiOB.setData(times.map(t => ({ time: t, value: S.rsi.ob })));
+    rsiOS.setData(times.map(t => ({ time: t, value: S.rsi.os })));
+    macdLineSeries.setData(toSeries(times, ml));
+    macdSignalSeries.setData(toSeries(times, sl));
+    macdHistSeries.setData(times.map((t, i) => hl[i] != null ? { time: t, value: hl[i], color: hl[i] >= 0 ? '#26a69a' : '#ef5350' } : null).filter(Boolean));
     renderOverlays(candles, times);
     renderExtras(candles, times);
-    // ── Sidebar ──
-    renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence });
-
-    // Legend: نماد + تایم‌فریم + مقادیر آخرین کندل (پیش‌فرض بدون crosshair)
+    renderCustom(candles, times);
     document.getElementById('lg-symbol').textContent = `${symbol} · ${currentIv.toUpperCase()}`;
     showLastLegend();
-
-    // اندازه چارت‌ها رو دوباره حساب کن (کیبورد موبایل ممکنه ارتفاع صفحه رو عوض کرده باشه)
     resizeChartsNow();
-
-    // به‌جای fitContent (که همه ۳۰۰ کندل رو له می‌کنه تو صفحه)، فقط آخرین کندل‌های اخیر با زوم مناسب نشون داده میشه
     rsiChart.priceScale('right').applyOptions({ autoScale: true });
     macdChart.priceScale('right').applyOptions({ autoScale: true });
     if (resetView) {
-    const barsToShow = window.innerWidth <= 768 ? 55 : 120;
-    const totalBars = candles.length;
-    priceChart.timeScale().setVisibleLogicalRange({
-      from: Math.max(0, totalBars - barsToShow),
-      to:   totalBars + 3,
-    });
+      const barsToShow = window.innerWidth <= 768 ? 55 : 120, total = candles.length;
+      priceChart.timeScale().setVisibleLogicalRange({ from: Math.max(0, total - barsToShow), to: total + 3 });
     }
+    onSymbolRendered(symbol);
     document.getElementById('status').textContent = `${symbol} · ${currentIv} · ${candles.length} کندل`;
-  } catch(e) {
+  } catch (e) {
     document.getElementById('status').textContent = '❌ ' + e.message;
   }
 }
-// ─── Sidebar ─────────────────────────────────────────────────────────────────
-function renderSidebar({ candles, rsiArr, ml, sl, peaks, valleys, divergence }) {
-  const fmt  = v => v?.toLocaleString('en-US', {maximumFractionDigits:2}) ?? '—';
-  const fmtD = t => new Date(t*1000).toLocaleDateString('fa-IR');
+function makePane(key) {
+  const wrap = document.createElement('div');
+  wrap.className = 'chart-wrap'; wrap.id = 'wrap-' + key;
+  wrap.innerHTML = `<div class="pane-legend"><span class="lg-symbol" id="lg-${key}-title"></span><span class="lg-item" id="lg-${key}-vals"></span></div><div id="chart-${key}"></div>`;
+  document.getElementById('chartsCol').appendChild(wrap);
+  const el = document.getElementById('chart-' + key);
+  el.style.height = '140px';
+  const chart = LightweightCharts.createChart(el, { ...baseChartOptions(), height: 140 });
+  allCharts.push(chart); hookSync(chart);
+  chart.subscribeCrosshairMove(param => {
+    if (!param.time) { if (!isSyncing) showLastLegend(); return; }
+    const idx = globalCandles.findIndex(c => c.time === param.time);
+    if (idx !== -1) updateLegendByIndex(idx);
+  });
+  const r = priceChart && priceChart.timeScale().getVisibleLogicalRange();
+  if (r) { try { chart.timeScale().setVisibleLogicalRange(r); } catch (e) {} }
+  return { chart, wrap };
+}
 
-  const rsiClass = v => v==null?'':v>=S.rsi.ob?'rsi-ob':v<=S.rsi.os?'rsi-os':'rsi-n';
-  const rsiLbl   = v => v==null?'—':v>=S.rsi.ob?'اشباع خرید':v<=S.rsi.os?'اشباع فروش':'خنثی';
-  const macdClass = i => ml[i]==null||sl[i]==null?'':ml[i]>sl[i]?'macd-bull':'macd-bear';
-  const macdLbl   = i => ml[i]==null||sl[i]==null?'—':ml[i]>sl[i]?'صعودی':'نزولی';
+function removePane(key) {
+  const p = extraPanes[key]; if (!p) return;
+  allCharts = allCharts.filter(c => c !== p.chart);
+  p.chart.remove(); p.wrap.remove();
+  delete extraPanes[key]; delete extraData[key];
+}
 
-  let html = '';
+// ═══════════ کمکی‌ها ═══════════
+function escHtml(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+function newScriptId() { return 'cs' + Math.random().toString(36).slice(2, 9); }
+function sanitizeScripts(arr, imported) {
+  if (!Array.isArray(arr)) return [];
+  const seen = new Set();
+  return arr.slice(0, 30).filter(x => x && typeof x.code === 'string').map(x => {
+    let id = typeof x.id === 'string' && /^cs[a-z0-9]{3,14}$/.test(x.id) && !seen.has(x.id) ? x.id : newScriptId();
+    seen.add(id);
+    const params = {};
+    if (x.params && typeof x.params === 'object') Object.keys(x.params).slice(0, 30).forEach(k => {
+      const v = x.params[k];
+      if (/^\w{1,30}$/.test(k) && k !== '__proto__' && ((typeof v === 'number' && isFinite(v)) || typeof v === 'boolean' || (typeof v === 'string' && v.length <= 50))) params[k] = v;
+    });
+    return { id, name: String(x.name || 'اسکریپت').slice(0, 60), code: x.code.slice(0, 20000), on: imported ? false : toBool(x.on, true), params };
+  });
+}
+function updSetting(k, v) {
+  if (k === 'fibLevels') v = String(v).split(/[\s,،]+/).map(parseFloat).filter(isFinite);
+  S[k] = v; S = sanitizeSettings(S); saveSettings(); updateMagnetBtn(); drawVersion++; renderPanel();
+  if (k === 'limit') msg('برای اعمال تعداد کندل جدید، «بارگذاری» را بزنید');
+}
 
-  // Signal — هر سه حالت (نزولی/صعودی/خنثی) به‌صورت یکسان، نواری و فشرده
-  if (divergence.bearish) {
-    const d = divergence.bearish;
-    html += `<div class="pivot-row">
-      <div class="status-bar bearish">🔴 نزولی: قله$${fmt(d.peakClose)}→کلوز$${fmt(d.currentClose)} (${d.priceDiff}%)</div>
-      <div class="status-bar bearish">RSI: دره${(+d.valleyRsi).toFixed(1)}→فعلی${(+d.currentRsi).toFixed(1)} (${d.rsiDiff})</div>
-    </div>`;
+// ═══════════ ابزارهای رسم (روند، افقی، فیبوناچی، الیوت) ═══════════
+const DR_KEY = 'ta_drawings_v1';
+const DRAW_DEFS = {
+  trend: { n: 2, hint: 'خط روند' },
+  hline: { n: 1, hint: 'خط افقی' },
+  fib:   { n: 2, hint: 'فیبوناچی (شروع، پایان)' },
+  ewi:   { n: 6, labels: ['0', '1', '2', '3', '4', '5'], hint: 'الیوت ۱-۵' },
+  ewc:   { n: 4, labels: ['0', 'A', 'B', 'C'], hint: 'الیوت ABC' }
+};
+const FIB_COLORS = ['#9ca3af', '#ef5350', '#f59e0b', '#26a69a', '#3b82f6', '#a855f7', '#9ca3af', '#ec4899', '#14b8a6'];
+let allDrawings = {}, drawSymbol = '', drawTool = 'cursor', draft = null, cursorPx = null;
+let selectedId = null, drawVersion = 0, dragging = null, lastDrawSig = '';
+
+function newDrawId() { return 'd' + Math.random().toString(36).slice(2, 9); }
+function sanitizeDrawings(raw) {
+  const out = {};
+  if (!raw || typeof raw !== 'object') return out;
+  Object.keys(raw).slice(0, 200).forEach(sym => {
+    if (!SYMBOL_RE.test(sym) || !Array.isArray(raw[sym])) return;
+    const list = raw[sym].slice(0, 100).filter(d => d && DRAW_DEFS[d.type] && Array.isArray(d.pts)).map(d => ({
+      id: newDrawId(), type: d.type,
+      color: /^#[0-9a-fA-F]{6}$/.test(d.color) ? d.color : '#f59e0b',
+      pts: d.pts.filter(p => p && isFinite(p.t) && isFinite(p.p)).slice(0, DRAW_DEFS[d.type].n).map(p => ({ t: +p.t, p: +p.p }))
+    })).filter(d => d.pts.length >= (d.type === 'hline' ? 1 : 2));
+    if (list.length) out[sym.toUpperCase()] = list;
+  });
+  return out;
+}
+function pruneDrawings() { const o = {}; Object.keys(allDrawings).forEach(k => { if (allDrawings[k].length) o[k] = allDrawings[k]; }); return o; }
+function loadDrawings() { try { allDrawings = sanitizeDrawings(JSON.parse(localStorage.getItem(DR_KEY))); } catch (e) { allDrawings = {}; } }
+function saveDrawings() { try { localStorage.setItem(DR_KEY, JSON.stringify(pruneDrawings())); } catch (e) {} }
+function curDrawings() { if (!drawSymbol) return []; return allDrawings[drawSymbol] || (allDrawings[drawSymbol] = []); }
+function onSymbolRendered(symbol) {
+  if (symbol !== drawSymbol) { drawSymbol = symbol; selectedId = null; draft = null; refreshToolbar(); }
+  drawVersion++;
+}
+
+const IV_SEC = { '1h': 3600, '4h': 14400, '1d': 86400 };
+function ptToXY(pt) {
+  if (!globalCandles.length) return null;
+  const lg = (pt.t - globalCandles[0].time) / IV_SEC[currentIv];
+  const x = priceChart.timeScale().logicalToCoordinate(lg), y = candleSeries.priceToCoordinate(pt.p);
+  return x == null || y == null ? null : { x, y };
+}
+function xyToPt(x, y) {
+  if (!globalCandles.length) return null;
+  const lg = priceChart.timeScale().coordinateToLogical(x), p = candleSeries.coordinateToPrice(y);
+  if (lg == null || p == null) return null;
+  return { t: globalCandles[0].time + Math.round(lg) * IV_SEC[currentIv], p };
+}
+function snapPoint(x, y) {
+  const pt = xyToPt(x, y); if (!pt) return null;
+  if (S.magnet) {
+    const c = globalCandles[Math.round((pt.t - globalCandles[0].time) / IV_SEC[currentIv])];
+    if (c) {
+      let best = null, bd = 18;
+      ['open', 'high', 'low', 'close'].forEach(k => {
+        const yy = candleSeries.priceToCoordinate(c[k]);
+        if (yy != null && Math.abs(yy - y) < bd) { bd = Math.abs(yy - y); best = c[k]; }
+      });
+      if (best != null) pt.p = best;
+    }
   }
-  if (divergence.bullish) {
-    const d = divergence.bullish;
-    html += `<div class="pivot-row">
-      <div class="status-bar bullish">🟢 صعودی: دره$${fmt(d.valleyClose)}→کلوز$${fmt(d.currentClose)} (${d.priceDiff}%)</div>
-      <div class="status-bar bullish">RSI: قله${(+d.peakRsi).toFixed(1)}→فعلی${(+d.currentRsi).toFixed(1)} (+${d.rsiDiff})</div>
-    </div>`;
-  }
-  if (!divergence.bearish && !divergence.bullish) {
-    const lastRsi = rsiArr[rsiArr.length - 1];
-    html += `<div class="pivot-row">
-      <div class="status-bar neutral">⚪ واگرایی شناسایی نشد</div>
-      <div class="status-bar ${rsiClass(lastRsi)}">RSI فعلی: ${lastRsi!=null?lastRsi.toFixed(1):'—'} · ${rsiLbl(lastRsi)}</div>
-    </div>`;
-  }
+  return pt;
+}
+function plotRight() {
+  const el = document.getElementById('chart-price'); let w = 56;
+  try { w = priceChart.priceScale('right').width(); } catch (e) {}
+  return Math.max(50, el.clientWidth - w);
+}
+function plotBottom() {
+  const el = document.getElementById('chart-price'); let h = 26;
+  try { h = priceChart.timeScale().height(); } catch (e) {}
+  return Math.max(50, el.clientHeight - h);
+}
 
-  // قله‌ها و دره‌ها به صورت جفت (قله | دره) توی هر ردیف کنار هم
-  const lastPeaks   = peaks.slice(-3).reverse();
-  const lastValleys = valleys.slice(-3).reverse();
-  const pairCount = Math.max(lastPeaks.length, lastValleys.length);
+function setTool(t) { drawTool = t; draft = null; if (t !== 'cursor') selectedId = null; drawVersion++; refreshToolbar(); }
+function refreshToolbar() {
+  document.querySelectorAll('#toolbar [data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === drawTool));
+  const hint = document.getElementById('drawHint'), done = document.getElementById('drawDone');
+  if (!hint) return;
+  if (drawTool === 'cursor') hint.textContent = selectedId ? 'انتخاب شد — نقاط را بکشید، یا Delete' : '';
+  else { const d = DRAW_DEFS[drawTool]; hint.textContent = draft ? `${d.hint}: نقطه ${draft.pts.length + 1} از ${d.n}` : `${d.hint}: روی چارت کلیک کنید`; }
+  done.style.display = draft && draft.pts.length >= 2 && DRAW_DEFS[draft.type].n > 2 ? '' : 'none';
+}
+function updateMagnetBtn() { const b = document.getElementById('magnetBtn'); if (b) b.classList.toggle('active', !!S.magnet); }
+function toggleMagnet() { updSetting('magnet', !S.magnet); }
+function onDrawColor(v) {
+  if (!/^#[0-9a-fA-F]{6}$/.test(v)) return;
+  S.drawColor = v; saveSettings();
+  const d = curDrawings().find(x => x.id === selectedId);
+  if (d) { d.color = v; saveDrawings(); }
+  drawVersion++;
+}
+function deleteSelected() {
+  if (!selectedId) return;
+  const l = curDrawings(), i = l.findIndex(d => d.id === selectedId);
+  if (i >= 0) { l.splice(i, 1); saveDrawings(); }
+  selectedId = null; drawVersion++; refreshToolbar();
+}
+function undoDrawing() { if (draft) { draft.pts.pop(); if (!draft.pts.length) draft = null; } else { curDrawings().pop(); saveDrawings(); selectedId = null; } drawVersion++; refreshToolbar(); }
+function clearDrawings() {
+  if (!curDrawings().length || !confirm('همه‌ی رسم‌های ' + drawSymbol + ' پاک شود؟')) return;
+  allDrawings[drawSymbol] = []; saveDrawings(); selectedId = null; drawVersion++; refreshToolbar();
+}
+function finishDraft() {
+  if (!draft || draft.pts.length < (draft.type === 'hline' ? 1 : 2)) { draft = null; refreshToolbar(); return; }
+  const d = { id: newDrawId(), type: draft.type, color: S.drawColor, pts: draft.pts };
+  curDrawings().push(d); selectedId = d.id; draft = null; drawTool = 'cursor';
+  saveDrawings(); drawVersion++; refreshToolbar();
+}
+function finishDraftEarly() { if (draft) finishDraft(); }
 
-  function peakCardHtml(i, idx) {
-    const c = candles[i], rv = rsiArr[i];
-    const label = idx === 0 ? 'آخرین قله' : `قله ${idx + 1} دوره قبل`;
-    return `<div class="pivot-card peak">
-      <div class="ptype">▼ ${label}</div>
-      <div class="price-val">$${fmt(c.close)}</div>
-      <div class="row"><span>تاریخ</span><span>${fmtD(c.time)}</span></div>
-      <div class="row"><span>RSI</span><span>${rv!=null?rv.toFixed(1):'—'} <span class="badge ${rsiClass(rv)}">${rsiLbl(rv)}</span></span></div>
-      <div class="row"><span>MACD</span><span>${ml[i]!=null?ml[i].toFixed(3):'—'} <span class="badge ${macdClass(i)}">${macdLbl(i)}</span></span></div>
-    </div>`;
+function distSeg(px, py, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+  let t = l2 ? ((px - a.x) * dx + (py - a.y) * dy) / l2 : 0; t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (a.x + t * dx), py - (a.y + t * dy));
+}
+function fibY(d, l) { return candleSeries.priceToCoordinate(d.pts[1].p + (d.pts[0].p - d.pts[1].p) * l); }
+function hitTest(x, y) {
+  const R = 12, list = curDrawings();
+  for (let k = list.length - 1; k >= 0; k--) {
+    const d = list[k], P = d.pts.map(ptToXY);
+    if (P.some(q => !q)) continue;
+    if (d.type === 'hline') { if (Math.abs(P[0].y - y) < R) return d.id; continue; }
+    for (let i = 0; i < P.length - 1; i++) if (distSeg(x, y, P[i], P[i + 1]) < R) return d.id;
+    if (d.type === 'fib' && x >= Math.min(P[0].x, P[1].x) - R && x <= plotRight() &&
+        S.fibLevels.some(l => { const yy = fibY(d, l); return yy != null && Math.abs(yy - y) < R; })) return d.id;
   }
+  return null;
+}
+function onChartClick(param) {
+  if (!param || !param.point || !globalCandles.length) return;
+  if (drawTool === 'cursor') { selectedId = hitTest(param.point.x, param.point.y); drawVersion++; refreshToolbar(); return; }
+  const pt = snapPoint(param.point.x, param.point.y); if (!pt) return;
+  if (!draft) draft = { type: drawTool, pts: [] };
+  draft.pts.push(pt);
+  if (draft.pts.length >= DRAW_DEFS[draft.type].n) finishDraft(); else { drawVersion++; refreshToolbar(); }
+}
 
-  function valleyCardHtml(i, idx) {
-    const c = candles[i], rv = rsiArr[i];
-    const label = idx === 0 ? 'آخرین دره' : `دره ${idx + 1} دوره قبل`;
-    return `<div class="pivot-card valley">
-      <div class="ptype">▲ ${label}</div>
-      <div class="price-val">$${fmt(c.close)}</div>
-      <div class="row"><span>تاریخ</span><span>${fmtD(c.time)}</span></div>
-      <div class="row"><span>RSI</span><span>${rv!=null?rv.toFixed(1):'—'} <span class="badge ${rsiClass(rv)}">${rsiLbl(rv)}</span></span></div>
-      <div class="row"><span>MACD</span><span>${ml[i]!=null?ml[i].toFixed(3):'—'} <span class="badge ${macdClass(i)}">${macdLbl(i)}</span></span></div>
-    </div>`;
+function fmtPrice(p) { return p.toLocaleString('en-US', { maximumFractionDigits: lastPricePrecision }); }
+function svgLine(x1, y1, x2, y2, col, w, dash) { return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${w}"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`; }
+function svgText(x, y, t, col, anchor) { return `<text x="${x}" y="${y}" fill="${col}" font-size="11" text-anchor="${anchor}" stroke="#0b0e17" stroke-width="3" paint-order="stroke">${t}</text>`; }
+function drawOne(d, P, W, sel) {
+  const c = d.color, sw = sel ? 2.6 : 1.6;
+  let s = `<g opacity="${d.temp ? 0.7 : 1}">`;
+  if (d.type === 'hline') {
+    s += svgLine(0, P[0].y, W, P[0].y, c, sw, '6 4') + svgText(W - 4, P[0].y - 4, fmtPrice(d.pts[0].p), c, 'end');
+  } else if (P.length < 2) {
+    s += `<circle cx="${P[0].x}" cy="${P[0].y}" r="4" fill="${c}"/>`;
+  } else if (d.type === 'trend') {
+    s += svgLine(P[0].x, P[0].y, P[1].x, P[1].y, c, sw);
+  } else if (d.type === 'fib') {
+    const xl = Math.min(P[0].x, P[1].x);
+    s += svgLine(P[0].x, P[0].y, P[1].x, P[1].y, '#6b7280', 1, '3 3');
+    S.fibLevels.forEach((l, i) => {
+      const price = d.pts[1].p + (d.pts[0].p - d.pts[1].p) * l, y = candleSeries.priceToCoordinate(price);
+      if (y == null) return;
+      const col = FIB_COLORS[i % FIB_COLORS.length];
+      s += svgLine(xl, y, W, y, col, sel ? 1.6 : 1) + svgText(xl + 4, y - 3, `${l} (${fmtPrice(price)})`, col, 'start');
+    });
+  } else {
+    const labels = DRAW_DEFS[d.type].labels;
+    s += `<polyline points="${P.map(q => q.x + ',' + q.y).join(' ')}" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+    P.forEach((q, i) => {
+      const pr = d.pts[i].p, prev = d.pts[i - 1], next = d.pts[i + 1];
+      const isHigh = (prev ? pr >= prev.p : true) && (next ? pr >= next.p : true), cy = q.y + (isHigh ? -16 : 16);
+      s += `<circle cx="${q.x}" cy="${cy}" r="9" fill="#0b0e17" stroke="${c}" stroke-width="1.3"/><text x="${q.x}" y="${cy + 4}" fill="${c}" font-size="11" font-weight="700" text-anchor="middle">${labels[i] || ''}</text>`;
+    });
   }
-
-  for (let idx = 0; idx < pairCount; idx++) {
-    const peakHtml   = lastPeaks[idx]   != null ? peakCardHtml(lastPeaks[idx], idx)     : '<div></div>';
-    const valleyHtml = lastValleys[idx] != null ? valleyCardHtml(lastValleys[idx], idx) : '<div></div>';
-    html += `<div class="pivot-row">${peakHtml}${valleyHtml}</div>`;
+  if (sel) P.forEach((q, i) => { s += `<circle class="dh" data-id="${d.id}" data-hi="${i}" cx="${q.x}" cy="${q.y}" r="7" fill="#fff" fill-opacity=".9" stroke="${c}" stroke-width="2" style="cursor:move;touch-action:none"/>`; });
+  return s + '</g>';
+}
+function drawingsSVG(W) {
+  const list = curDrawings().slice();
+  if (draft) {
+    const pts = draft.pts.slice();
+    if (cursorPx) { const cp = xyToPt(cursorPx.x, cursorPx.y); if (cp) pts.push(cp); }
+    if (pts.length) list.push({ id: '_draft', type: draft.type, color: S.drawColor, pts: pts.slice(0, DRAW_DEFS[draft.type].n), temp: true });
   }
+  let out = '';
+  list.forEach(d => { const P = d.pts.map(ptToXY); if (!P.some(q => !q)) out += drawOne(d, P, W, d.id === selectedId); });
+  return out;
+}
+function drawLoop() {
+  try {
+    if (priceChart && candleSeries && globalCandles.length) {
+      const el = document.getElementById('chart-price'), r = priceChart.timeScale().getVisibleLogicalRange();
+      const ref = globalCandles[globalCandles.length - 1].close;
+      const sig = [r && r.from, r && r.to, candleSeries.priceToCoordinate(ref), candleSeries.priceToCoordinate(ref * 1.05), el.clientWidth, el.clientHeight, drawVersion, drawTool, selectedId].join('|');
+      if (sig !== lastDrawSig) {
+        lastDrawSig = sig;
+        const svg = document.getElementById('drawSvg'), W = plotRight();
+        svg.setAttribute('width', W); svg.setAttribute('height', plotBottom());
+        svg.innerHTML = drawingsSVG(W);
+      }
+    }
+  } catch (e) {}
+  requestAnimationFrame(drawLoop);
+}
+function initDrawings() {
+  loadDrawings();
+  priceChart.subscribeClick(onChartClick);
+  priceChart.subscribeCrosshairMove(p => { cursorPx = p.point || null; if (draft) drawVersion++; });
+  document.getElementById('drawSvg').addEventListener('pointerdown', e => {
+    const h = e.target.closest && e.target.closest('[data-hi]'); if (!h) return;
+    e.preventDefault(); e.stopPropagation();
+    dragging = { id: h.getAttribute('data-id'), i: +h.getAttribute('data-hi') };
+  });
+  window.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const d = curDrawings().find(x => x.id === dragging.id); if (!d) { dragging = null; return; }
+    const r = document.getElementById('chart-price').getBoundingClientRect();
+    const pt = snapPoint(e.clientX - r.left, e.clientY - r.top);
+    if (pt) { d.pts[dragging.i] = pt; drawVersion++; }
+  });
+  window.addEventListener('pointerup', () => { if (dragging) { dragging = null; saveDrawings(); } });
+  window.addEventListener('keydown', e => {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+    if (e.key === 'Escape') { draft = null; selectedId = null; setTool('cursor'); }
+    else if (e.key === 'Enter') finishDraftEarly();
+    else if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
+  });
+  refreshToolbar();
+  requestAnimationFrame(drawLoop);
+}
 
-  document.getElementById('pivotCards').innerHTML = html || '<p class="no-data">Pivot پیدا نشد</p>';
+// ═══════════ اسکریپت‌های کاربر (اندیکاتور/استراتژی با کد) ═══════════
+const scriptInfo = {}, btResults = {};
+let csOverlaySeries = [];
+
+function rolling(a, p, f) {
+  return a.map((_, i) => {
+    if (i < p - 1) return null;
+    let r = a[i]; for (let j = i - p + 1; j <= i; j++) { if (a[j] == null) return null; r = f(r, a[j]); }
+    return r;
+  });
+}
+function makeTA(candles) {
+  const g = (x, i) => Array.isArray(x) ? x[i] : x;
+  const cmp = (a, b, f) => candles.map((_, i) => { const a1 = g(a, i), b1 = g(b, i), a0 = g(a, i - 1), b0 = g(b, i - 1); return i > 0 && a1 != null && b1 != null && a0 != null && b0 != null && f(a1, b1, a0, b0); });
+  const rel = (a, b, f) => candles.map((_, i) => { const x = g(a, i), y = g(b, i); return x != null && y != null && f(x, y); });
+  return {
+    sma: calcSMA, ema: calcEMA,
+    rsi: (src, p) => src.length > (p || 14) ? calcRSI(src, p || 14) : src.map(() => null),
+    atr: p => calcATR(candles, p || 14),
+    bb: (src, p, m) => calcBB(src, p || 20, m || 2),
+    macd: (src, f, s, sg) => { const r = calcMACD(src, f || 12, s || 26, sg || 9); return { macd: r.ml, signal: r.sl, hist: r.hl }; },
+    stoch: (k, d, sm) => calcStoch(candles, k || 14, d || 3, sm || 3),
+    vwap: () => calcVWAP(candles, currentIv),
+    highest: (a, p) => rolling(a, p, Math.max), lowest: (a, p) => rolling(a, p, Math.min),
+    change: (a, k) => a.map((v, i) => i >= (k || 1) && v != null && a[i - (k || 1)] != null ? v - a[i - (k || 1)] : null),
+    crossover: (a, b) => cmp(a, b, (a1, b1, a0, b0) => a1 > b1 && a0 <= b0),
+    crossunder: (a, b) => cmp(a, b, (a1, b1, a0, b0) => a1 < b1 && a0 >= b0),
+    gt: (a, b) => rel(a, b, (x, y) => x > y), lt: (a, b) => rel(a, b, (x, y) => x < y),
+    and: (...as) => candles.map((_, i) => as.every(a => !!g(a, i))),
+    or: (...as) => candles.map((_, i) => as.some(a => !!g(a, i))),
+    not: a => candles.map((_, i) => !g(a, i))
+  };
+}
+const SCRIPT_BLOCKED = ['window', 'document', 'fetch', 'localStorage', 'sessionStorage', 'XMLHttpRequest', 'globalThis', 'self', 'Function', 'navigator', 'location', 'indexedDB', 'WebSocket', 'parent', 'top'];
+const SCRIPT_NAMES = ['open', 'high', 'low', 'close', 'volume', 'time', 'ta', 'indicator', 'strategy', 'input', 'plot', 'hline', 'longEntry', 'longExit', 'shortEntry', 'shortExit', 'stopLoss', 'takeProfit'];
+const HEX = /^#[0-9a-fA-F]{6}$/;
+
+function runScript(sc, candles) {
+  const res = { kind: 'indicator', overlay: false, title: sc.name, plots: [], hlines: [], inputs: [], sig: {}, sl: 0, tp: 0, fee: 0.1, error: null };
+  const n = candles.length, col = k => candles.map(c => c[k]);
+  const arr = (v, what) => { if (!Array.isArray(v) || v.length !== n) throw new Error(`${what}: باید آرایه‌ای هم‌طول کندل‌ها (${n}) باشد`); return v; };
+  const api = {
+    indicator: (title, o) => { res.kind = 'indicator'; if (title) res.title = String(title).slice(0, 60); res.overlay = !!(o && o.overlay); },
+    strategy: (title, o) => { res.kind = 'strategy'; if (title) res.title = String(title).slice(0, 60); res.overlay = !!(o && o.overlay); if (o && isFinite(o.fee)) res.fee = Math.min(5, Math.max(0, +o.fee)); },
+    input: (name, def) => {
+      if (typeof name !== 'string' || !/^\w{1,30}$/.test(name)) throw new Error('نام input فقط حروف انگلیسی، عدد و _ (حداکثر ۳۰ کاراکتر)');
+      if (!['number', 'boolean', 'string'].includes(typeof def)) throw new Error('مقدار پیش‌فرض input باید عدد، true/false یا متن باشد');
+      if (!res.inputs.some(x => x.name === name)) res.inputs.push({ name, def });
+      const v = sc.params && sc.params[name];
+      if (v === undefined) return def;
+      if (typeof def === 'number') { const x = parseFloat(v); return isFinite(x) ? x : def; }
+      return typeof def === 'boolean' ? !!v : String(v);
+    },
+    plot: (vals, title, color, type) => {
+      if (res.plots.length >= 8) throw new Error('حداکثر ۸ plot مجاز است');
+      arr(vals, 'plot');
+      res.plots.push({ name: String(title || 'plot' + (res.plots.length + 1)).slice(0, 30), color: HEX.test(color) ? color : OV_COLORS[res.plots.length % 6],
+        type: type === 'histogram' ? 'histogram' : 'line', values: vals.map(v => typeof v === 'number' && isFinite(v) ? v : null) });
+    },
+    hline: (price, color) => { if (isFinite(price) && res.hlines.length < 6) res.hlines.push({ price: +price, color: HEX.test(color) ? color : '#6b7280' }); },
+    longEntry: v => { res.sig.longEntry = arr(v, 'longEntry'); }, longExit: v => { res.sig.longExit = arr(v, 'longExit'); },
+    shortEntry: v => { res.sig.shortEntry = arr(v, 'shortEntry'); }, shortExit: v => { res.sig.shortExit = arr(v, 'shortExit'); },
+    stopLoss: p => { res.sl = Math.max(0, +p || 0); }, takeProfit: p => { res.tp = Math.max(0, +p || 0); }
+  };
+  try {
+    const fn = new Function(...SCRIPT_NAMES, ...SCRIPT_BLOCKED, '"use strict";\n' + sc.code);
+    fn(col('open'), col('high'), col('low'), col('close'), col('volume'), col('time'), makeTA(candles),
+       ...SCRIPT_NAMES.slice(7).map(k => api[k]), ...SCRIPT_BLOCKED.map(() => undefined));
+  } catch (e) { res.error = (e && e.message) || String(e); }
+  return res;
+}
+
+function backtest(r, candles) {
+  const n = candles.length, s = r.sig, fee = r.fee / 100;
+  const sg = (k, i) => !!(s[k] && s[k][i]);
+  let pos = 0, entryPx = 0, entryIdx = 0, eq = 1, pend = {};
+  const trades = [], curve = new Array(n).fill(1), markers = [];
+  const close = (i, px, reason, forced) => {
+    const ret = pos * (px / entryPx - 1) - 2 * fee; eq *= 1 + ret;
+    trades.push({ dir: pos, entryIdx, exitIdx: i, entry: entryPx, exit: px, ret: ret * 100, reason, open: !!forced });
+    if (!forced) markers.push({ time: candles[i].time, position: pos > 0 ? 'aboveBar' : 'belowBar', color: '#ffc107', shape: 'circle', text: 'X' });
+    pos = 0;
+  };
+  const enter = (i, dir) => {
+    pos = dir; entryPx = candles[i].open; entryIdx = i;
+    markers.push({ time: candles[i].time, position: dir > 0 ? 'belowBar' : 'aboveBar', color: dir > 0 ? '#26a69a' : '#ef5350', shape: dir > 0 ? 'arrowUp' : 'arrowDown', text: dir > 0 ? 'L' : 'S' });
+  };
+  for (let i = 0; i < n; i++) {
+    const c = candles[i];
+    if (i > 0) {   // سیگنال کندل قبل، در قیمت باز این کندل اجرا میشه
+      if (pos > 0 && (pend.lx || pend.se)) close(i, c.open, 'signal');
+      else if (pos < 0 && (pend.sx || pend.le)) close(i, c.open, 'signal');
+      if (pos === 0) { if (pend.le) enter(i, 1); else if (pend.se) enter(i, -1); }
+    }
+    if (pos !== 0 && (r.sl || r.tp)) {
+      const slPx = r.sl ? entryPx * (1 - pos * r.sl / 100) : null, tpPx = r.tp ? entryPx * (1 + pos * r.tp / 100) : null;
+      if (pos > 0) { if (slPx != null && c.low <= slPx) close(i, Math.min(slPx, c.open), 'SL'); else if (tpPx != null && c.high >= tpPx) close(i, Math.max(tpPx, c.open), 'TP'); }
+      else { if (slPx != null && c.high >= slPx) close(i, Math.max(slPx, c.open), 'SL'); else if (tpPx != null && c.low <= tpPx) close(i, Math.min(tpPx, c.open), 'TP'); }
+    }
+    curve[i] = pos !== 0 ? eq * (1 + pos * (c.close / entryPx - 1) - fee) : eq;
+    pend = { le: sg('longEntry', i), lx: sg('longExit', i), se: sg('shortEntry', i), sx: sg('shortExit', i) };
+  }
+  if (pos !== 0) { close(n - 1, candles[n - 1].close, 'open', true); curve[n - 1] = eq; }
+  let peak = 1, maxDD = 0; curve.forEach(v => { peak = Math.max(peak, v); maxDD = Math.max(maxDD, (peak - v) / peak); });
+  const wins = trades.filter(t => t.ret > 0), sumW = wins.reduce((a, t) => a + t.ret, 0), sumL = trades.filter(t => t.ret <= 0).reduce((a, t) => a - t.ret, 0);
+  const rets = trades.map(t => t.ret);
+  return { trades, curve, markers, stats: {
+    n: trades.length, winRate: trades.length ? wins.length / trades.length * 100 : 0, totalRet: (eq - 1) * 100,
+    avg: trades.length ? rets.reduce((a, b) => a + b, 0) / trades.length : 0,
+    best: rets.length ? Math.max(...rets) : 0, worst: rets.length ? Math.min(...rets) : 0,
+    pf: sumL ? sumW / sumL : null, maxDD: maxDD * 100, buyHold: (candles[n - 1].close / candles[0].open - 1) * 100 } };
+}
+
+function fillCustomPane(key, r, times) {
+  let p = extraPanes[key];
+  if (!p) { p = makePane(key); p.series = []; extraPanes[key] = p; }
+  p.series.forEach(s => { try { p.chart.removeSeries(s); } catch (e) {} });
+  p.series = r.plots.map(pl => {
+    const s = pl.type === 'histogram'
+      ? p.chart.addHistogramSeries({ color: pl.color, priceLineVisible: false, lastValueVisible: false })
+      : p.chart.addLineSeries({ color: pl.color, lineWidth: 1.5, priceLineVisible: false });
+    s.setData(toSeries(times, pl.values)); return s;
+  });
+  r.hlines.forEach(h => { if (p.series[0]) p.series[0].createPriceLine({ price: h.price, color: h.color, lineWidth: 1, lineStyle: 2, axisLabelVisible: false }); });
+  p.custom = r.plots;
+  document.getElementById(`lg-${key}-title`).textContent = r.title;
+}
+function renderCustom(candles, times) {
+  csOverlaySeries.forEach(s => { try { priceChart.removeSeries(s); } catch (e) {} }); csOverlaySeries = [];
+  Object.keys(btResults).forEach(k => delete btResults[k]);
+  const want = new Set(), markers = [];
+  S.customIndicators.filter(sc => sc.on).forEach(sc => {
+    const r = runScript(sc, candles);
+    scriptInfo[sc.id] = { kind: r.kind, inputs: r.inputs, error: r.error };
+    if (r.error) return;
+    if (r.kind === 'strategy') { const bt = backtest(r, candles); bt.title = r.title; btResults[sc.id] = bt; markers.push(...bt.markers); }
+    if (!r.plots.length) return;
+    if (r.overlay) {
+      r.plots.forEach(pl => {
+        const s = priceChart.addLineSeries({ color: pl.color, lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+        s.setData(toSeries(times, pl.values)); csOverlaySeries.push(s);
+        overlayDefs.push({ label: pl.name + ' ', color: pl.color, vals: pl.values });
+      });
+    } else { const key = 'cs_' + sc.id; want.add(key); fillCustomPane(key, r, times); }
+  });
+  Object.keys(extraPanes).filter(k => k.startsWith('cs_') && !want.has(k)).forEach(removePane);
+  candleSeries.setMarkers(markers.sort((a, b) => a.time - b.time));
+}
+
+function updScript(id, on) { const sc = S.customIndicators.find(s => s.id === id); if (sc) { sc.on = !!on; onIndChange(); } }
+function updParam(id, name, val) {
+  const sc = S.customIndicators.find(s => s.id === id), inp = ((scriptInfo[id] || {}).inputs || []).find(x => x.name === name);
+  if (!sc || !inp) return;
+  sc.params[name] = typeof inp.def === 'number' ? (isFinite(parseFloat(val)) ? parseFloat(val) : inp.def) : typeof inp.def === 'boolean' ? !!val : String(val).slice(0, 50);
+  onIndChange();
+}
+function delScript(id) {
+  const sc = S.customIndicators.find(s => s.id === id);
+  if (!sc || !confirm(`اسکریپت «${sc.name}» حذف شود؟`)) return;
+  S.customIndicators = S.customIndicators.filter(s => s.id !== id); delete scriptInfo[id]; onIndChange();
+}
+function inputField(sc, inp) {
+  const v = sc.params[inp.name] !== undefined ? sc.params[inp.name] : inp.def, nm = escHtml(inp.name);
+  if (typeof inp.def === 'boolean') return `<label><input type="checkbox" ${v ? 'checked' : ''} onchange="updParam('${sc.id}','${nm}',this.checked)">${nm}</label>`;
+  if (typeof inp.def === 'number') return `<label>${nm}<input type="number" step="any" value="${+v}" onchange="updParam('${sc.id}','${nm}',this.value)"></label>`;
+  return `<label>${nm}<input type="text" style="width:90px" value="${escHtml(String(v))}" onchange="updParam('${sc.id}','${nm}',this.value)"></label>`;
+}
+
+function fmtT(t) {
+  const o = { day: '2-digit', month: '2-digit', year: '2-digit' };
+  if (currentIv !== '1d') { o.hour = '2-digit'; o.minute = '2-digit'; o.hour12 = false; }
+  return new Date(t * 1000).toLocaleString('en-GB', o);
+}
+function sparkline(eq) {
+  const mn = Math.min(...eq), mx = Math.max(...eq), rg = mx - mn || 1;
+  const pts = eq.map((v, i) => `${(i / (eq.length - 1) * 300).toFixed(1)},${(56 - (v - mn) / rg * 52).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 300 60" style="width:100%;height:60px;direction:ltr"><polyline points="${pts}" fill="none" stroke="#2962ff" stroke-width="1.5"/></svg>`;
+}
+function btReport() {
+  const ids = Object.keys(btResults).filter(id => S.customIndicators.some(s => s.id === id && s.on));
+  if (!ids.length) return '';
+  const pc = v => `<b class="${v >= 0 ? 'bt-up' : 'bt-dn'}">${v.toFixed(2)}%</b>`;
+  return `<div class="ind-sec"><h4>نتیجه بک‌تست — ${escHtml(lastSymbol)} ${currentIv} (${lastCandles.length} کندل)</h4>` + ids.map(id => {
+    const b = btResults[id], st = b.stats, sc = S.customIndicators.find(s => s.id === id);
+    const rows = b.trades.slice(-30).reverse().map((t, i) => `<tr><td>${b.trades.length - i}</td><td>${t.dir > 0 ? 'Long' : 'Short'}</td><td>${fmtT(candles0(t.entryIdx))}</td><td>${fmtT(candles0(t.exitIdx))}</td><td>${t.reason}${t.open ? ' (باز)' : ''}</td><td class="${t.ret >= 0 ? 'bt-up' : 'bt-dn'}">${t.ret.toFixed(2)}%</td></tr>`).join('');
+    return `<div class="bt-card"><b>${escHtml(b.title || sc.name)}</b>
+      <div class="bt-grid">
+        <div>بازده کل${pc(st.totalRet)}</div><div>خرید و نگهداری${pc(st.buyHold)}</div><div>تعداد معامله<b>${st.n}</b></div>
+        <div>درصد برد<b>${st.winRate.toFixed(1)}%</b></div><div>میانگین معامله${pc(st.avg)}</div><div>Profit Factor<b>${st.pf == null ? '—' : st.pf.toFixed(2)}</b></div>
+        <div>بیشترین افت<b class="bt-dn">-${st.maxDD.toFixed(2)}%</b></div><div>بهترین${pc(st.best)}</div><div>بدترین${pc(st.worst)}</div>
+      </div>${sparkline(b.curve)}
+      <div class="bt-tbl"><table><tr><th>#</th><th>جهت</th><th>ورود</th><th>خروج</th><th>علت</th><th>سود</th></tr>${rows}</table></div></div>`;
+  }).join('') + `<p class="no-data">ورود در قیمت باز کندل بعد از سیگنال، کارمزد هر طرف طبق strategy(…,{fee}) ؛ نتیجه‌ی گذشته تضمین آینده نیست.</p></div>`;
+}
+function candles0(i) { return lastCandles[i] ? lastCandles[i].time : 0; }
+
+// ─── ویرایشگر اسکریپت ───
+const TEMPLATES = {
+  ema_cross: { name: 'تقاطع EMA (روی قیمت)', code:
+"indicator('EMA Cross', { overlay: true });\nconst fast = ta.ema(close, input('fast', 9));\nconst slow = ta.ema(close, input('slow', 21));\nplot(fast, 'Fast', '#f59e0b');\nplot(slow, 'Slow', '#3b82f6');" },
+  rsi_sma: { name: 'RSI + SMA (پنل جدا)', code:
+"indicator('RSI + SMA');\nconst r = ta.rsi(close, input('len', 14));\nplot(r, 'RSI', '#ffc107');\nplot(ta.sma(r, input('smaLen', 9)), 'SMA', '#3b82f6');\nhline(70, '#ef5350');\nhline(30, '#26a69a');" },
+  strat_ema: { name: 'استراتژی تقاطع EMA', code:
+"strategy('EMA Cross Strategy', { fee: 0.1, overlay: true });\nconst fast = ta.ema(close, input('fast', 9));\nconst slow = ta.ema(close, input('slow', 21));\nlongEntry(ta.crossover(fast, slow));\nlongExit(ta.crossunder(fast, slow));\nshortEntry(ta.crossunder(fast, slow));\nshortExit(ta.crossover(fast, slow));\nstopLoss(input('sl', 3));      // درصد؛ 0 = غیرفعال\ntakeProfit(input('tp', 6));\nplot(fast, 'Fast', '#f59e0b');\nplot(slow, 'Slow', '#3b82f6');" },
+  strat_rsi: { name: 'استراتژی برگشت RSI (فقط لانگ)', code:
+"strategy('RSI Reversal', { fee: 0.1 });\nconst r = ta.rsi(close, input('len', 14));\nconst lo = input('oversold', 30), hi = input('overbought', 70);\nlongEntry(ta.crossover(r, lo));\nlongExit(ta.crossover(r, hi));\nplot(r, 'RSI', '#ffc107');\nhline(lo, '#26a69a');\nhline(hi, '#ef5350');" }
+};
+let editingId = null;
+function edErr(t) { document.getElementById('edErr').textContent = t; }
+function openEditor(id, tpl) {
+  editingId = id || null;
+  const sc = id ? S.customIndicators.find(s => s.id === id) : null, t = TEMPLATES[tpl || 'ema_cross'];
+  document.getElementById('edName').value = sc ? sc.name : t.name;
+  document.getElementById('edCode').value = sc ? sc.code : t.code;
+  document.getElementById('edForce').style.display = 'none'; edErr('');
+  document.getElementById('edOverlay').classList.add('show');
+}
+function closeEditor() { document.getElementById('edOverlay').classList.remove('show'); }
+function loadTemplate(k) {
+  if (!k || !TEMPLATES[k]) return;
+  if (editingId && !confirm('کد فعلی با نمونه جایگزین شود؟')) return;
+  document.getElementById('edCode').value = TEMPLATES[k].code;
+  if (!editingId) document.getElementById('edName').value = TEMPLATES[k].name;
+}
+function edKey(e) {
+  if (e.key !== 'Tab') return;
+  e.preventDefault();
+  const t = e.target, s = t.selectionStart;
+  t.value = t.value.slice(0, s) + '  ' + t.value.slice(t.selectionEnd); t.selectionStart = t.selectionEnd = s + 2;
+}
+function saveEditor(force) {
+  const name = document.getElementById('edName').value.trim().slice(0, 60) || 'اسکریپت بدون نام';
+  const code = document.getElementById('edCode').value.slice(0, 20000);
+  if (!code.trim()) return edErr('کد خالی است');
+  const existing = editingId && S.customIndicators.find(s => s.id === editingId);
+  if (!existing && S.customIndicators.length >= 30) return edErr('حداکثر ۳۰ اسکریپت');
+  const tmp = { id: existing ? existing.id : newScriptId(), name, code, on: true, params: existing ? existing.params : {} };
+  if (!force && lastCandles.length) {
+    const r = runScript(tmp, lastCandles);
+    if (r.error) { edErr('خطا: ' + r.error + '\nاگر می‌خواهید با همین کد ذخیره شود «ذخیره با وجود خطا» را بزنید.'); document.getElementById('edForce').style.display = ''; return; }
+  }
+  if (existing) { existing.name = name; existing.code = code; existing.on = true; } else S.customIndicators.push(tmp);
+  closeEditor(); onIndChange();
 }
 
 // ─── Boot ────────────────────────────────────────────────────────────────────
@@ -1432,6 +1627,7 @@ loadSettings();
 initCharts();
 populateSymbolDropdown();
 applyIndicatorVisibility();
+initDrawings();
 // لایه محافظ: دوباره روی window.load هم اجرا میشه، برای اطمینان بیشتر
 window.addEventListener('load', applyResponsiveLayout);
 </script>
