@@ -109,7 +109,7 @@ function renderExtras(candles, times) {
     const def = EXTRA_DEFS[k];
     extraData[k] = def.compute(candles);
     def.fill(extraPanes[k].series, extraData[k], times);
-    document.getElementById(`lg-${k}-title`).textContent = def.title();
+    document.getElementById(`lg-${k}-title`).textContent = def.title(extraData[k]);
   });
 }
 function updateExtraLegends(idx) {
@@ -128,6 +128,7 @@ function applyIndicatorVisibility() {
   syncExtraPane('stoch', S.stoch.on);
   syncExtraPane('atr', S.atr.on);
   syncExtraPane('obv', S.obv.on);
+  syncExtraPane('rsisma', S.rsisma.on);
   syncExtraPane('roc', S.roc.on);
   syncExtraPane('adx', S.adx.on);
   resizeChartsNow();
@@ -428,7 +429,7 @@ function updateTimeAxes() {
   order.forEach((k, i) => { try { m[k].applyOptions({ timeScale: { visible: i === order.length - 1 } }); } catch (e) {} });
 }
 function closePane(key) {
-  if (['rsi', 'macd', 'stoch', 'atr', 'obv', 'roc', 'adx'].includes(key)) S[key].on = false;
+  if (['rsi', 'macd', 'stoch', 'atr', 'obv', 'rsisma', 'roc', 'adx'].includes(key)) S[key].on = false;
   else { const sc = S.customIndicators.find(s => 'cs_' + s.id === key); if (sc) sc.on = false; }
   onIndChange();
 }
@@ -450,14 +451,33 @@ function initGrips() { ['price', 'rsi', 'macd'].forEach(k => addGrip(document.ge
 function resetLayout() { S.paneH = {}; chartMax = false; updateMaxBtn(); saveSettings(); resizeChartsNow(); drawVersion++; msg('↺ اندازه‌ی پنل‌ها بازنشانی شد'); }
 const lineOpt = color => ({ color, lineWidth: 1.5, priceLineVisible: false });
 EXTRA_DEFS.obv = {
-  title: () => `OBV (SMA ${S.obv.sma})`,
+  title: d => `OBV (SMA ${S.obv.sma})` + (d && d.cal ? ' · همتراز با TV' : d && d.lost ? ' · ⚠ همترازی منقضی' : ''),
   build(ch) {
     return { o: ch.addLineSeries({ ...lineOpt('#2962ff'), priceFormat: { type: 'custom', formatter: fxc, minMove: 1 } }),
              s: ch.addLineSeries({ ...lineOpt('#ff6d00'), priceFormat: { type: 'custom', formatter: fxc, minMove: 1 } }) };
   },
-  compute: c => { const o = calcOBV(c); return { o, s: calcSMA(o, S.obv.sma) }; },
+  compute: c => {
+    const key = lastSymbol + '|' + currentIv, a0 = S.obv.anchors[key];
+    const r = calibrateOBV(calcOBV(c), c.map(x => x.time), a0);
+    if (r.matched && r.anchor && (!a0 || r.anchor.t !== a0.t)) { S.obv.anchors[key] = r.anchor; saveSettings(); }
+    return { o: r.values, s: calcSMA(r.values, S.obv.sma), cal: r.matched, lost: !!a0 && !r.matched };
+  },
   fill(sr, d, t) { sr.o.setData(toSeries(t, d.o)); sr.s.setData(toSeries(t, d.s)); },
   legend: (d, i) => `<span style="color:#2962ff">OBV ${fxc(d.o[i])}</span> <span style="color:#ff6d00">SMA ${fxc(d.s[i])}</span>`
+};
+EXTRA_DEFS.rsisma = {
+  title: () => `RSI (${S.rsisma.period}) SMA (${S.rsisma.sma})`,
+  build(ch) {
+    const r = ch.addLineSeries(lineOpt('#ffc107')), m = ch.addLineSeries(lineOpt('#3b82f6'));
+    [70, 30].forEach(p => r.createPriceLine({ price: p, color: '#6b7280', lineWidth: 1, lineStyle: 2, axisLabelVisible: false }));
+    return { r, m };
+  },
+  compute: c => {
+    const cl = c.map(x => x.close), r = cl.length > S.rsisma.period ? calcRSI(cl, S.rsisma.period) : cl.map(() => null);
+    return { r, m: calcSMA(r, S.rsisma.sma) };
+  },
+  fill(sr, d, t) { sr.r.setData(toSeries(t, d.r)); sr.m.setData(toSeries(t, d.m)); },
+  legend: (d, i) => `<span style="color:#ffc107">RSI ${fx(d.r[i])}</span> <span style="color:#3b82f6">SMA ${fx(d.m[i])}</span>`
 };
 EXTRA_DEFS.roc = {
   title: () => `ROC (${S.roc.period})`,

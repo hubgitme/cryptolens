@@ -5,7 +5,7 @@
 let currentIv = '4h';
 
 // ─── لیست ارزها (۱۰ ارز برتر + ذخیره‌شده‌های کاربر با localStorage) ──────────
-const TOP_COINS = ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','CRVUSDT','ADAUSDT','XLMUSDT','DOGEUSDT','NEARUSDT','GRAMUSDT','SUIUSDT','PEPEUSDT',];
+const TOP_COINS = ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','CRVUSDT','ADAUSDT','XLMUSDT','DOGEUSDT','NEARUSDT','TONUSDT','SUIUSDT','PEPEUSDT',];
 
 function getSavedSymbols() {
   try { return JSON.parse(localStorage.getItem('savedSymbols') || '[]'); }
@@ -64,7 +64,8 @@ function defaultSettings() {
     macd:  { on: true, fast: 12, slow: 26, sig: 9 },
     stoch: { on: false, k: 14, d: 3, smooth: 3 },
     atr:   { on: false, period: 14 },
-    obv:   { on: false, sma: 20 },
+    obv:   { on: false, sma: 20, anchors: {} },
+    rsisma: { on: false, period: 14, sma: 9 },
     roc:   { on: false, period: 9 },
     adx:   { on: false, period: 14 },
     customIndicators: []
@@ -114,7 +115,13 @@ function sanitizeSettings(raw, imported) {
   const a = raw.atr || {};
   o.atr = { on: toBool(a.on, false), period: toInt(a.period, 14, 2, 200) };
   const ob = raw.obv || {}, ro = raw.roc || {}, ad = raw.adx || {};
-  o.obv = { on: toBool(ob.on, false), sma: toInt(ob.sma, 20, 1, 500) };
+  o.obv = { on: toBool(ob.on, false), sma: toInt(ob.sma, 20, 1, 500), anchors: {} };
+  if (ob.anchors && typeof ob.anchors === 'object') Object.keys(ob.anchors).slice(0, 60).forEach(k => {
+    const a = ob.anchors[k];
+    if (/^[A-Za-z0-9]{2,20}\|(1h|4h|1d|1w)$/.test(k) && a && isFinite(a.t) && isFinite(a.v)) o.obv.anchors[k] = { t: +a.t, v: +a.v };
+  });
+  const rs = raw.rsisma || {};
+  o.rsisma = { on: toBool(rs.on, false), period: toInt(rs.period, 14, 2, 200), sma: toInt(rs.sma, 9, 1, 500) };
   o.roc = { on: toBool(ro.on, false), period: toInt(ro.period, 9, 1, 500) };
   o.adx = { on: toBool(ad.on, false), period: toInt(ad.period, 14, 2, 100) };
   o.customIndicators = sanitizeScripts(raw.customIndicators, imported);

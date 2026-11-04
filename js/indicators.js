@@ -137,3 +137,23 @@ function calcADX(c, p) {   // ADX و ‎+DI/−DI به روش Wilder
   return out;
 }
 const fxc = v => v != null ? v.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 2 }) : '—';
+
+// ─── OBV: همتراز کردن با TradingView ────────────────────────────────────────
+// OBV تجمعی است و مقدار مطلقش به «کندل شروع» بستگی دارد (TradingView از ابتدای تاریخچه‌ی بارگذاری‌شده‌ی خودش
+// شروع می‌کند، ما از اولین کندل دریافتی). شکل نمودار یکی است و فقط یک عدد ثابت فرق دارد؛ با یک «لنگر» جبران میشود.
+function calibrateOBV(raw, times, anchor) {   // anchor: {t, v} یا null
+  if (!anchor) return { values: raw, anchor: null, matched: false };
+  const j = times.indexOf(anchor.t);
+  if (j < 0) return { values: raw, anchor, matched: false };   // لنگر از پنجره‌ی داده بیرون رفته
+  const off = anchor.v - raw[j], values = raw.map(x => x + off), k = times.length - 2;
+  // لنگر به کندل بسته‌ی قبل از آخر منتقل میشود تا با جلو رفتن پنجره‌ی داده معتبر بماند
+  return { values, anchor: k >= 0 ? { t: times[k], v: values[k] } : anchor, matched: true };
+}
+function makeObvAnchor(raw, times, target) {   // target = مقدار OBV آخرین کندل در TradingView
+  const n = raw.length; if (n < 3) return null;
+  return { t: times[n - 2], v: raw[n - 2] + (target - raw[n - 1]) };
+}
+function parseCompact(text) {   // 40.5K، 1.2M، 1,250,000، −3.1K
+  const m = String(text).trim().replace(/[,\s]/g, '').replace(/\u2212/g, '-').match(/^(-?\d*\.?\d+)([kmb]?)$/i);
+  return m ? parseFloat(m[1]) * { '': 1, k: 1e3, m: 1e6, b: 1e9 }[m[2].toLowerCase()] : null;
+}

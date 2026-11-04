@@ -70,7 +70,14 @@ function renderPanel() {
       ${paneRow('macd', 'MACD', fld('macd', 'fast', 'سریع', 'min="2"') + fld('macd', 'slow', 'کند', 'min="3"') + fld('macd', 'sig', 'سیگنال', 'min="1"'))}
       ${paneRow('stoch', 'Stochastic', fld('stoch', 'k', 'K', 'min="2"') + fld('stoch', 'd', 'D', 'min="1"') + fld('stoch', 'smooth', 'نرم‌سازی', 'min="1"'))}
       ${paneRow('atr', 'ATR', fld('atr', 'period', 'دوره', 'min="2" max="200"'))}
+      ${paneRow('rsisma', 'RSI + SMA', fld('rsisma', 'period', 'دوره RSI', 'min="2" max="200"') + fld('rsisma', 'sma', 'دوره SMA', 'min="1" max="500"'))}
       ${paneRow('obv', 'OBV + SMA', fld('obv', 'sma', 'دوره SMA', 'min="1" max="500"'))}
+      <div class="ind-row sub">
+        <label style="flex:1">همتراز با TradingView<input id="obvTv" type="text" placeholder="OBV آخرین کندل در TV، مثلاً 40.5K" style="flex:1;direction:ltr"></label>
+        <button onclick="calibrateObv()">همتراز کن</button><button onclick="clearObvAnchor()">حذف</button>
+        <span class="tag">${S.obv.anchors[obvKey()] ? 'همتراز شده' : 'همتراز نیست'}</span>
+      </div>
+      <div class="ind-row sub"><span class="no-data">OBV تجمعی است و مقدار مطلقش به کندل شروع بستگی دارد (TradingView از ابتدای تاریخچه‌ی خودش حساب می‌کند). شکل نمودار یکی است؛ با وارد کردن عدد فعلی TV، مقدار ثابت اختلاف جبران میشود. برای هر ارز و تایم‌فریم جداست.</span></div>
       ${paneRow('roc', 'ROC', fld('roc', 'period', 'دوره', 'min="1" max="500"'))}
       ${paneRow('adx', 'ADX / +DI / −DI', fld('adx', 'period', 'دوره', 'min="2" max="100"'))}
     </div>
@@ -102,3 +109,15 @@ function renderPanel() {
       <div class="ind-msg" id="indMsg"></div>
     </div>`;
 }
+
+// ─── OBV: همترازی با TradingView ────────────────────────────────────────────
+function obvKey() { return `${lastSymbol}|${currentIv}`; }
+function calibrateObv() {
+  const v = parseCompact(document.getElementById('obvTv').value);
+  if (v == null) return msg('❌ عدد معتبر وارد کنید (مثلاً 40.5K یا 1250000)');
+  if (lastCandles.length < 3) return msg('ابتدا داده بارگذاری شود');
+  S.obv.anchors[obvKey()] = makeObvAnchor(calcOBV(lastCandles), lastCandles.map(c => c.time), v);
+  S.obv.on = true;
+  onIndChange(); msg('✅ OBV با TradingView همتراز شد');
+}
+function clearObvAnchor() { delete S.obv.anchors[obvKey()]; onIndChange(); msg('همترازی OBV حذف شد'); }
