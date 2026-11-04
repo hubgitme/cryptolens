@@ -5,7 +5,7 @@
 let currentIv = '4h';
 
 // ─── لیست ارزها (۱۰ ارز برتر + ذخیره‌شده‌های کاربر با localStorage) ──────────
-const TOP_COINS = ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','CRVUSDT','ADAUSDT','XLMUSDT','DOGEUSDT','NEARUSDT','TONUSDT','SUIUSDT','PEPEUSDT',];
+const TOP_COINS = ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','CRVUSDT','ADAUSDT','XLMUSDT','DOGEUSDT','NEARUSDT','GRAMUSDT','SUIUSDT','PEPEUSDT',];
 
 function getSavedSymbols() {
   try { return JSON.parse(localStorage.getItem('savedSymbols') || '[]'); }
