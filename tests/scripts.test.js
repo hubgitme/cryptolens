@@ -47,3 +47,10 @@ test('sanitizeSettings: ورودی مخرب پاک‌سازی میشود و اس
   assert.equal(imp.customIndicators[0].on, false);
   assert.equal(X.sanitizeSettings({ iv: '1w' }).iv, '1w');
 });
+
+test('sanitizeSettings: لنگر OBV و RSI+SMA', () => {
+  const o = X.sanitizeSettings({ obv: { on: true, anchors: { 'BTCUSDT|4h': { t: 5, v: 7 }, 'bad key': { t: 1, v: 1 }, 'ETHUSDT|9x': { t: 1, v: 1 }, 'SOLUSDT|1w': { t: 'x', v: 1 } } }, rsisma: { on: true, period: 1, sma: 9 } });
+  assert.deepEqual(Object.keys(o.obv.anchors), ['BTCUSDT|4h']);
+  assert.equal(o.obv.anchors['BTCUSDT|4h'].v, 7);
+  assert.equal(o.rsisma.on, true); assert.equal(o.rsisma.period, 2);   // کمینه‌ی دوره
+});

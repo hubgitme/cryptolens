@@ -32,3 +32,26 @@ test('toSeries: برای مقدارهای خالی «جای خالی» می‌گ
   const s = I.toSeries([10, 20, 30], [null, 5, 6]);
   assert.equal(s.length, 3); assert.equal(s[0].time, 10); assert.ok(!('value' in s[0])); assert.equal(s[1].value, 5);
 });
+
+test('OBV: همترازی با مقدار TradingView و ماندگاری با جلو رفتن پنجره', () => {
+  const closes = [10, 11, 10, 10, 12, 13], vols = [5, 3, 4, 2, 6, 7];
+  const candles = closes.map((c, i) => ({ close: c, volume: vols[i], time: 100 + i }));
+  const times = candles.map(c => c.time), raw = Array.from(I.calcOBV(candles));
+  const anchor = I.makeObvAnchor(raw, times, 40500);
+  const r = I.calibrateOBV(raw, times, anchor);
+  assert.ok(r.matched); near(r.values[5], 40500);                     // آخرین کندل = عدد TV
+  near(r.values[5] - r.values[4], raw[5] - raw[4]);                  // شکل نمودار تغییر نمی‌کند
+  // پنجره یک کندل جلو می‌رود (اولین کندل حذف و یک کندل جدید اضافه میشود)
+  const c2 = candles.slice(1).concat([{ close: 12, volume: 9, time: 106 }]);
+  const t2 = c2.map(c => c.time), raw2 = Array.from(I.calcOBV(c2));
+  const r2 = I.calibrateOBV(raw2, t2, r.anchor);
+  assert.ok(r2.matched);
+  near(r2.values[4], 40500);                                          // کندل آخرِ قبلی همان مقدار TV را حفظ می‌کند
+  near(r2.values[5], 40500 - 9);                                      // کندل جدید با افت قیمت ۱۳→۱۲
+  assert.equal(I.calibrateOBV(raw, times, { t: 1, v: 5 }).matched, false);   // لنگر بیرون از پنجره
+});
+test('parseCompact', () => {
+  assert.equal(I.parseCompact('40.5K'), 40500); assert.equal(I.parseCompact('1.2m'), 1200000);
+  assert.equal(I.parseCompact('1,250,000'), 1250000); assert.equal(I.parseCompact('\u22123.1K'), -3100);
+  assert.equal(I.parseCompact('abc'), null);
+});
