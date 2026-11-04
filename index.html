@@ -2,9 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <link rel="manifest" href="./manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>تحلیل تکنیکال ارز دیجیتال</title>
   <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
   <style>
@@ -262,7 +260,6 @@
       <button onclick="chooseIv('1h')"  id="btn-1h">1H</button>
       <button onclick="chooseIv('4h')"  id="btn-4h" class="active">4H</button>
       <button onclick="chooseIv('1d')"  id="btn-1d">1D</button>
-       <button onclick="chooseIv('1w')"  id="btn-1w">1W</button>
     </div>
     <button id="indBtn" onclick="openInd()">📈 اندیکاتورها</button>
     <button id="loadBtn" onclick="loadData()" title="بروزرسانی داده">🔄</button>
@@ -338,7 +335,7 @@
   <details><summary style="cursor:pointer;font-size:.78rem;color:var(--muted)">راهنمای API</summary><pre class="code-doc">متغیرها (آرایه هم‌طول کندل‌ها): open high low close volume time
 ta.sma(src,len)  ta.ema(src,len)  ta.rsi(src,len)  ta.atr(len)
 ta.bb(src,len,mult) -> {mid,up,lo}     ta.macd(src,fast,slow,sig) -> {macd,signal,hist}
-ta.stoch(k,d,smooth) -> {k,d}          ta.vwap()
+ta.stoch(k,d,smooth) -> {k,d}          ta.vwap()   ta.obv()   ta.roc(src,len)   ta.adx(len) -> {adx,pdi,mdi}
 ta.highest(src,len)  ta.lowest(src,len)  ta.change(src,n)
 ta.crossover(a,b)  ta.crossunder(a,b)  ta.gt(a,b)  ta.lt(a,b)  ta.and(..)  ta.or(..)  ta.not(a)   (a و b آرایه یا عدد)
 
@@ -434,6 +431,9 @@ function defaultSettings() {
     macd:  { on: true, fast: 12, slow: 26, sig: 9 },
     stoch: { on: false, k: 14, d: 3, smooth: 3 },
     atr:   { on: false, period: 14 },
+    obv:   { on: false, sma: 20 },
+    roc:   { on: false, period: 9 },
+    adx:   { on: false, period: 14 },
     customIndicators: []
   };
 }
@@ -480,6 +480,10 @@ function sanitizeSettings(raw, imported) {
   o.stoch = { on: toBool(s.on, false), k: toInt(s.k, 14, 2, 200), d: toInt(s.d, 3, 1, 50), smooth: toInt(s.smooth, 3, 1, 50) };
   const a = raw.atr || {};
   o.atr = { on: toBool(a.on, false), period: toInt(a.period, 14, 2, 200) };
+  const ob = raw.obv || {}, ro = raw.roc || {}, ad = raw.adx || {};
+  o.obv = { on: toBool(ob.on, false), sma: toInt(ob.sma, 20, 1, 500) };
+  o.roc = { on: toBool(ro.on, false), period: toInt(ro.period, 9, 1, 500) };
+  o.adx = { on: toBool(ad.on, false), period: toInt(ad.period, 14, 2, 100) };
   o.customIndicators = sanitizeScripts(raw.customIndicators, imported);
   return o;
 }
@@ -505,7 +509,7 @@ function msg(t) {
 }
 
 // ─── محاسبات اندیکاتورها ────────────────────────────────────────────────────
-function toSeries(times, vals) { return times.map((t, i) => vals[i] != null ? { time: t, value: vals[i] } : null).filter(Boolean); }
+function toSeries(times, vals) { return times.map((t, i) => vals[i] != null ? { time: t, value: vals[i] } : { time: t }); }
 function calcSMA(a, p) {
   const out = new Array(a.length).fill(null);
   for (let i = p - 1; i < a.length; i++) {
@@ -686,6 +690,9 @@ function applyIndicatorVisibility() {
   document.getElementById('lg-macd-title').textContent = `MACD (${S.macd.fast},${S.macd.slow},${S.macd.sig})`;
   syncExtraPane('stoch', S.stoch.on);
   syncExtraPane('atr', S.atr.on);
+  syncExtraPane('obv', S.obv.on);
+  syncExtraPane('roc', S.roc.on);
+  syncExtraPane('adx', S.adx.on);
   resizeChartsNow();
 }
 
@@ -759,6 +766,9 @@ function renderPanel() {
       ${paneRow('macd', 'MACD', fld('macd', 'fast', 'سریع', 'min="2"') + fld('macd', 'slow', 'کند', 'min="3"') + fld('macd', 'sig', 'سیگنال', 'min="1"'))}
       ${paneRow('stoch', 'Stochastic', fld('stoch', 'k', 'K', 'min="2"') + fld('stoch', 'd', 'D', 'min="1"') + fld('stoch', 'smooth', 'نرم‌سازی', 'min="1"'))}
       ${paneRow('atr', 'ATR', fld('atr', 'period', 'دوره', 'min="2" max="200"'))}
+      ${paneRow('obv', 'OBV + SMA', fld('obv', 'sma', 'دوره SMA', 'min="1" max="500"'))}
+      ${paneRow('roc', 'ROC', fld('roc', 'period', 'دوره', 'min="1" max="500"'))}
+      ${paneRow('adx', 'ADX / +DI / −DI', fld('adx', 'period', 'دوره', 'min="2" max="100"'))}
     </div>
     <div class="ind-sec"><h4>اسکریپت‌های من (اندیکاتور و استراتژی با کد)</h4>${scRows}
       <div class="ind-add">
@@ -1109,7 +1119,7 @@ function renderAll(resetView) {
     rsiOS.setData(times.map(t => ({ time: t, value: S.rsi.os })));
     macdLineSeries.setData(toSeries(times, ml));
     macdSignalSeries.setData(toSeries(times, sl));
-    macdHistSeries.setData(times.map((t, i) => hl[i] != null ? { time: t, value: hl[i], color: hl[i] >= 0 ? '#26a69a' : '#ef5350' } : null).filter(Boolean));
+    macdHistSeries.setData(times.map((t, i) => hl[i] != null ? { time: t, value: hl[i], color: hl[i] >= 0 ? '#26a69a' : '#ef5350' } : { time: t }));
     renderOverlays(candles, times);
     renderExtras(candles, times);
     renderCustom(candles, times);
@@ -1123,6 +1133,7 @@ function renderAll(resetView) {
       priceChart.timeScale().setVisibleLogicalRange({ from: Math.max(0, total - barsToShow), to: total + 3 });
     }
     onSymbolRendered(symbol);
+    scheduleAlign();
     document.getElementById('status').textContent = `${symbol} · ${currentIv} · ${candles.length} کندل`;
   } catch (e) {
     document.getElementById('status').textContent = '❌ ' + e.message;
@@ -1448,6 +1459,8 @@ function makeTA(candles) {
     macd: (src, f, s, sg) => { const r = calcMACD(src, f || 12, s || 26, sg || 9); return { macd: r.ml, signal: r.sl, hist: r.hl }; },
     stoch: (k, d, sm) => calcStoch(candles, k || 14, d || 3, sm || 3),
     vwap: () => calcVWAP(candles, currentIv),
+    obv: () => calcOBV(candles), roc: (src, p) => calcROC(src, p || 9),
+    adx: p => { const r = calcADX(candles, p || 14); return { adx: r.adx, pdi: r.pdi, mdi: r.mdi }; },
     highest: (a, p) => rolling(a, p, Math.max), lowest: (a, p) => rolling(a, p, Math.min),
     change: (a, k) => a.map((v, i) => i >= (k || 1) && v != null && a[i - (k || 1)] != null ? v - a[i - (k || 1)] : null),
     crossover: (a, b) => cmp(a, b, (a1, b1, a0, b0) => a1 > b1 && a0 <= b0),
@@ -1731,7 +1744,7 @@ function toggleLockSelected() {
 }
 function toggleLockAll() { S.lockAll = !S.lockAll; saveSettings(); drawVersion++; refreshToolbar(); }
 function closePane(key) {
-  if (['rsi', 'macd', 'stoch', 'atr'].includes(key)) S[key].on = false;
+  if (['rsi', 'macd', 'stoch', 'atr', 'obv', 'roc', 'adx'].includes(key)) S[key].on = false;
   else { const sc = S.customIndicators.find(s => 'cs_' + s.id === key); if (sc) sc.on = false; }
   onIndChange();
 }
@@ -1752,6 +1765,81 @@ function addGrip(wrap, key) {
 function initGrips() { ['price', 'rsi', 'macd'].forEach(k => addGrip(document.getElementById('wrap-' + k), k)); }
 function resetLayout() { S.paneH = {}; chartMax = false; updateMaxBtn(); saveSettings(); resizeChartsNow(); drawVersion++; msg('↺ اندازه‌ی پنل‌ها بازنشانی شد'); }
 
+// ═══════════ اندیکاتورهای OBV+SMA / ROC / ADX و هم‌ترازی پنل‌ها ═══════════
+function calcOBV(c) {
+  let o = 0;
+  return c.map((x, i) => { if (i > 0) o += x.close > c[i - 1].close ? x.volume : x.close < c[i - 1].close ? -x.volume : 0; return o; });
+}
+function calcROC(src, p) { return src.map((v, i) => i >= p && v != null && src[i - p] ? (v - src[i - p]) / src[i - p] * 100 : null); }
+function calcADX(c, p) {   // ADX و ‎+DI/−DI به روش Wilder
+  const n = c.length, nul = () => new Array(n).fill(null), out = { adx: nul(), pdi: nul(), mdi: nul() };
+  if (n <= 2 * p) return out;
+  const tr = [0], pdm = [0], mdm = [0];
+  for (let i = 1; i < n; i++) {
+    const up = c[i].high - c[i - 1].high, dn = c[i - 1].low - c[i].low;
+    pdm.push(up > dn && up > 0 ? up : 0); mdm.push(dn > up && dn > 0 ? dn : 0);
+    tr.push(Math.max(c[i].high - c[i].low, Math.abs(c[i].high - c[i - 1].close), Math.abs(c[i].low - c[i - 1].close)));
+  }
+  let st = 0, sp = 0, sm = 0; const dx = nul();
+  for (let i = 1; i <= p; i++) { st += tr[i]; sp += pdm[i]; sm += mdm[i]; }
+  for (let i = p; i < n; i++) {
+    if (i > p) { st = st - st / p + tr[i]; sp = sp - sp / p + pdm[i]; sm = sm - sm / p + mdm[i]; }
+    const pd = st ? 100 * sp / st : 0, md = st ? 100 * sm / st : 0;
+    out.pdi[i] = pd; out.mdi[i] = md; dx[i] = pd + md ? 100 * Math.abs(pd - md) / (pd + md) : 0;
+  }
+  let a = 0; for (let i = p; i < 2 * p; i++) a += dx[i];
+  a /= p; out.adx[2 * p - 1] = a;
+  for (let i = 2 * p; i < n; i++) { a = (a * (p - 1) + dx[i]) / p; out.adx[i] = a; }
+  return out;
+}
+const fxc = v => v != null ? v.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 2 }) : '—';
+const lineOpt = color => ({ color, lineWidth: 1.5, priceLineVisible: false });
+EXTRA_DEFS.obv = {
+  title: () => `OBV (SMA ${S.obv.sma})`,
+  build(ch) {
+    return { o: ch.addLineSeries({ ...lineOpt('#2962ff'), priceFormat: { type: 'custom', formatter: fxc, minMove: 1 } }),
+             s: ch.addLineSeries({ ...lineOpt('#ff6d00'), priceFormat: { type: 'custom', formatter: fxc, minMove: 1 } }) };
+  },
+  compute: c => { const o = calcOBV(c); return { o, s: calcSMA(o, S.obv.sma) }; },
+  fill(sr, d, t) { sr.o.setData(toSeries(t, d.o)); sr.s.setData(toSeries(t, d.s)); },
+  legend: (d, i) => `<span style="color:#2962ff">OBV ${fxc(d.o[i])}</span> <span style="color:#ff6d00">SMA ${fxc(d.s[i])}</span>`
+};
+EXTRA_DEFS.roc = {
+  title: () => `ROC (${S.roc.period})`,
+  build(ch) { const r = ch.addLineSeries(lineOpt('#a855f7')); r.createPriceLine({ price: 0, color: '#6b7280', lineWidth: 1, lineStyle: 2, axisLabelVisible: false }); return { r }; },
+  compute: c => ({ r: calcROC(c.map(x => x.close), S.roc.period) }),
+  fill(sr, d, t) { sr.r.setData(toSeries(t, d.r)); },
+  legend: (d, i) => `<span style="color:#a855f7">${fx(d.r[i])}%</span>`
+};
+EXTRA_DEFS.adx = {
+  title: () => `ADX (${S.adx.period})`,
+  build(ch) {
+    const a = ch.addLineSeries({ ...lineOpt('#f59e0b'), lineWidth: 2 });
+    a.createPriceLine({ price: 25, color: '#6b7280', lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
+    return { a, p: ch.addLineSeries(lineOpt('#26a69a')), m: ch.addLineSeries(lineOpt('#ef5350')) };
+  },
+  compute: c => { const r = calcADX(c, S.adx.period); return { a: r.adx, p: r.pdi, m: r.mdi }; },
+  fill(sr, d, t) { sr.a.setData(toSeries(t, d.a)); sr.p.setData(toSeries(t, d.p)); sr.m.setData(toSeries(t, d.m)); },
+  legend: (d, i) => `<span style="color:#f59e0b">ADX ${fx(d.a[i])}</span> <span style="color:#26a69a">+DI ${fx(d.p[i])}</span> <span style="color:#ef5350">−DI ${fx(d.m[i])}</span>`
+};
+
+// پهنای محور قیمت همه‌ی چارت‌ها یکسان میشه تا کندل‌ها و اندیکاتورها دقیقاً زیر هم بیفتن
+let alignTimer = null;
+function scheduleAlign() {
+  clearTimeout(alignTimer);
+  alignTimer = setTimeout(() => {
+    const charts = Object.values(allPaneCharts());
+    charts.forEach(ch => { try { ch.applyOptions({ rightPriceScale: { minimumWidth: 0 } }); } catch (e) {} });
+    alignTimer = setTimeout(() => {
+      let mx = 0;
+      charts.forEach(ch => { try { mx = Math.max(mx, ch.priceScale('right').width()); } catch (e) {} });
+      if (!mx) return;
+      charts.forEach(ch => { try { ch.applyOptions({ rightPriceScale: { minimumWidth: Math.ceil(mx) } }); } catch (e) {} });
+      drawVersion++;
+    }, 120);
+  }, 60);
+}
+
 // ─── Boot ────────────────────────────────────────────────────────────────────
 applyResponsiveLayout();
 loadSettings();
@@ -1764,14 +1852,6 @@ updateMaxBtn();
 loadData();   // بارگذاری خودکار هنگام باز شدن صفحه
 // لایه محافظ: دوباره روی window.load هم اجرا میشه، برای اطمینان بیشتر
 window.addEventListener('load', applyResponsiveLayout);
-</script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js');
-    });
-  }
 </script>
 </body>
 </html>
