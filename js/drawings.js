@@ -270,4 +270,7 @@ function toggleLockSelected() {
   const sd = curDrawings().find(x => x.id === selectedId); if (!sd) return;
   sd.locked = !sd.locked; saveDrawings(); drawVersion++; refreshToolbar();
 }
-function toggleLockAll() { S.lockAll = !S.lockAll; saveSettings(); drawVersion++; refreshToolbar(); }
+function toggleLockAll() {
+  S.lockAll = !S.lockAll; saveSettings(); drawVersion++; refreshToolbar(); applyLockState();
+  msg(S.lockAll ? '🔒 همه قفل شد: رسم‌ها و پنل‌های اندیکاتور (اندازه و حرکت)' : '🔓 قفل همه باز شد');
+}

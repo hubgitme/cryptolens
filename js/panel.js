@@ -70,7 +70,7 @@ function renderPanel() {
       ${paneRow('macd', 'MACD', fld('macd', 'fast', 'سریع', 'min="2"') + fld('macd', 'slow', 'کند', 'min="3"') + fld('macd', 'sig', 'سیگنال', 'min="1"'))}
       ${paneRow('stoch', 'Stochastic', fld('stoch', 'k', 'K', 'min="2"') + fld('stoch', 'd', 'D', 'min="1"') + fld('stoch', 'smooth', 'نرم‌سازی', 'min="1"'))}
       ${paneRow('atr', 'ATR', fld('atr', 'period', 'دوره', 'min="2" max="200"'))}
-      ${paneRow('rsisma', 'RSI + SMA', fld('rsisma', 'period', 'دوره RSI', 'min="2" max="200"') + fld('rsisma', 'sma', 'دوره SMA', 'min="1" max="500"'))}
+      ${paneRow('rsisma', 'RSI + SMA', fld('rsisma', 'period', 'دوره RSI', 'min="2" max="200"') + fld('rsisma', 'sma', 'دوره SMA', 'min="1" max="500"') + fld('rsisma', 'hi', 'خط بالا', 'min="1" max="100"') + fld('rsisma', 'lo', 'خط پایین', 'min="0" max="99"'))}
       ${paneRow('obv', 'OBV + SMA', fld('obv', 'sma', 'دوره SMA', 'min="1" max="500"'))}
       <div class="ind-row sub">
         <label style="flex:1">همتراز با TradingView<input id="obvTv" type="text" placeholder="OBV آخرین کندل در TV، مثلاً 40.5K" style="flex:1;direction:ltr"></label>
@@ -92,6 +92,7 @@ function renderPanel() {
       <div class="ind-row">
         <label>تعداد کندل<select onchange="updSetting('limit',this.value)">${[300, 500, 1000].map(n => `<option value="${n}" ${S.limit === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
         <label><input type="checkbox" ${S.magnet ? 'checked' : ''} onchange="updSetting('magnet',this.checked)">Magnet (چسبیدن به OHLC)</label>
+        <label>ساعت کندل‌ها<select onchange="updSetting('tz',this.value)"><option value="local" ${S.tz === 'local' ? 'selected' : ''}>محلی (مثل TradingView)</option><option value="utc" ${S.tz === 'utc' ? 'selected' : ''}>UTC</option></select></label>
       </div>
       <div class="ind-row"><label style="flex:1">سطوح فیبوناچی<input type="text" style="flex:1;direction:ltr" value="${S.fibLevels.join(', ')}" onchange="updSetting('fibLevels',this.value)"></label></div>
       <div class="ind-row"><button onclick="resetLayout()">↺ بازنشانی اندازه‌ی پنل‌ها</button></div>

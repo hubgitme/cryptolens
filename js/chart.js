@@ -16,7 +16,8 @@ function baseChartOptions() {
     layout: { background: { color: '#0b0e17' }, textColor: '#6b7280' },
     grid: { vertLines: { color: '#1e2535' }, horzLines: { color: '#1e2535' } },
     crosshair: { mode: LightweightCharts.CrosshairMode.Magnet },
-    timeScale: { borderColor: '#1e2535', timeVisible: true, rightOffset: 5, barSpacing: 9 },
+    timeScale: { borderColor: '#1e2535', timeVisible: true, secondsVisible: false, rightOffset: 5, barSpacing: 9 },
+    localization: { timeFormatter: fmtCrossTime },
     rightPriceScale: { borderColor: '#1e2535' },
     handleScroll: true,
     handleScale: true,
@@ -61,7 +62,7 @@ function renderOverlays(candles, times) {
     volSeries = priceChart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'vol',
       lastValueVisible: false, priceLineVisible: false });
     volSeries.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
-    volSeries.setData(candles.map(c => ({ time: c.time, value: c.volume,
+    volSeries.setData(candles.map((c, i) => ({ time: times[i], value: c.volume,
       color: c.close >= c.open ? 'rgba(38,166,154,0.45)' : 'rgba(239,83,80,0.45)' })));
     overlayDefs.push({ label: 'Vol ', color: '#6b7280', vals: candles.map(c => c.volume), compact: true });
   }
@@ -80,7 +81,7 @@ const EXTRA_DEFS = {
   stoch: {
     title: () => `Stoch (${S.stoch.k},${S.stoch.d},${S.stoch.smooth})`,
     build(ch) {
-      const k = ch.addLineSeries({ color: '#2962ff', lineWidth: 1.5, priceLineVisible: false });
+      const k = ch.addLineSeries(withLevels({ color: '#2962ff', lineWidth: 1.5, priceLineVisible: false }, () => [20, 80]));
       const d = ch.addLineSeries({ color: '#ff6d00', lineWidth: 1.5, priceLineVisible: false });
       [80, 20].forEach(p => k.createPriceLine({ price: p, color: '#6b7280', lineWidth: 1, lineStyle: 2, axisLabelVisible: false }));
       return { k, d };
@@ -131,6 +132,7 @@ function applyIndicatorVisibility() {
   syncExtraPane('rsisma', S.rsisma.on);
   syncExtraPane('roc', S.roc.on);
   syncExtraPane('adx', S.adx.on);
+  applyLockState();
   resizeChartsNow();
 }
 
@@ -225,7 +227,7 @@ function initCharts() {
   // crosshair on price chart drives legend
   priceChart.subscribeCrosshairMove(param => {
     if (!param.time) { showLastLegend(); return; }
-    const idx = globalCandles.findIndex(c => c.time === param.time);
+    const idx = globalCandles.findIndex(c => dt(c.time) === param.time);
     if (idx === -1) return;
     updateLegendByIndex(idx);
 
@@ -246,7 +248,7 @@ function initCharts() {
     try { priceChart.setCrosshairPosition(0, param.time, candleSeries); } catch(e){}
     try { macdChart.setCrosshairPosition(0, param.time, macdLineSeries); } catch(e){}
     isSyncing = false;
-    const idx = globalCandles.findIndex(c => c.time === param.time);
+    const idx = globalCandles.findIndex(c => dt(c.time) === param.time);
     if (idx !== -1) updateLegendByIndex(idx);
   });
 
@@ -257,7 +259,7 @@ function initCharts() {
     try { priceChart.setCrosshairPosition(0, param.time, candleSeries); } catch(e){}
     try { rsiChart.setCrosshairPosition(0, param.time, rsiSeries); } catch(e){}
     isSyncing = false;
-    const idx = globalCandles.findIndex(c => c.time === param.time);
+    const idx = globalCandles.findIndex(c => dt(c.time) === param.time);
     if (idx !== -1) updateLegendByIndex(idx);
   });
 }
@@ -334,14 +336,16 @@ function renderAll(resetView) {
   const symbol = lastSymbol, candles = lastCandles;
   if (!candles.length) return;
   try {
-    const closes = candles.map(c => c.close), times = candles.map(c => c.time);
+    const closes = candles.map(c => c.close);
+    updateTimeShift(candles);
+    const times = candles.map(c => dt(c.time));
     const rsiArr = calcRSI(closes, S.rsi.period);
     const { ml, sl, hl } = calcMACD(closes, S.macd.fast, S.macd.slow, S.macd.sig);
     globalCandles = candles; globalRsi = rsiArr; globalMacdL = ml; globalMacdS = sl; globalMacdH = hl;
     const small = closes[closes.length - 1] < 1;
     lastPricePrecision = small ? 4 : 2;
     candleSeries.applyOptions({ priceFormat: { type: 'price', precision: lastPricePrecision, minMove: small ? 0.0001 : 0.01 } });
-    candleSeries.setData(candles);
+    candleSeries.setData(candles.map((c, i) => ({ ...c, time: times[i] })));
     priceChart.priceScale('right').applyOptions({ autoScale: true });
     rsiSeries.setData(toSeries(times, rsiArr));
     rsiOB.setData(times.map(t => ({ time: t, value: S.rsi.ob })));
@@ -375,16 +379,16 @@ function makePane(key) {
   document.getElementById('chartsCol').insertBefore(wrap, document.getElementById('chartsPad'));
   const el = document.getElementById('chart-' + key);
   el.style.height = '180px';
-  const chart = LightweightCharts.createChart(el, { ...baseChartOptions(), ...PANE_INTERACT, height: 180 });
+  const chart = LightweightCharts.createChart(el, { ...baseChartOptions(), ...(S.lockAll ? PANE_LOCKED : PANE_INTERACT), height: 180 });
   allCharts.push(chart); hookSync(chart);
   chart.subscribeCrosshairMove(param => {
     if (!param.time) { if (!isSyncing) showLastLegend(); return; }
-    const idx = globalCandles.findIndex(c => c.time === param.time);
+    const idx = globalCandles.findIndex(c => dt(c.time) === param.time);
     if (idx !== -1) updateLegendByIndex(idx);
   });
   const r = priceChart && priceChart.timeScale().getVisibleLogicalRange();
   if (r) { try { chart.timeScale().setVisibleLogicalRange(r); } catch (e) {} }
-  addGrip(wrap, key);
+  addGrip(wrap, key); keepPaneAutoscale(chart, el);
   return { chart, wrap };
 }
 
@@ -397,7 +401,18 @@ function removePane(key) {
 
 // ═══════════ جابجایی رسم‌ها / تقسیم صفحه / بارگذاری خودکار ═══════════
 let inflightKey = null, chartMax = false;
-const PANE_INTERACT = { handleScroll: { mouseWheel: false, vertTouchDrag: false }, handleScale: { mouseWheel: false } };
+// پنل‌های اندیکاتور: چرخ موس/کشیدن عمودی صفحه را اسکرول می‌کند و کشیدن محور قیمت (کشیده‌شدن نمودار) غیرفعال است
+const PANE_INTERACT = { handleScroll: { mouseWheel: false, vertTouchDrag: false }, handleScale: { mouseWheel: false, axisPressedMouseMove: { time: true, price: false } } };
+const PANE_LOCKED = { handleScroll: false, handleScale: false };   // «قفل همه»: هیچ حرکت/زومی در پنل‌ها
+function applyLockState() {
+  const col = document.getElementById('chartsCol'); if (col) col.classList.toggle('locked', !!S.lockAll);
+  const opts = S.lockAll ? PANE_LOCKED : PANE_INTERACT;
+  Object.entries(allPaneCharts()).forEach(([k, ch]) => { if (k !== 'price') { try { ch.applyOptions(opts); } catch (e) {} } });
+}
+// بعد از هر کشیدن، مقیاس قیمت پنل دوباره خودکار میشود تا نمودار «کشیده» نماند
+function keepPaneAutoscale(chart, el) {
+  el.addEventListener('pointerup', () => { try { chart.priceScale('right').applyOptions({ autoScale: true }); } catch (e) {} });
+}
 
 // لایه‌ی شفاف تمام‌صفحه موقع کشیدن، تا موس/لمس از دست نره (حتی وقتی SVG دوباره ساخته میشه)
 function dragShield(e, cursor, onMove, onEnd) {
@@ -447,7 +462,10 @@ function addGrip(wrap, key) {
   });
   g.addEventListener('dblclick', () => { delete S.paneH[key]; if (key === 'price') { chartMax = false; updateMaxBtn(); } resizeChartsNow(); saveSettings(); drawVersion++; });
 }
-function initGrips() { ['price', 'rsi', 'macd'].forEach(k => addGrip(document.getElementById('wrap-' + k), k)); }
+function initGrips() {
+  ['price', 'rsi', 'macd'].forEach(k => addGrip(document.getElementById('wrap-' + k), k));
+  keepPaneAutoscale(rsiChart, document.getElementById('chart-rsi')); keepPaneAutoscale(macdChart, document.getElementById('chart-macd'));
+}
 function resetLayout() { S.paneH = {}; chartMax = false; updateMaxBtn(); saveSettings(); resizeChartsNow(); drawVersion++; msg('↺ اندازه‌ی پنل‌ها بازنشانی شد'); }
 const lineOpt = color => ({ color, lineWidth: 1.5, priceLineVisible: false });
 EXTRA_DEFS.obv = {
@@ -468,20 +486,25 @@ EXTRA_DEFS.obv = {
 EXTRA_DEFS.rsisma = {
   title: () => `RSI (${S.rsisma.period}) SMA (${S.rsisma.sma})`,
   build(ch) {
-    const r = ch.addLineSeries(lineOpt('#ffc107')), m = ch.addLineSeries(lineOpt('#3b82f6'));
-    [70, 30].forEach(p => r.createPriceLine({ price: p, color: '#6b7280', lineWidth: 1, lineStyle: 2, axisLabelVisible: false }));
-    return { r, m };
+    const r = ch.addLineSeries(withLevels(lineOpt('#ffc107'), () => [S.rsisma.lo, S.rsisma.hi]));
+    return { r, m: ch.addLineSeries(lineOpt('#3b82f6')), lines: [] };
   },
   compute: c => {
     const cl = c.map(x => x.close), r = cl.length > S.rsisma.period ? calcRSI(cl, S.rsisma.period) : cl.map(() => null);
     return { r, m: calcSMA(r, S.rsisma.sma) };
   },
-  fill(sr, d, t) { sr.r.setData(toSeries(t, d.r)); sr.m.setData(toSeries(t, d.m)); },
+  fill(sr, d, t) {
+    sr.r.setData(toSeries(t, d.r)); sr.m.setData(toSeries(t, d.m));
+    // خطوط سطح (پیش‌فرض ۷۰ و ۴۰) همراه عدد روی محور، با تغییر تنظیمات دوباره ساخته میشوند
+    sr.lines.forEach(l => { try { sr.r.removePriceLine(l); } catch (e) {} });
+    sr.lines = [[S.rsisma.hi, '#ef5350'], [S.rsisma.lo, '#26a69a']].map(([price, color]) =>
+      sr.r.createPriceLine({ price, color, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' }));
+  },
   legend: (d, i) => `<span style="color:#ffc107">RSI ${fx(d.r[i])}</span> <span style="color:#3b82f6">SMA ${fx(d.m[i])}</span>`
 };
 EXTRA_DEFS.roc = {
   title: () => `ROC (${S.roc.period})`,
-  build(ch) { const r = ch.addLineSeries(lineOpt('#a855f7')); r.createPriceLine({ price: 0, color: '#6b7280', lineWidth: 1, lineStyle: 2, axisLabelVisible: false }); return { r }; },
+  build(ch) { const r = ch.addLineSeries(withLevels(lineOpt('#a855f7'), () => [0])); r.createPriceLine({ price: 0, color: '#6b7280', lineWidth: 1, lineStyle: 2, axisLabelVisible: false }); return { r }; },
   compute: c => ({ r: calcROC(c.map(x => x.close), S.roc.period) }),
   fill(sr, d, t) { sr.r.setData(toSeries(t, d.r)); },
   legend: (d, i) => `<span style="color:#a855f7">${fx(d.r[i])}%</span>`
@@ -489,7 +512,7 @@ EXTRA_DEFS.roc = {
 EXTRA_DEFS.adx = {
   title: () => `ADX (${S.adx.period})`,
   build(ch) {
-    const a = ch.addLineSeries({ ...lineOpt('#f59e0b'), lineWidth: 2 });
+    const a = ch.addLineSeries(withLevels({ ...lineOpt('#f59e0b'), lineWidth: 2 }, () => [25]));
     a.createPriceLine({ price: 25, color: '#6b7280', lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
     return { a, p: ch.addLineSeries(lineOpt('#26a69a')), m: ch.addLineSeries(lineOpt('#ef5350')) };
   },

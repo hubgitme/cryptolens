@@ -114,7 +114,7 @@ function fillCustomPane(key, r, times) {
   p.series = r.plots.map(pl => {
     const s = pl.type === 'histogram'
       ? p.chart.addHistogramSeries({ color: pl.color, priceLineVisible: false, lastValueVisible: false })
-      : p.chart.addLineSeries({ color: pl.color, lineWidth: 1.5, priceLineVisible: false });
+      : p.chart.addLineSeries(r.hlines.length ? withLevels({ color: pl.color, lineWidth: 1.5, priceLineVisible: false }, () => r.hlines.map(h => h.price)) : { color: pl.color, lineWidth: 1.5, priceLineVisible: false });
     s.setData(toSeries(times, pl.values)); return s;
   });
   r.hlines.forEach(h => { if (p.series[0]) p.series[0].createPriceLine({ price: h.price, color: h.color, lineWidth: 1, lineStyle: 2, axisLabelVisible: false }); });
@@ -140,7 +140,7 @@ function renderCustom(candles, times) {
     } else { const key = 'cs_' + sc.id; want.add(key); fillCustomPane(key, r, times); }
   });
   Object.keys(extraPanes).filter(k => k.startsWith('cs_') && !want.has(k)).forEach(removePane);
-  candleSeries.setMarkers(markers.sort((a, b) => a.time - b.time));
+  candleSeries.setMarkers(markers.map(m => ({ ...m, time: dt(m.time) })).sort((a, b) => a.time - b.time));
 }
 
 function updScript(id, on) { const sc = S.customIndicators.find(s => s.id === id); if (sc) { sc.on = !!on; onIndChange(); } }
@@ -164,6 +164,7 @@ function inputField(sc, inp) {
 
 function fmtT(t) {
   const o = { day: '2-digit', month: '2-digit', year: '2-digit' };
+  if (S.tz === 'utc') o.timeZone = 'UTC';
   if (currentIv !== '1d' && currentIv !== '1w') { o.hour = '2-digit'; o.minute = '2-digit'; o.hour12 = false; }
   return new Date(t * 1000).toLocaleString('en-GB', o);
 }

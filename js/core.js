@@ -65,7 +65,8 @@ function defaultSettings() {
     stoch: { on: false, k: 14, d: 3, smooth: 3 },
     atr:   { on: false, period: 14 },
     obv:   { on: false, sma: 20, anchors: {} },
-    rsisma: { on: false, period: 14, sma: 9 },
+    rsisma: { on: false, period: 14, sma: 9, hi: 70, lo: 40 },
+    tz: 'local',
     roc:   { on: false, period: 9 },
     adx:   { on: false, period: 14 },
     customIndicators: []
@@ -121,7 +122,9 @@ function sanitizeSettings(raw, imported) {
     if (/^[A-Za-z0-9]{2,20}\|(1h|4h|1d|1w)$/.test(k) && a && isFinite(a.t) && isFinite(a.v)) o.obv.anchors[k] = { t: +a.t, v: +a.v };
   });
   const rs = raw.rsisma || {};
-  o.rsisma = { on: toBool(rs.on, false), period: toInt(rs.period, 14, 2, 200), sma: toInt(rs.sma, 9, 1, 500) };
+  o.rsisma = { on: toBool(rs.on, false), period: toInt(rs.period, 14, 2, 200), sma: toInt(rs.sma, 9, 1, 500), hi: toNum(rs.hi, 70, 1, 100), lo: toNum(rs.lo, 40, 0, 99) };
+  if (o.rsisma.lo >= o.rsisma.hi) { o.rsisma.hi = 70; o.rsisma.lo = 40; }
+  o.tz = raw.tz === 'utc' ? 'utc' : 'local';
   o.roc = { on: toBool(ro.on, false), period: toInt(ro.period, 9, 1, 500) };
   o.adx = { on: toBool(ad.on, false), period: toInt(ad.period, 14, 2, 100) };
   o.customIndicators = sanitizeScripts(raw.customIndicators, imported);
@@ -237,8 +240,36 @@ function sanitizeScripts(arr, imported) {
 }
 function updSetting(k, v) {
   if (k === 'fibLevels') v = String(v).split(/[\s,،]+/).map(parseFloat).filter(isFinite);
-  S[k] = v; S = sanitizeSettings(S); saveSettings(); updateMagnetBtn(); drawVersion++; renderPanel();
+  S[k] = v; S = sanitizeSettings(S); saveSettings(); updateMagnetBtn(); drawVersion++;
+  if (k === 'tz' && lastCandles.length) renderAll(false);
+  renderPanel();
   if (k === 'limit') loadData();
 }
 
 function chooseIv(iv) { setIv(iv); loadData(); }
+
+// ─── زمان نمایش (مثل TradingView: ساعت محلی) ────────────────────────────────
+// داده‌ی چارت به اندازه‌ی اختلاف ساعت محلی شیفت میشود تا محور زمان، کراس‌هیر و تغییر روز با ساعت دستگاه یکی باشد؛
+// داده‌ی اصلی، رسم‌ها و لنگر OBV همچنان با زمان UTC ذخیره میشوند.
+let TIME_SHIFT = 0;
+function dt(t) { return t + TIME_SHIFT; }
+function updateTimeShift(candles) {
+  TIME_SHIFT = S.tz === 'utc' || !candles.length ? 0 : -new Date(candles[candles.length - 1].time * 1000).getTimezoneOffset() * 60;
+}
+const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function fmtCrossTime(t) {   // برچسب کراس‌هیر مثل TradingView: Fri 03 Nov '23  12:00
+  const d = new Date(t * 1000), p = n => String(n).padStart(2, '0');
+  const day = `${WD[d.getUTCDay()]} ${p(d.getUTCDate())} ${MO[d.getUTCMonth()]} '${String(d.getUTCFullYear()).slice(2)}`;
+  return currentIv === '1d' || currentIv === '1w' ? day : `${day}  ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+}
+// خطوط سطح (مثل ۷۰/۴۰) در محدوده‌ی قیمتی پنل لحاظ شوند تا هیچ‌وقت بیرون از دید نمانند
+function withLevels(opts, getLevels) {
+  return { ...opts, autoscaleInfoProvider: orig => {
+    const r = orig(), lv = getLevels().filter(isFinite);
+    if (!lv.length) return r;
+    const lo = Math.min(...lv), hi = Math.max(...lv);
+    if (!r || !r.priceRange) return { priceRange: { minValue: lo, maxValue: hi } };
+    return { priceRange: { minValue: Math.min(r.priceRange.minValue, lo), maxValue: Math.max(r.priceRange.maxValue, hi) }, margins: r.margins };
+  } };
+}
