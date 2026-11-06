@@ -10,54 +10,60 @@
 </head>
 <body>
 
-<header>
-  <h1>📊 تحلیل تکنیکال</h1>
-  <div class="controls">
-    <input id="symbolInput" type="text" value="BTCUSDT" style="width:100px; direction:ltr;" onkeydown="if(event.key==='Enter')loadData()" onchange="loadData()" />
-    <select id="symbolSelect" onchange="onSymbolSelect(this)" style="direction:ltr; max-width:150px;">
-      <option value="">— انتخاب سریع —</option>
+<header class="topbar">
+  <div class="tb-row">
+    <div class="brand">📊 کریپتو لنز</div>
+    <div class="sym-box">
+      <input id="symbolInput" type="text" value="BTCUSDT" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="نماد" oninput="refreshStar()" onkeydown="if(event.key==='Enter')loadData()" onchange="loadData()" />
+      <button id="saveSymbolBtn" class="icon-btn" onclick="saveCurrentSymbol()" title="ذخیره‌ی این ارز" aria-label="ذخیره ارز"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8-4.3-4.1 5.9-.9z"/></svg></button>
+    </div>
+    <select id="symbolSelect" onchange="onSymbolSelect(this)" aria-label="انتخاب سریع ارز">
+      <option value="">انتخاب سریع</option>
       <optgroup label="۱۰ ارز برتر" id="topCoinsGroup"></optgroup>
       <optgroup label="ذخیره‌شده‌های من" id="savedCoinsGroup"></optgroup>
     </select>
-    <button id="saveSymbolBtn" onclick="saveCurrentSymbol()" title="ذخیره ارز فعلی">⭐ ذخیره</button>
-    <div class="iv-group">
-    	 <button onclick="chooseIv('15m')"  id="btn-15m">15M</button>
-     <button onclick="chooseIv('30m')"  id="btn-30m">30M</button>
-      <button onclick="chooseIv('1h')"  id="btn-1h">1H</button>
-      <button onclick="chooseIv('4h')"  id="btn-4h" class="active">4H</button>
-      <button onclick="chooseIv('1d')"  id="btn-1d">1D</button>
-      <button onclick="chooseIv('1w')"  id="btn-1w">1W</button>
-    </div>
-    <button id="indBtn" onclick="openInd()">📈 اندیکاتورها</button>
-    <button id="loadBtn" onclick="loadData()" title="بروزرسانی داده">🔄</button>
+    <button id="indBtn" class="btn-pill" onclick="openInd()" title="اندیکاتورها و تنظیمات"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-6 4 3 6-8"/><path d="M3 21h18"/></svg><span>اندیکاتورها</span></button>
   </div>
-  <span id="status">آماده</span>
+  <div class="tb-row">
+    <div class="iv-group" role="tablist" aria-label="تایم‌فریم">
+      <button onclick="chooseIv('15m')" id="btn-15m">15M</button>
+      <button onclick="chooseIv('30m')" id="btn-30m">30M</button>
+      <button onclick="chooseIv('1h')" id="btn-1h">1H</button>
+      <button onclick="chooseIv('4h')" id="btn-4h">4H</button>
+      <button onclick="chooseIv('1d')" id="btn-1d">1D</button>
+      <button onclick="chooseIv('1w')" id="btn-1w">1W</button>
+    </div>
+    <button id="loadBtn" class="icon-btn" onclick="loadData()" title="بروزرسانی داده" aria-label="بروزرسانی"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
+  </div>
+  <div class="tb-status"><span id="status">آماده</span><span id="drawHint"></span></div>
 </header>
 
-<div class="toolbar" id="toolbar">
-  <button data-tool="cursor" class="active" onclick="setTool('cursor')" title="انتخاب / جابجایی">🖱 انتخاب</button>
-  <span class="sep"></span>
-  <button data-tool="trend" onclick="setTool('trend')">╱ روند</button>
-  <button data-tool="hline" onclick="setTool('hline')">─ افقی</button>
-  <button data-tool="fib" onclick="setTool('fib')">Fib</button>
-  <button data-tool="ewi" onclick="setTool('ewi')">الیوت 1-5</button>
-  <button data-tool="ewc" onclick="setTool('ewc')">الیوت ABC</button>
-  <button id="drawDone" onclick="finishDraftEarly()" style="display:none">✔ اتمام</button>
-  <span class="sep"></span>
-  <input type="color" id="drawColor" value="#f59e0b" onchange="onDrawColor(this.value)" title="رنگ">
-  <button id="magnetBtn" onclick="toggleMagnet()" title="چسبیدن به OHLC">🧲</button>
-  <button id="lockBtn" onclick="toggleLockSelected()" disabled>🔒 قفل</button>
-  <button id="lockAllBtn" onclick="toggleLockAll()" title="قفل همه: رسم‌ها + اندازه و حرکت پنل‌های اندیکاتور">🔐 قفل همه</button>
-  <button onclick="deleteSelected()">🗑 انتخابی</button>
-  <button onclick="undoDrawing()">↶</button>
-  <button onclick="clearDrawings()">🧹 همه</button>
-  <span class="sep"></span>
-  <button id="maxBtn" onclick="toggleChartMax()">⛶ چارت بزرگ</button>
-  <span id="drawHint"></span>
+<div class="toolbar" id="toolbar" role="toolbar" aria-label="ابزارهای رسم">
+  <div class="tg"><button class="tb active" data-tool="cursor" onclick="setTool('cursor')" title="انتخاب / جابجایی" aria-label="انتخاب / جابجایی"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 8-6 2-2 6z"/></svg></button></div>
+  <div class="tg">
+    <button class="tb" data-tool="trend" onclick="setTool('trend')" title="خط روند" aria-label="خط روند"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19L20 5"/><circle cx="4" cy="19" r="1.6"/><circle cx="20" cy="5" r="1.6"/></svg></button>
+    <button class="tb" data-tool="hline" onclick="setTool('hline')" title="خط افقی" aria-label="خط افقی"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18"/><circle cx="12" cy="12" r="1.6"/></svg></button>
+    <button class="tb" data-tool="fib" onclick="setTool('fib')" title="فیبوناچی" aria-label="فیبوناچی"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M3 10h18M3 15h18M3 20h18"/><path d="M5 20L19 5" stroke-width="1.2"/></svg></button>
+    <button class="tb" data-tool="ewi" onclick="setTool('ewi')" title="الیوت ۱-۵ (۶ نقطه)" aria-label="الیوت ۱-۵ (۶ نقطه)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19l4-8 3 4 5-10 3 5 3-4"/></svg></button>
+    <button class="tb" data-tool="ewc" onclick="setTool('ewc')" title="الیوت ABC (۴ نقطه)" aria-label="الیوت ABC (۴ نقطه)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6 8 4-5 8 10"/></svg></button>
+    <button id="drawDone" class="tb done" onclick="finishDraftEarly()" style="display:none" title="اتمام رسم" aria-label="اتمام"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></button>
+  </div>
+  <div class="tg">
+    <input type="color" id="drawColor" value="#f59e0b" onchange="onDrawColor(this.value)" title="رنگ رسم" aria-label="رنگ">
+    <button id="magnetBtn" class="tb" onclick="toggleMagnet()" title="چسبیدن به OHLC" aria-label="مگنت"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v8a6 6 0 0 0 12 0V3"/><path d="M6 7h4M14 7h4"/></svg></button>
+    <button id="lockBtn" class="tb" onclick="toggleLockSelected()" disabled title="قفل رسم انتخاب‌شده" aria-label="قفل"><svg viewBox="0 0 24 24" class="i-lock" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><svg viewBox="0 0 24 24" class="i-unlock" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg></button>
+    <button id="lockAllBtn" class="tb" onclick="toggleLockAll()" title="قفل همه: رسم‌ها + اندازه و حرکت پنل‌های اندیکاتور" aria-label="قفل همه"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="10" width="14" height="9.5" rx="2"/><path d="M6.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/><path d="M20.5 8v10a2 2 0 0 1-2 2H9" opacity=".6"/></svg></button>
+  </div>
+  <div class="tg">
+    <button class="tb" onclick="deleteSelected()" title="حذف رسم انتخاب‌شده" aria-label="حذف"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></button>
+    <button class="tb" onclick="undoDrawing()" title="بازگردانی آخرین رسم" aria-label="بازگردانی"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+    <button class="tb" onclick="clearDrawings()" title="پاک‌کردن همه‌ی رسم‌های این ارز" aria-label="پاک کردن همه"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19l9-9 4 4-5 5H5z"/><path d="M14 10l3-3 3 3-3 3"/></svg></button>
+  </div>
+  <div class="tg"><button id="maxBtn" class="tb" onclick="toggleChartMax()" title="بزرگ‌کردن چارت" aria-label="چارت بزرگ"><svg viewBox="0 0 24 24" class="i-max" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg viewBox="0 0 24 24" class="i-min" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button></div>
 </div>
-<div class="main">
-  
 
+<div class="main">
+  <div class="charts-wrap">
   <div class="charts-col" id="chartsCol">
     <div class="chart-wrap" id="wrap-price">
       <div class="pane-legend" id="legend-price">
@@ -88,6 +94,8 @@
       <div id="chart-macd"></div>
     </div>
     <div id="chartsPad" class="charts-pad"></div>
+  </div>
+  <div class="time-axis" id="timeAxisBar"><div id="timeAxisChart"></div></div>
   </div>
 </div>
 
