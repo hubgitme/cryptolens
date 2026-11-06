@@ -69,7 +69,13 @@ header.topbar {
 .iv-group button.active { background: var(--accent); color: #fff; }
 #loadBtn { color: var(--text); }
 .tb-status { display: flex; justify-content: space-between; gap: 10px; font-size: .68rem; color: var(--muted); min-height: 14px; padding: 0 2px; }
-#status { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#status { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.live-info { flex: none; display: inline-flex; align-items: center; gap: 5px; direction: ltr; font-variant-numeric: tabular-nums; color: var(--text); font-size: .72rem; }
+.live-info b { font-weight: 700; }
+.live-info .up { color: var(--green); } .live-info .dn { color: var(--red); } .live-info .lt { color: var(--muted); }
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+.live-dot.on { background: var(--green); animation: livepulse 2s ease-in-out infinite; }
+@keyframes livepulse { 50% { opacity: .3; } }
 #drawHint { color: var(--yellow); white-space: nowrap; }
 
 /* ── نوار ابزار رسم: آیکونی، گروه‌بندی‌شده و قابل اسکرول افقی ── */
