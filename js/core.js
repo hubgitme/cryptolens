@@ -75,7 +75,7 @@ function defaultSettings() {
     atr:   { on: false, period: 14 },
     obv:   { on: false, sma: 20, anchors: {} },
     rsisma: { on: false, period: 14, sma: 9, hi: 70, lo: 40 },
-    tz: 'local',
+    tz: 'local', refresh: 60,
     roc:   { on: false, period: 9 },
     adx:   { on: false, period: 14 },
     customIndicators: []
@@ -134,6 +134,7 @@ function sanitizeSettings(raw, imported) {
   o.rsisma = { on: toBool(rs.on, false), period: toInt(rs.period, 14, 2, 200), sma: toInt(rs.sma, 9, 1, 500), hi: toNum(rs.hi, 70, 1, 100), lo: toNum(rs.lo, 40, 0, 99) };
   if (o.rsisma.lo >= o.rsisma.hi) { o.rsisma.hi = 70; o.rsisma.lo = 40; }
   o.tz = raw.tz === 'utc' ? 'utc' : 'local';
+  o.refresh = [0, 15, 30, 60, 300].includes(+raw.refresh) ? +raw.refresh : 60;   // ثانیه؛ 0 = خاموش
   o.roc = { on: toBool(ro.on, false), period: toInt(ro.period, 9, 1, 500) };
   o.adx = { on: toBool(ad.on, false), period: toInt(ad.period, 14, 2, 100) };
   o.customIndicators = sanitizeScripts(raw.customIndicators, imported);
@@ -252,6 +253,7 @@ function updSetting(k, v) {
   if (k === 'fibLevels') v = String(v).split(/[\s,،]+/).map(parseFloat).filter(isFinite);
   S[k] = v; S = sanitizeSettings(S); saveSettings(); updateMagnetBtn(); drawVersion++;
   if (k === 'tz' && lastCandles.length) renderAll(false);
+  if (k === 'refresh') startAutoRefresh();
   renderPanel();
   if (k === 'limit') loadData();
 }

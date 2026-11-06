@@ -10,7 +10,8 @@ applyIndicatorVisibility();
 initDrawings();
 initGrips();
 updateMaxBtn();
-loadData();   // بارگذاری خودکار هنگام باز شدن صفحه
+loadData();
+startAutoRefresh();   // بارگذاری خودکار هنگام باز شدن صفحه
 // لایه محافظ: دوباره روی window.load هم اجرا میشه، برای اطمینان بیشتر
 window.addEventListener('load', applyResponsiveLayout);
 

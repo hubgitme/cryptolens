@@ -157,3 +157,13 @@ function parseCompact(text) {   // 40.5K، 1.2M، 1,250,000، −3.1K
   const m = String(text).trim().replace(/[,\s]/g, '').replace(/\u2212/g, '-').match(/^(-?\d*\.?\d+)([kmb]?)$/i);
   return m ? parseFloat(m[1]) * { '': 1, k: 1e3, m: 1e6, b: 1e9 }[m[2].toLowerCase()] : null;
 }
+
+// ─── ادغام کندل‌های تازه در داده‌ی فعلی (بروزرسانی خودکار) ───────────────────
+// کندل هم‌زمان جایگزین میشود، کندل جدید اضافه؛ اگر طول از maxLen بگذرد، قدیمی‌ترها حذف میشوند تا keepLen بماند.
+function mergeCandles(old, fresh, maxLen, keepLen) {
+  const map = new Map();
+  old.forEach(c => map.set(c.time, c)); fresh.forEach(c => map.set(c.time, c));
+  let arr = [...map.values()].sort((a, b) => a.time - b.time), removed = 0;
+  if (arr.length > maxLen) { removed = arr.length - keepLen; arr = arr.slice(removed); }
+  return { candles: arr, removed };
+}

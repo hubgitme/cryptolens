@@ -321,7 +321,7 @@ async function loadData() {
     const json = await res.json();
     if (inflightKey !== key) return;   // درخواست جدیدتری شروع شده، این نتیجه کنار گذاشته میشه
     if (!json.success) throw new Error(json.error || 'خطا در دریافت داده');
-    lastCandles = json.data; lastSymbol = symbol;
+    lastCandles = json.data; lastSymbol = symbol; lastUpdate = Date.now();
     renderAll(true);
     renderPanel();
   } catch (e) {
@@ -335,7 +335,7 @@ async function loadData() {
   }
 }
 
-function renderAll(resetView) {
+function renderAll(resetView, quiet) {   // quiet: بروزرسانی بی‌صدای هر دقیقه (بدون ریست مقیاس/اندازه/نمای کاربر)
   const symbol = lastSymbol, candles = lastCandles;
   if (!candles.length) return;
   try {
@@ -349,7 +349,7 @@ function renderAll(resetView) {
     lastPricePrecision = small ? 4 : 2;
     candleSeries.applyOptions({ priceFormat: { type: 'price', precision: lastPricePrecision, minMove: small ? 0.0001 : 0.01 } });
     candleSeries.setData(candles.map((c, i) => ({ ...c, time: times[i] })));
-    priceChart.priceScale('right').applyOptions({ autoScale: true });
+    if (!quiet) priceChart.priceScale('right').applyOptions({ autoScale: true });
     rsiSeries.setData(toSeries(times, rsiArr));
     rsiOB.setData(times.map(t => ({ time: t, value: S.rsi.ob })));
     rsiOS.setData(times.map(t => ({ time: t, value: S.rsi.os })));
@@ -362,16 +362,19 @@ function renderAll(resetView) {
     renderCustom(candles, times);
     document.getElementById('lg-symbol').textContent = `${symbol} · ${currentIv.toUpperCase()}`;
     showLastLegend();
-    resizeChartsNow();
-    rsiChart.priceScale('right').applyOptions({ autoScale: true });
-    macdChart.priceScale('right').applyOptions({ autoScale: true });
+    if (!quiet) {
+      resizeChartsNow();
+      rsiChart.priceScale('right').applyOptions({ autoScale: true });
+      macdChart.priceScale('right').applyOptions({ autoScale: true });
+    }
     if (resetView) {
       const barsToShow = window.innerWidth <= 768 ? 55 : 120, total = candles.length;
       priceChart.timeScale().setVisibleLogicalRange({ from: Math.max(0, total - barsToShow), to: total + 3 });
     }
     onSymbolRendered(symbol);
-    scheduleAlign();
-    document.getElementById('status').textContent = `${symbol} · ${currentIv} · ${candles.length} کندل`;
+    updateLiveInfo();
+    if (!quiet) scheduleAlign();
+    if (!quiet) document.getElementById('status').textContent = `${symbol} · ${currentIv} · ${candles.length} کندل`;
   } catch (e) {
     document.getElementById('status').textContent = '❌ ' + e.message;
   }
@@ -537,3 +540,42 @@ function scheduleAlign() {   // پهنای محور قیمت همه‌ی چار�
     }, 120);
   }, 60);
 }
+
+// ═══════════ بروزرسانی خودکار قیمت (پیش‌فرض هر ۱ دقیقه؛ در پنل قابل تنظیم) ═══════════
+let refreshTimer = null, refreshBusy = false, lastUpdate = 0;
+async function refreshLatest() {
+  if (refreshBusy || inflightKey || dragging || !lastCandles.length || document.hidden) return;
+  const symbol = lastSymbol, iv = currentIv;
+  refreshBusy = true;
+  try {
+    const res = await fetch(`/api/klines?symbol=${symbol}&interval=${iv}&limit=5`);   // فقط چند کندل آخر
+    const json = await res.json();
+    if (!json.success || !Array.isArray(json.data) || symbol !== lastSymbol || iv !== currentIv || inflightKey) return;
+    lastUpdate = Date.now();
+    const oldLen = lastCandles.length, prev = lastCandles[oldLen - 1];
+    const m = mergeCandles(lastCandles, json.data, S.limit + 120, S.limit), last = m.candles[m.candles.length - 1];
+    if (m.candles.length === oldLen && !m.removed && last.close === prev.close && last.high === prev.high && last.low === prev.low && last.volume === prev.volume) { updateLiveInfo(); return; }
+    const r = priceChart.timeScale().getVisibleLogicalRange(), appended = m.candles.length + m.removed - oldLen;
+    lastCandles = m.candles;
+    renderAll(false, true);
+    if (r) {   // اگر کاربر روی آخرین کندل بود، با کندل جدید جلو میرود؛ وگرنه نمای او حفظ میشود
+      const shift = r.to >= oldLen - 1 ? appended - m.removed : -m.removed;
+      if (shift) priceChart.timeScale().setVisibleLogicalRange({ from: r.from + shift, to: r.to + shift });
+    }
+  } catch (e) { /* قطعی اینترنت/سرور: دور بعد دوباره تلاش میشود */ }
+  finally { refreshBusy = false; }
+}
+function startAutoRefresh() {
+  clearInterval(refreshTimer); refreshTimer = null;
+  if (S.refresh > 0) refreshTimer = setInterval(refreshLatest, S.refresh * 1000);
+  updateLiveInfo();
+}
+function updateLiveInfo() {   // قیمت لحظه‌ای + درصد کندل جاری + ساعت آخرین بروزرسانی
+  const el = document.getElementById('liveInfo');
+  if (!el || !lastCandles.length) return;
+  const c = lastCandles[lastCandles.length - 1], chg = (c.close / c.open - 1) * 100, d = new Date(lastUpdate || Date.now()), p = n => String(n).padStart(2, '0');
+  el.innerHTML = `<span class="live-dot${S.refresh ? ' on' : ''}"></span><b>${fmtPrice(c.close)}</b> <span class="${chg >= 0 ? 'up' : 'dn'}">${chg >= 0 ? '▲' : '▼'}${Math.abs(chg).toFixed(2)}%</span> <span class="lt">${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}</span>`;
+  el.title = S.refresh ? `بروزرسانی خودکار هر ${S.refresh >= 60 ? S.refresh / 60 + ' دقیقه' : S.refresh + ' ثانیه'}` : 'بروزرسانی خودکار خاموش است';
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.refresh > 0 && Date.now() - lastUpdate > S.refresh * 500) refreshLatest(); });
+window.addEventListener('online', () => { if (S.refresh > 0) refreshLatest(); });

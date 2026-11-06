@@ -93,6 +93,7 @@ function renderPanel() {
         <label>تعداد کندل<select onchange="updSetting('limit',this.value)">${[300, 500, 1000].map(n => `<option value="${n}" ${S.limit === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
         <label><input type="checkbox" ${S.magnet ? 'checked' : ''} onchange="updSetting('magnet',this.checked)">Magnet (چسبیدن به OHLC)</label>
         <label>ساعت کندل‌ها<select onchange="updSetting('tz',this.value)"><option value="local" ${S.tz === 'local' ? 'selected' : ''}>محلی (مثل TradingView)</option><option value="utc" ${S.tz === 'utc' ? 'selected' : ''}>UTC</option></select></label>
+        <label>بروزرسانی خودکار قیمت<select onchange="updSetting('refresh',this.value)">${[[0, 'خاموش'], [15, 'هر ۱۵ ثانیه'], [30, 'هر ۳۰ ثانیه'], [60, 'هر ۱ دقیقه'], [300, 'هر ۵ دقیقه']].map(([v, t]) => `<option value="${v}" ${S.refresh === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
       </div>
       <div class="ind-row"><label style="flex:1">سطوح فیبوناچی<input type="text" style="flex:1;direction:ltr" value="${S.fibLevels.join(', ')}" onchange="updSetting('fibLevels',this.value)"></label></div>
       <div class="ind-row"><button onclick="resetLayout()">↺ بازنشانی اندازه‌ی پنل‌ها</button></div>
