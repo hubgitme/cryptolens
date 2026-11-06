@@ -127,11 +127,11 @@ function applyIndicatorVisibility() {
   document.getElementById('lg-rsi-title').textContent = `RSI (${S.rsi.period})`;
   document.getElementById('lg-macd-title').textContent = `MACD (${S.macd.fast},${S.macd.slow},${S.macd.sig})`;
   syncExtraPane('stoch', S.stoch.on);
+  syncExtraPane('atr', S.atr.on);
+  syncExtraPane('obv', S.obv.on);
   syncExtraPane('rsisma', S.rsisma.on);
   syncExtraPane('roc', S.roc.on);
   syncExtraPane('adx', S.adx.on);
-  syncExtraPane('atr', S.atr.on);
-  syncExtraPane('obv', S.obv.on);
   applyLockState();
   resizeChartsNow();
 }
