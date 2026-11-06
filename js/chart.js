@@ -16,7 +16,7 @@ function baseChartOptions() {
     layout: { background: { color: '#0b0e17' }, textColor: '#6b7280' },
     grid: { vertLines: { color: '#1e2535' }, horzLines: { color: '#1e2535' } },
     crosshair: { mode: LightweightCharts.CrosshairMode.Magnet },
-    timeScale: { borderColor: '#1e2535', timeVisible: true, secondsVisible: false, rightOffset: 5, barSpacing: 9 },
+    timeScale: { borderColor: '#1e2535', timeVisible: true, secondsVisible: false, rightOffset: 5, barSpacing: 9, visible: false },   // محور زمان فقط در نوار ثابت پایین صفحه
     localization: { timeFormatter: fmtCrossTime },
     rightPriceScale: { borderColor: '#1e2535' },
     handleScroll: true,
@@ -111,6 +111,8 @@ function renderExtras(candles, times) {
     extraData[k] = def.compute(candles);
     def.fill(extraPanes[k].series, extraData[k], times);
     document.getElementById(`lg-${k}-title`).textContent = def.title(extraData[k]);
+    const mk = { stoch: 'k', atr: 'a', obv: 'o', roc: 'r', adx: 'a', rsisma: 'r' }[k];   // خط اصلی هر پنل برای هم‌گام‌سازی کراس‌هیر
+    extraPanes[k].xh = { series: extraPanes[k].series[mk], vals: extraData[k][mk] };
   });
 }
 function updateExtraLegends(idx) {
@@ -155,7 +157,6 @@ function calcHeights() {
 function resizeChartsNow() {
   applyResponsiveLayout();
   if (!priceChart) return;
-  updateTimeAxes();
   const h = calcHeights(), m = allPaneCharts();
   Object.keys(m).forEach(k => {
     if (h[k] == null) return;
@@ -163,6 +164,7 @@ function resizeChartsNow() {
     el.style.height = h[k] + 'px';
     m[k].resize(el.clientWidth, h[k]);
   });
+  sizeTimeAxis();
 }
 let resizeTimer = null;
 function handleResize() {
@@ -204,63 +206,64 @@ function initCharts() {
   allCharts = [priceChart, rsiChart, macdChart];
   allCharts.forEach(hookSync);
   [rsiChart, macdChart].forEach(c => c.applyOptions(PANE_INTERACT));
-  // ── Crosshair sync + tooltip ──
-  function syncCrosshair(src, targets, getTooltip) {
-    src.subscribeCrosshairMove(param => {
-      // Sync crosshair to other charts
-      if (param.time) {
-        targets.forEach(t => {
-          t.setCrosshairPosition(
-            param.seriesData?.values()?.next()?.value?.value ?? 0,
-            param.time,
-            t.series?.[0]
-          );
-        });
-      } else {
-        targets.forEach(t => t.clearCrosshairPosition());
-      }
-      // Update tooltip bar
-      if (param.time && getTooltip) getTooltip(param);
-    });
-  }
+  hookCrosshair(priceChart, 'price'); hookCrosshair(rsiChart, 'rsi'); hookCrosshair(macdChart, 'macd');
+}
 
-  // crosshair on price chart drives legend
-  priceChart.subscribeCrosshairMove(param => {
-    if (!param.time) { showLastLegend(); return; }
-    const idx = globalCandles.findIndex(c => dt(c.time) === param.time);
-    if (idx === -1) return;
-    updateLegendByIndex(idx);
-
-    // sync crosshair position on rsi and macd charts
-    if (!isSyncing) {
-      isSyncing = true;
-      const rsi = globalRsi[idx], ml = globalMacdL[idx];
-      if (rsi != null) { try { rsiChart.setCrosshairPosition(rsi, param.time, rsiSeries); } catch(e){} }
-      if (ml  != null) { try { macdChart.setCrosshairPosition(ml, param.time, macdLineSeries); } catch(e){} }
-      isSyncing = false;
-    }
+// ─── نوار ساعت ثابت پایین صفحه (مثل TradingView): پنل‌ها اسکرول میشوند، این نوار ثابت می‌ماند ───
+const AXIS_CHART_H = 90;
+let axisChart = null, axisSeries = null, globalCloses = [];
+function initTimeAxis() {
+  const base = baseChartOptions();
+  axisChart = LightweightCharts.createChart(document.getElementById('timeAxisChart'), {
+    ...base, height: AXIS_CHART_H,
+    timeScale: { ...base.timeScale, visible: true },
+    rightPriceScale: { visible: true, borderVisible: false },
+    handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+    handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: { time: true, price: false } }
   });
+  axisSeries = axisChart.addLineSeries({ color: 'rgba(0,0,0,0)', lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+  allCharts.push(axisChart); hookSync(axisChart); hookCrosshair(axisChart, 'axis');
+  sizeTimeAxis();
+}
+function sizeTimeAxis() {
+  if (!axisChart) return;
+  const col = document.getElementById('chartsCol'), bar = document.getElementById('timeAxisBar'), el = document.getElementById('timeAxisChart');
+  let h = 28; try { h = Math.round(axisChart.timeScale().height()) || 28; } catch (e) {}
+  bar.style.height = h + 'px';
+  bar.style.paddingRight = Math.max(0, col.offsetWidth - col.clientWidth) + 'px';   // جبران نوار اسکرول تا ستون‌ها هم‌تراز بمانند
+  const w = col.clientWidth; el.style.width = w + 'px'; el.style.height = AXIS_CHART_H + 'px';
+  axisChart.resize(w, AXIS_CHART_H);
+}
 
-  rsiChart.subscribeCrosshairMove(param => {
-    if (!param.time) { if (!isSyncing) showLastLegend(); return; }
+// ─── خط عمودی کراس‌هیر روی همه‌ی پنل‌ها (قیمت، RSI، MACD، پنل‌های جدا، اسکریپت‌ها و نوار ساعت) ───
+function candleIndexAt(time) {
+  if (!globalCandles.length) return -1;
+  const g = Math.round((time - dt(globalCandles[0].time)) / (IV_SEC[currentIv] || 1)), c = globalCandles[g];
+  return c && dt(c.time) === time ? g : globalCandles.findIndex(x => dt(x.time) === time);
+}
+function crosshairTargets() {
+  const list = [{ key: 'price', chart: priceChart, series: candleSeries, vals: globalCloses }];
+  if (S.rsi.on) list.push({ key: 'rsi', chart: rsiChart, series: rsiSeries, vals: globalRsi });
+  if (S.macd.on) list.push({ key: 'macd', chart: macdChart, series: macdLineSeries, vals: globalMacdL });
+  Object.keys(extraPanes).forEach(k => { const p = extraPanes[k]; if (p.xh) list.push({ key: k, chart: p.chart, series: p.xh.series, vals: p.xh.vals }); });
+  if (axisChart) list.push({ key: 'axis', chart: axisChart, series: axisSeries, vals: null });
+  return list;
+}
+function hookCrosshair(chart, key) {
+  chart.subscribeCrosshairMove(param => {
     if (isSyncing) return;
+    const idx = param.time ? candleIndexAt(param.time) : -1;
     isSyncing = true;
-    try { priceChart.setCrosshairPosition(0, param.time, candleSeries); } catch(e){}
-    try { macdChart.setCrosshairPosition(0, param.time, macdLineSeries); } catch(e){}
-    isSyncing = false;
-    const idx = globalCandles.findIndex(c => dt(c.time) === param.time);
-    if (idx !== -1) updateLegendByIndex(idx);
-  });
-
-  macdChart.subscribeCrosshairMove(param => {
-    if (!param.time) { if (!isSyncing) showLastLegend(); return; }
-    if (isSyncing) return;
-    isSyncing = true;
-    try { priceChart.setCrosshairPosition(0, param.time, candleSeries); } catch(e){}
-    try { rsiChart.setCrosshairPosition(0, param.time, rsiSeries); } catch(e){}
-    isSyncing = false;
-    const idx = globalCandles.findIndex(c => dt(c.time) === param.time);
-    if (idx !== -1) updateLegendByIndex(idx);
+    try {
+      crosshairTargets().forEach(t => {
+        if (t.key === key) return;
+        try {
+          if (!param.time) t.chart.clearCrosshairPosition();
+          else { const v = idx >= 0 && t.vals ? t.vals[idx] : null; t.chart.setCrosshairPosition(v == null ? 0 : v, param.time, t.series); }
+        } catch (e) {}
+      });
+    } finally { isSyncing = false; }
+    if (!param.time) showLastLegend(); else if (idx !== -1) updateLegendByIndex(idx);
   });
 }
 
@@ -341,7 +344,7 @@ function renderAll(resetView) {
     const times = candles.map(c => dt(c.time));
     const rsiArr = calcRSI(closes, S.rsi.period);
     const { ml, sl, hl } = calcMACD(closes, S.macd.fast, S.macd.slow, S.macd.sig);
-    globalCandles = candles; globalRsi = rsiArr; globalMacdL = ml; globalMacdS = sl; globalMacdH = hl;
+    globalCandles = candles; globalCloses = closes; globalRsi = rsiArr; globalMacdL = ml; globalMacdS = sl; globalMacdH = hl;
     const small = closes[closes.length - 1] < 1;
     lastPricePrecision = small ? 4 : 2;
     candleSeries.applyOptions({ priceFormat: { type: 'price', precision: lastPricePrecision, minMove: small ? 0.0001 : 0.01 } });
@@ -353,6 +356,7 @@ function renderAll(resetView) {
     macdLineSeries.setData(toSeries(times, ml));
     macdSignalSeries.setData(toSeries(times, sl));
     macdHistSeries.setData(times.map((t, i) => hl[i] != null ? { time: t, value: hl[i], color: hl[i] >= 0 ? '#26a69a' : '#ef5350' } : { time: t }));
+    if (axisSeries) axisSeries.setData(times.map(t => ({ time: t, value: 0 })));
     renderOverlays(candles, times);
     renderExtras(candles, times);
     renderCustom(candles, times);
@@ -381,11 +385,7 @@ function makePane(key) {
   el.style.height = '180px';
   const chart = LightweightCharts.createChart(el, { ...baseChartOptions(), ...(S.lockAll ? PANE_LOCKED : PANE_INTERACT), height: 180 });
   allCharts.push(chart); hookSync(chart);
-  chart.subscribeCrosshairMove(param => {
-    if (!param.time) { if (!isSyncing) showLastLegend(); return; }
-    const idx = globalCandles.findIndex(c => dt(c.time) === param.time);
-    if (idx !== -1) updateLegendByIndex(idx);
-  });
+  hookCrosshair(chart, key);
   const r = priceChart && priceChart.timeScale().getVisibleLogicalRange();
   if (r) { try { chart.timeScale().setVisibleLogicalRange(r); } catch (e) {} }
   addGrip(wrap, key); keepPaneAutoscale(chart, el);
@@ -425,7 +425,11 @@ function dragShield(e, cursor, onMove, onEnd) {
   sh.addEventListener('pointermove', onMove);
   sh.addEventListener('pointerup', end); sh.addEventListener('pointercancel', end);
 }
-function updateMaxBtn() { const b = document.getElementById('maxBtn'); if (b) { b.classList.toggle('active', chartMax); b.textContent = chartMax ? '⛶ کوچک‌کردن چارت' : '⛶ چارت بزرگ'; } }
+function updateMaxBtn() {
+  const b = document.getElementById('maxBtn'); if (!b) return;
+  b.classList.toggle('active', chartMax);
+  b.title = chartMax ? 'کوچک‌کردن چارت (نمایش اندیکاتورها)' : 'بزرگ‌کردن چارت';
+}
 function toggleChartMax() {
   chartMax = !chartMax; updateMaxBtn(); resizeChartsNow();
   document.getElementById('chartsCol').scrollTop = 0; drawVersion++;
@@ -437,12 +441,6 @@ function allPaneCharts() {
   return m;
 }
 
-function updateTimeAxes() {
-  const m = allPaneCharts();
-  const order = [...document.querySelectorAll('#chartsCol > .chart-wrap')]
-    .filter(w => w.style.display !== 'none').map(w => w.id.replace(/^wrap-/, '')).filter(k => m[k]);
-  order.forEach((k, i) => { try { m[k].applyOptions({ timeScale: { visible: i === order.length - 1 } }); } catch (e) {} });
-}
 function closePane(key) {
   if (['rsi', 'macd', 'stoch', 'atr', 'obv', 'rsisma', 'roc', 'adx'].includes(key)) S[key].on = false;
   else { const sc = S.customIndicators.find(s => 'cs_' + s.id === key); if (sc) sc.on = false; }
@@ -523,7 +521,7 @@ EXTRA_DEFS.adx = {
 
 // پهنای محور قیمت همه‌ی چارت‌ها یکسان میشه تا کندل‌ها و اندیکاتورها دقیقاً زیر هم بیفتن
 let alignTimer = null;
-function scheduleAlign() {
+function scheduleAlign() {   // پهنای محور قیمت همه‌ی چارت‌ها یکسان میشود تا کندل‌ها و اندیکاتورها و نوار ساعت دقیقاً زیر هم بیفتند
   clearTimeout(alignTimer);
   alignTimer = setTimeout(() => {
     const charts = Object.values(allPaneCharts());
@@ -531,9 +529,11 @@ function scheduleAlign() {
     alignTimer = setTimeout(() => {
       let mx = 0;
       charts.forEach(ch => { try { mx = Math.max(mx, ch.priceScale('right').width()); } catch (e) {} });
-      if (!mx) return;
-      charts.forEach(ch => { try { ch.applyOptions({ rightPriceScale: { minimumWidth: Math.ceil(mx) } }); } catch (e) {} });
-      drawVersion++;
+      if (mx) {
+        const all = axisChart ? charts.concat(axisChart) : charts;
+        all.forEach(ch => { try { ch.applyOptions({ rightPriceScale: { minimumWidth: Math.ceil(mx) } }); } catch (e) {} });
+      }
+      sizeTimeAxis(); drawVersion++;
     }, 120);
   }, 60);
 }

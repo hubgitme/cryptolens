@@ -119,6 +119,7 @@ function fillCustomPane(key, r, times) {
   });
   r.hlines.forEach(h => { if (p.series[0]) p.series[0].createPriceLine({ price: h.price, color: h.color, lineWidth: 1, lineStyle: 2, axisLabelVisible: false }); });
   p.custom = r.plots;
+  p.xh = p.series[0] ? { series: p.series[0], vals: r.plots[0].values } : null;
   document.getElementById(`lg-${key}-title`).textContent = r.title;
 }
 function renderCustom(candles, times) {

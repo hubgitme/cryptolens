@@ -37,7 +37,7 @@ function onSymbolRendered(symbol) {
   drawVersion++;
 }
 
-const IV_SEC = { '1h': 3600, '4h': 14400, '1d': 86400, '1w': 604800 };
+const IV_SEC = { '15m': 900, '30m': 1800, '1h': 3600, '4h': 14400, '1d': 86400, '1w': 604800 };
 function ptToXY(pt) {
   if (!globalCandles.length) return null;
   const lg = (pt.t - globalCandles[0].time) / IV_SEC[currentIv];
@@ -83,11 +83,11 @@ function refreshToolbar() {
   if (!hint) return;
   const sd = curDrawings().find(x => x.id === selectedId);
   const lb = document.getElementById('lockBtn'), la = document.getElementById('lockAllBtn');
-  if (lb) { lb.disabled = !sd; lb.textContent = sd && sd.locked ? '🔓 باز کردن قفل' : '🔒 قفل'; lb.classList.toggle('active', !!(sd && sd.locked)); }
+  if (lb) { lb.disabled = !sd; lb.classList.toggle('locked', !!(sd && sd.locked)); lb.title = sd && sd.locked ? 'باز کردن قفل رسم انتخاب‌شده' : 'قفل رسم انتخاب‌شده'; }
   if (la) la.classList.toggle('active', !!S.lockAll);
   if (drawTool === 'cursor') {
     hint.textContent = sd ? ((sd.locked || S.lockAll) ? 'قفل است — برای جابجایی قفل را باز کنید' : 'بکشید تا جابجا شود؛ نقطه‌ها را هم می‌توان کشید')
-      : (S.lockAll ? 'همه‌ی رسم‌ها قفل‌اند' : 'برای ویرایش، روی رسم کلیک کنید');
+      : (S.lockAll ? 'همه‌ی رسم‌ها قفل‌اند' : '');
   } else { const d = DRAW_DEFS[drawTool]; hint.textContent = draft ? `${d.hint}: نقطه ${draft.pts.length + 1} از ${d.n}` : `${d.hint}: روی چارت کلیک کنید`; }
   done.style.display = draft && draft.pts.length >= 2 && DRAW_DEFS[draft.type].n > 2 ? '' : 'none';
 }

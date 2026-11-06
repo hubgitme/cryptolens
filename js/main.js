@@ -4,6 +4,7 @@
 applyResponsiveLayout();
 loadSettings();
 initCharts();
+initTimeAxis();
 populateSymbolDropdown();
 applyIndicatorVisibility();
 initDrawings();

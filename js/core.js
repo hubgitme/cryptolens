@@ -27,29 +27,38 @@ function populateSymbolDropdown() {
     ? saved.map(s => `<option value="${s}">${s} ⭐</option>`).join('')
     : '';
   savedGroup.style.display = saved.length ? '' : 'none';
+  refreshStar();
 }
 
 function onSymbolSelect(sel) {
   if (!sel.value) return;
   document.getElementById('symbolInput').value = sel.value;
+  refreshStar();
   sel.value = ''; // برگردون به حالت پیش‌فرض تا دوباره قابل انتخاب باشه
   loadData();
 }
 
-function saveCurrentSymbol() {
+function saveCurrentSymbol() {   // ستاره: ذخیره / برداشتن ذخیره‌ی ارز فعلی
   const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
-  if (!symbol) return;
-  const saved = getSavedSymbols();
-  if (!saved.includes(symbol)) {
-    saved.push(symbol);
-    setSavedSymbols(saved);
-    populateSymbolDropdown();
-  }
-  document.getElementById('status').textContent = `✅ ${symbol} ذخیره شد`;
+  if (!SYMBOL_RE.test(symbol)) return;
+  let saved = getSavedSymbols();
+  const had = saved.includes(symbol);
+  saved = had ? saved.filter(s => s !== symbol) : saved.concat(symbol);
+  setSavedSymbols(saved);
+  populateSymbolDropdown();
+  document.getElementById('status').textContent = had ? `${symbol} از ذخیره‌شده‌ها برداشته شد` : `⭐ ${symbol} ذخیره شد`;
+}
+function refreshStar() {
+  const b = document.getElementById('saveSymbolBtn'); if (!b) return;
+  const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
+  const on = getSavedSymbols().includes(symbol);
+  b.classList.toggle('saved', on);
+  b.title = on ? 'برداشتن از ذخیره‌شده‌ها' : 'ذخیره‌ی این ارز';
 }
 
 // ═══════════ تنظیمات، اندیکاتورها و پشتیبان‌گیری ═══════════
 const LS_KEY = 'ta_settings_v1';
+const INTERVALS = ['15m', '30m', '1h', '4h', '1d', '1w'];
 const OV_TYPES = { sma: 'SMA', ema: 'EMA', bb: 'Bollinger', vwap: 'VWAP' };
 const OV_COLORS = ['#f59e0b', '#3b82f6', '#a855f7', '#14b8a6', '#ec4899', '#84cc16'];
 const SYMBOL_RE = /^[A-Za-z0-9]{2,20}$/;
@@ -83,7 +92,7 @@ function sanitizeSettings(raw, imported) {
   const o = defaultSettings();
   if (!raw || typeof raw !== 'object') return o;
   if (typeof raw.symbol === 'string' && SYMBOL_RE.test(raw.symbol)) o.symbol = raw.symbol.toUpperCase();
-  if (['1h', '4h', '1d', '1w'].includes(raw.iv)) o.iv = raw.iv;
+  if (INTERVALS.includes(raw.iv)) o.iv = raw.iv;
   o.limit = [300, 500, 1000].includes(+raw.limit) ? +raw.limit : 500;
   o.magnet = toBool(raw.magnet, true);
   o.paneH = {};
@@ -209,9 +218,10 @@ function resetSettings() {
 // ─── Interval ───────────────────────────────────────────────────────────────
 function setIv(iv) {
   currentIv = iv;
-  ['1h','4h','1d','1w'].forEach(i =>
-    document.getElementById('btn-' + i).classList.toggle('active', i === iv)
-  );
+  INTERVALS.forEach(i => {
+    const b = document.getElementById('btn-' + i);
+    if (b) b.classList.toggle('active', i === iv);
+  });
   saveSettings();
 }
 
