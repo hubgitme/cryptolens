@@ -186,9 +186,10 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .charts-col { scrollbar-gutter: stable; }
 .charts-pad { height: max(80px, env(safe-area-inset-bottom)); flex-shrink: 0; }
-.grip { position:absolute; left:0; right:0; bottom:-6px; height:12px; cursor:ns-resize; z-index:9; touch-action:none; }
-.grip::before { content:''; position:absolute; left:50%; top:4px; width:40px; height:4px; margin-left:-20px; border-radius:2px; background:var(--border); }
+.grip { position:absolute; left:50%; width:88px; margin-left:-44px; bottom:-11px; height:22px; cursor:ns-resize; z-index:9; touch-action:none; }
+.grip::before { content:''; position:absolute; left:50%; top:8px; width:46px; height:5px; margin-left:-23px; border-radius:3px; background:var(--border); }
 .grip:hover::before { background:var(--accent); }
+.charts-col.locked .grip { display:none; }
 .pane-btns { pointer-events:auto; display:inline-flex; gap:2px; }
 .pane-btns button { padding:0 6px; font-size:.72rem; line-height:1.4; background:transparent; border:none; color:var(--muted); cursor:pointer; }
 .pane-btns button:hover { color:#fff; }
