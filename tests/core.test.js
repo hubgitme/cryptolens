@@ -29,3 +29,9 @@ test('sanitizeSettings: ساعت نمایش و سطح‌های RSI+SMA', () => {
   const o = X.sanitizeSettings({ rsisma: { hi: 60, lo: 30 } }); assert.equal(o.rsisma.hi, 60); assert.equal(o.rsisma.lo, 30);
   const bad = X.sanitizeSettings({ rsisma: { hi: 30, lo: 60 } }); assert.equal(bad.rsisma.lo, 40); assert.equal(bad.rsisma.hi, 70);
 });
+
+test('تایم‌فریم‌ها: 15m و 30m معتبرند و مقدار نامعتبر رد میشود', () => {
+  for (const iv of ['15m', '30m', '1h', '4h', '1d', '1w']) assert.equal(X.sanitizeSettings({ iv }).iv, iv);
+  assert.equal(X.sanitizeSettings({ iv: '5m' }).iv, '4h');
+  const D = load('core.js', 'drawings.js'); assert.equal(D.$('IV_SEC["15m"]'), 900); assert.equal(D.$('IV_SEC["30m"]'), 1800);
+});
