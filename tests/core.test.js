@@ -35,3 +35,10 @@ test('تایم‌فریم‌ها: 15m و 30m معتبرند و مقدار نام
   assert.equal(X.sanitizeSettings({ iv: '5m' }).iv, '4h');
   const D = load('core.js', 'drawings.js'); assert.equal(D.$('IV_SEC["15m"]'), 900); assert.equal(D.$('IV_SEC["30m"]'), 1800);
 });
+
+test('sanitizeSettings: فاصله‌ی بروزرسانی خودکار', () => {
+  assert.equal(X.sanitizeSettings({}).refresh, 60);
+  for (const v of [0, 15, 30, 60, 300]) assert.equal(X.sanitizeSettings({ refresh: v }).refresh, v);
+  assert.equal(X.sanitizeSettings({ refresh: '30' }).refresh, 30);
+  assert.equal(X.sanitizeSettings({ refresh: 7 }).refresh, 60);
+});

@@ -55,3 +55,14 @@ test('parseCompact', () => {
   assert.equal(I.parseCompact('1,250,000'), 1250000); assert.equal(I.parseCompact('\u22123.1K'), -3100);
   assert.equal(I.parseCompact('abc'), null);
 });
+
+test('mergeCandles: جایگزینی کندل جاری، افزودن کندل جدید و برش قدیمی‌ها', () => {
+  const mk = (t, c) => ({ time: t, close: c });
+  const old = [1, 2, 3, 4, 5].map(t => mk(t, t));
+  const a = I.mergeCandles(old, [mk(5, 50), mk(6, 6)], 100, 100);
+  assert.equal(a.candles.length, 6); assert.equal(a.candles[4].close, 50); assert.equal(a.candles[5].time, 6); assert.equal(a.removed, 0);
+  const b = I.mergeCandles(old, [mk(6, 6)], 5, 4);       // طول 6 > 5 → برش به 4 (۲ کندل قدیمی حذف)
+  assert.equal(b.removed, 2); assert.equal(b.candles.length, 4); assert.equal(b.candles[0].time, 3);
+  const c = I.mergeCandles(old, [mk(2, 22), mk(4, 44)], 100, 100); assert.equal(c.candles.length, 5); assert.equal(c.candles[1].close, 22);
+  const d = I.mergeCandles(old, [mk(7, 7), mk(6, 6)], 100, 100); assert.deepEqual(Array.from(d.candles, x => x.time), [1, 2, 3, 4, 5, 6, 7]);   // مرتب
+});
