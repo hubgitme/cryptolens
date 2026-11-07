@@ -4,8 +4,8 @@
 
 ## ویژگی‌ها
 - چارت کندل (Lightweight Charts) با تایم‌فریم 1H / 4H / 1D / 1W؛ بارگذاری خودکار هنگام باز شدن و تغییر ارز/تایم‌فریم
-- اندیکاتورهای روی قیمت: EMA، SMA، Bollinger، VWAP، Volume
-- پنل‌های جدا (ارتفاع ثابت، قابل تغییر اندازه، محور زمان فقط پایین‌ترین): RSI، RSI+SMA، MACD، Stochastic، CCI، Williams %R، ATR، OBV+SMA (با همترازی با TradingView)، ROC، ADX/+DI/−DI
+- اندیکاتورهای روی قیمت: EMA، SMA، Bollinger، VWAP، Williams Alligator، Volume
+- پنل‌های جدا (ارتفاع ثابت، قابل تغییر اندازه، محور زمان فقط پایین‌ترین): RSI، RSI+SMA، MACD، Stochastic، CCI، Williams %R، Momentum، MFI، ATR، OBV+SMA (با همترازی با TradingView)، ROC، ADX/+DI/−DI
 - ترتیب پنل‌های اندیکاتور با ▲▼ روی عنوان هر پنل قابل جابجایی است (ذخیره می‌شود)
 - ابزارهای رسم: خط روند، افقی، فیبوناچی، الیوت 1-5 و ABC؛ جابجایی، Magnet و قفل (تکی/همه)
 - اسکریپت‌های کاربر با کد (اندیکاتور و استراتژی شبیه Pine) + بک‌تست (بازده، درصد برد، Profit Factor، افت سرمایه)
