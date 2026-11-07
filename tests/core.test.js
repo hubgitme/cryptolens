@@ -42,3 +42,12 @@ test('sanitizeSettings: فاصله‌ی بروزرسانی خودکار', () => 
   assert.equal(X.sanitizeSettings({ refresh: '30' }).refresh, 30);
   assert.equal(X.sanitizeSettings({ refresh: 7 }).refresh, 60);
 });
+
+test('sanitizeSettings: CCI، Williams %R و ترتیب پنل‌ها', () => {
+  const d = X.sanitizeSettings({}); assert.equal(d.cci.period, 20); assert.equal(d.wpr.period, 14); assert.equal(d.cci.on, false);
+  const o = X.sanitizeSettings({ cci: { on: true, period: 1 }, wpr: { on: true, period: 99999 } });
+  assert.equal(o.cci.period, 2); assert.equal(o.wpr.period, 300); assert.equal(o.cci.on, true);
+  const p = X.sanitizeSettings({ paneOrder: ['macd', 'rsi', 'macd', '<x>', 5, 'cs_abc123'] });
+  assert.deepEqual(Array.from(p.paneOrder), ['macd', 'rsi', 'cs_abc123']);
+  assert.deepEqual(Array.from(X.sanitizeSettings({ paneOrder: 'x' }).paneOrder), []);
+});

@@ -66,3 +66,20 @@ test('mergeCandles: جایگزینی کندل جاری، افزودن کندل �
   const c = I.mergeCandles(old, [mk(2, 22), mk(4, 44)], 100, 100); assert.equal(c.candles.length, 5); assert.equal(c.candles[1].close, 22);
   const d = I.mergeCandles(old, [mk(7, 7), mk(6, 6)], 100, 100); assert.deepEqual(Array.from(d.candles, x => x.time), [1, 2, 3, 4, 5, 6, 7]);   // مرتب
 });
+
+test('CCI: مقدار مرجع و حالت بدون نوسان', () => {
+  const mk = tp => ({ high: tp, low: tp, close: tp });
+  const r = I.calcCCI([1, 2, 3].map(mk), 3);
+  assert.equal(r[0], null); assert.equal(r[1], null); near(r[2], 100);          // (3-2)/(0.015*(2/3)) = 100
+  near(I.calcCCI([3, 2, 1].map(mk), 3)[2], -100);
+  assert.equal(I.calcCCI([5, 5, 5].map(mk), 3)[2], 0);                          // بدون نوسان: تقسیم بر صفر نمیشود
+});
+test('Williams %R: بازه‌ی ‎−۱۰۰ تا ۰', () => {
+  const c = (h, l, cl) => ({ high: h, low: l, close: cl });
+  const r = I.calcWPR([c(10, 0, 5), c(10, 0, 10), c(10, 0, 0)], 3);
+  assert.equal(r[0], null); near(r[2], -100);
+  near(I.calcWPR([c(10, 0, 5), c(10, 2, 5), c(10, 0, 10)], 3)[2], 0);
+  near(I.calcWPR([c(10, 0, 5), c(10, 0, 5), c(10, 0, 5)], 3)[2], -50);
+  const d = Array.from({ length: 60 }, (_, i) => c(100 + 10 * Math.sin(i / 5) + 2, 100 + 10 * Math.sin(i / 5) - 2, 100 + 10 * Math.sin(i / 5)));
+  assert.ok(Array.from(I.calcWPR(d, 14)).filter(v => v != null).every(v => v >= -100 && v <= 0));
+});
