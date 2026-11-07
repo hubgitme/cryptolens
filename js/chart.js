@@ -56,6 +56,21 @@ function renderOverlays(candles, times) {
       const v = calcVWAP(candles, currentIv);
       line(v, o.color);
       overlayDefs.push({ label: 'VWAP ', color: o.color, vals: v });
+    } else if (o.type === 'alligator') {
+      // Williams Alligator: سه SMMA از (H+L)/2 با جابه‌جایی رو به جلو؛ بخشی از خطوط به آینده‌ی چارت می‌رسد
+      const al = calcAlligator(candles, o.jaw, o.teeth, o.lips), n = candles.length, step = IV_SEC[currentIv] || 1, lastT = candles[n - 1].time;
+      [['jaw', '#2962ff', 'Jaw'], ['teeth', '#ef5350', 'Teeth'], ['lips', '#26a69a', 'Lips']].forEach(([key, color, name]) => {
+        const off = ALLIGATOR_SHIFT[key], v = al[key], data = [], shifted = new Array(n).fill(null);
+        for (let i = 0; i < n; i++) {
+          if (v[i] == null) continue;
+          const j = i + off;
+          data.push({ time: j < n ? times[j] : dt(lastT + (j - (n - 1)) * step), value: v[i] });
+          if (j < n) shifted[j] = v[i];
+        }
+        const sr = priceChart.addLineSeries({ color, lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+        sr.setData(data); overlaySeries.push(sr);
+        overlayDefs.push({ label: `${name} `, color, vals: shifted });
+      });
     }
   });
   if (S.volume.on) {
@@ -111,7 +126,7 @@ function renderExtras(candles, times) {
     extraData[k] = def.compute(candles);
     def.fill(extraPanes[k].series, extraData[k], times);
     document.getElementById(`lg-${k}-title`).textContent = def.title(extraData[k]);
-    const mk = { stoch: 'k', atr: 'a', obv: 'o', roc: 'r', adx: 'a', rsisma: 'r', cci: 'c', wpr: 'w' }[k];   // خط اصلی هر پنل برای هم‌گام‌سازی کراس‌هیر
+    const mk = { stoch: 'k', atr: 'a', obv: 'o', roc: 'r', adx: 'a', rsisma: 'r', cci: 'c', wpr: 'w', mom: 'm', mfi: 'f' }[k];   // خط اصلی هر پنل برای هم‌گام‌سازی کراس‌هیر
     extraPanes[k].xh = { series: extraPanes[k].series[mk], vals: extraData[k][mk] };
   });
 }
@@ -136,6 +151,8 @@ function applyIndicatorVisibility() {
   syncExtraPane('adx', S.adx.on);
   syncExtraPane('cci', S.cci.on);
   syncExtraPane('wpr', S.wpr.on);
+  syncExtraPane('mom', S.mom.on);
+  syncExtraPane('mfi', S.mfi.on);
   applyPaneOrder();
   applyLockState();
   resizeChartsNow();
@@ -359,7 +376,10 @@ function renderAll(resetView, quiet) {   // quiet: بروزرسانی بی‌ص�
     macdLineSeries.setData(toSeries(times, ml));
     macdSignalSeries.setData(toSeries(times, sl));
     macdHistSeries.setData(times.map((t, i) => hl[i] != null ? { time: t, value: hl[i], color: hl[i] >= 0 ? '#26a69a' : '#ef5350' } : { time: t }));
-    if (axisSeries) axisSeries.setData(times.map(t => ({ time: t, value: 0 })));
+    if (axisSeries) {   // نوار ساعت تا ۳۰ کندل آینده هم برچسب دارد (برای خطوط Alligator و فضای سمت راست)
+      const step = IV_SEC[currentIv] || 1, lastT = candles[candles.length - 1].time;
+      axisSeries.setData(times.concat(Array.from({ length: 30 }, (_, k) => dt(lastT + (k + 1) * step))).map(t => ({ time: t, value: 0 })));
+    }
     renderOverlays(candles, times);
     renderExtras(candles, times);
     renderCustom(candles, times);
@@ -449,7 +469,7 @@ function allPaneCharts() {
 }
 
 function closePane(key) {
-  if (['rsi', 'macd', 'stoch', 'atr', 'obv', 'rsisma', 'roc', 'adx', 'cci', 'wpr'].includes(key)) S[key].on = false;
+  if (['rsi', 'macd', 'stoch', 'atr', 'obv', 'rsisma', 'roc', 'adx', 'cci', 'wpr', 'mom', 'mfi'].includes(key)) S[key].on = false;
   else { const sc = S.customIndicators.find(s => 'cs_' + s.id === key); if (sc) sc.on = false; }
   onIndChange();
 }
@@ -534,6 +554,29 @@ EXTRA_DEFS.wpr = {
   fill(sr, d, t) { sr.w.setData(toSeries(t, d.w)); },
   legend: (d, i) => `<span style="color:#7e57c2">${fx(d.w[i])}</span>`
 };
+EXTRA_DEFS.mom = {
+  title: () => `MOM (${S.mom.period})`,
+  build(ch) {
+    const m = ch.addLineSeries(withLevels(lineOpt('#ffa726'), () => [0]));
+    m.createPriceLine({ price: 0, color: '#6b7280', lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: '' });
+    return { m };
+  },
+  compute: c => ({ m: calcMOM(c.map(x => x.close), S.mom.period) }),
+  fill(sr, d, t) { sr.m.setData(toSeries(t, d.m)); },
+  legend: (d, i) => `<span style="color:#ffa726">${fx(d.m[i])}</span>`
+};
+EXTRA_DEFS.mfi = {
+  title: () => `MFI (${S.mfi.period})`,
+  build(ch) {
+    const f = ch.addLineSeries(withLevels(lineOpt('#00bcd4'), () => [80, 20]));
+    [[80, '#ef5350'], [20, '#26a69a']].forEach(([price, color]) =>
+      f.createPriceLine({ price, color, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' }));
+    return { f };
+  },
+  compute: c => ({ f: calcMFI(c, S.mfi.period) }),
+  fill(sr, d, t) { sr.f.setData(toSeries(t, d.f)); },
+  legend: (d, i) => `<span style="color:#00bcd4">${fx(d.f[i])}</span>`
+};
 EXTRA_DEFS.roc = {
   title: () => `ROC (${S.roc.period})`,
   build(ch) { const r = ch.addLineSeries(withLevels(lineOpt('#a855f7'), () => [0])); r.createPriceLine({ price: 0, color: '#6b7280', lineWidth: 1, lineStyle: 2, axisLabelVisible: false }); return { r }; },
@@ -612,7 +655,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && S.
 window.addEventListener('online', () => { if (S.refresh > 0) refreshLatest(); });
 
 // ═══════════ جابجایی پنل‌های اندیکاتور (▲▼ روی عنوان هر پنل) ═══════════
-const BUILTIN_PANES = ['rsi', 'macd', 'stoch', 'atr', 'obv', 'rsisma', 'roc', 'adx', 'cci', 'wpr'];
+const BUILTIN_PANES = ['rsi', 'macd', 'stoch', 'atr', 'obv', 'rsisma', 'roc', 'adx', 'cci', 'wpr', 'mom', 'mfi'];
 function fullPaneOrder() {   // ترتیب کامل، شامل پنل‌های فعلاً مخفی
   const known = new Set(BUILTIN_PANES.concat(Object.keys(extraPanes))), out = [];
   S.paneOrder.forEach(k => { if (known.has(k) && !out.includes(k)) out.push(k); });

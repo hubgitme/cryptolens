@@ -59,7 +59,7 @@ function refreshStar() {
 // ═══════════ تنظیمات، اندیکاتورها و پشتیبان‌گیری ═══════════
 const LS_KEY = 'ta_settings_v1';
 const INTERVALS = ['15m', '30m', '1h', '4h', '1d', '1w'];
-const OV_TYPES = { sma: 'SMA', ema: 'EMA', bb: 'Bollinger', vwap: 'VWAP' };
+const OV_TYPES = { sma: 'SMA', ema: 'EMA', bb: 'Bollinger', vwap: 'VWAP', alligator: 'Alligator' };
 const OV_COLORS = ['#f59e0b', '#3b82f6', '#a855f7', '#14b8a6', '#ec4899', '#84cc16'];
 const SYMBOL_RE = /^[A-Za-z0-9]{2,20}$/;
 let ovSeq = 0;
@@ -80,6 +80,8 @@ function defaultSettings() {
     adx:   { on: false, period: 14 },
     cci:   { on: false, period: 20 },
     wpr:   { on: false, period: 14 },
+    mom:   { on: false, period: 10 },
+    mfi:   { on: false, period: 14 },
     paneOrder: [],
     customIndicators: []
   };
@@ -113,6 +115,7 @@ function sanitizeSettings(raw, imported) {
     o.overlays = raw.overlays.slice(0, 12).filter(x => x && OV_TYPES[x.type]).map((x, i) => ({
       id: 'ov' + (++ovSeq), type: x.type, on: toBool(x.on, true),
       period: toInt(x.period, 20, 1, 500), mult: toNum(x.mult, 2, 0.1, 10),
+      jaw: toInt(x.jaw, 13, 2, 200), teeth: toInt(x.teeth, 8, 2, 200), lips: toInt(x.lips, 5, 2, 200),
       color: /^#[0-9a-fA-F]{6}$/.test(x.color) ? x.color : OV_COLORS[i % OV_COLORS.length]
     }));
   }
@@ -133,6 +136,9 @@ function sanitizeSettings(raw, imported) {
     const a = ob.anchors[k];
     if (/^[A-Za-z0-9]{2,20}\|(1h|4h|1d|1w)$/.test(k) && a && isFinite(a.t) && isFinite(a.v)) o.obv.anchors[k] = { t: +a.t, v: +a.v };
   });
+  const mo = raw.mom || {}, mf = raw.mfi || {};
+  o.mom = { on: toBool(mo.on, false), period: toInt(mo.period, 10, 1, 500) };
+  o.mfi = { on: toBool(mf.on, false), period: toInt(mf.period, 14, 2, 300) };
   const cc = raw.cci || {}, wp = raw.wpr || {};
   o.cci = { on: toBool(cc.on, false), period: toInt(cc.period, 20, 2, 300) };
   o.wpr = { on: toBool(wp.on, false), period: toInt(wp.period, 14, 2, 300) };

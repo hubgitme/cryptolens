@@ -186,3 +186,28 @@ function calcWPR(c, p) {   // بین ‎−۱۰۰ و ۰ ؛ بالای ‎−۲۰
     return hh === ll ? -50 : -100 * (hh - x.close) / (hh - ll);
   });
 }
+
+// ─── Momentum، MFI و Williams Alligator ────────────────────────────────────
+function calcMOM(src, p) { return src.map((v, i) => i >= p && v != null && src[i - p] != null ? v - src[i - p] : null); }
+function calcMFI(c, p) {   // Money Flow Index؛ مثل ta.mfi در TradingView (hlc3 × حجم)
+  const tp = c.map(x => (x.high + x.low + x.close) / 3), out = new Array(c.length).fill(null);
+  for (let i = p; i < c.length; i++) {
+    let up = 0, dn = 0;
+    for (let j = i - p + 1; j <= i; j++) { const f = tp[j] * c[j].volume; if (tp[j] > tp[j - 1]) up += f; else if (tp[j] < tp[j - 1]) dn += f; }
+    out[i] = dn ? 100 - 100 / (1 + up / dn) : (up ? 100 : 50);
+  }
+  return out;
+}
+function calcSMMA(a, n) {   // میانگین هموار (Wilder / RMA) با شروع از SMA
+  const out = new Array(a.length).fill(null);
+  if (a.length < n) return out;
+  let s = 0; for (let i = 0; i < n; i++) s += a[i];
+  let prev = s / n; out[n - 1] = prev;
+  for (let i = n; i < a.length; i++) { prev = (prev * (n - 1) + a[i]) / n; out[i] = prev; }
+  return out;
+}
+const ALLIGATOR_SHIFT = { jaw: 8, teeth: 5, lips: 3 };   // جابه‌جایی رو به جلو (تعداد کندل)
+function calcAlligator(c, jaw, teeth, lips) {   // روی میانه‌ی قیمت (H+L)/2؛ مقدارها هنوز شیفت داده نشده‌اند
+  const hl2 = c.map(x => (x.high + x.low) / 2);
+  return { jaw: calcSMMA(hl2, jaw), teeth: calcSMMA(hl2, teeth), lips: calcSMMA(hl2, lips) };
+}

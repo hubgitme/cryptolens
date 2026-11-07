@@ -8,7 +8,7 @@ function onIndChange() {
 }
 function addOv(type) {
   if (S.overlays.length >= 12) return msg('حداکثر ۱۲ اندیکاتور');
-  S.overlays.push({ id: 'ov' + (++ovSeq), type, on: true, period: type === 'vwap' ? 1 : 20, mult: 2,
+  S.overlays.push({ id: 'ov' + (++ovSeq), type, on: true, period: type === 'vwap' ? 1 : 20, mult: 2, jaw: 13, teeth: 8, lips: 5,
     color: OV_COLORS[S.overlays.length % OV_COLORS.length] });
   onIndChange();
 }
@@ -19,6 +19,7 @@ function updOv(id, prop, val) {
   else if (prop === 'period') o.period = toInt(val, o.period, 1, 500);
   else if (prop === 'mult') o.mult = toNum(val, o.mult, 0.1, 10);
   else if (prop === 'color' && /^#[0-9a-fA-F]{6}$/.test(val)) o.color = val;
+  else if (prop === 'jaw' || prop === 'teeth' || prop === 'lips') o[prop] = toInt(val, o[prop], 2, 200);
   onIndChange();
 }
 function updPane(key, prop, val) {
@@ -38,9 +39,9 @@ function renderPanel() {
   const ovRows = S.overlays.map(o => `<div class="ind-row">
       <input type="checkbox" ${o.on ? 'checked' : ''} onchange="updOv('${o.id}','on',this.checked)">
       <span class="nm">${OV_TYPES[o.type]}</span>
-      ${o.type === 'vwap' ? '' : `<label>دوره<input type="number" min="1" max="500" value="${o.period}" onchange="updOv('${o.id}','period',this.value)"></label>`}
+      ${o.type === 'vwap' ? '' : o.type === 'alligator' ? [['jaw', 'فک'], ['teeth', 'دندان'], ['lips', 'لب']].map(([k, t]) => `<label>${t}<input type="number" min="2" max="200" value="${o[k]}" onchange="updOv('${o.id}','${k}',this.value)"></label>`).join('') : `<label>دوره<input type="number" min="1" max="500" value="${o.period}" onchange="updOv('${o.id}','period',this.value)"></label>`}
       ${o.type === 'bb' ? `<label>ضریب<input type="number" step="0.1" min="0.1" max="10" value="${o.mult}" onchange="updOv('${o.id}','mult',this.value)"></label>` : ''}
-      <input type="color" value="${o.color}" onchange="updOv('${o.id}','color',this.value)">
+      ${o.type === 'alligator' ? '' : `<input type="color" value="${o.color}" onchange="updOv('${o.id}','color',this.value)">`}
       <button onclick="delOv('${o.id}')" title="حذف">🗑</button></div>`).join('')
     || '<p class="no-data">هنوز اندیکاتوری روی نمودار قیمت اضافه نشده</p>';
   const scRows = S.customIndicators.map(sc => {
@@ -60,6 +61,7 @@ function renderPanel() {
       <div class="ind-add">
         <button onclick="addOv('ema')">+ EMA</button><button onclick="addOv('sma')">+ SMA</button>
         <button onclick="addOv('bb')">+ Bollinger</button><button onclick="addOv('vwap')">+ VWAP</button>
+        <button onclick="addOv('alligator')">+ Alligator</button>
       </div>
       <div class="ind-row" style="margin-top:10px">
         <input type="checkbox" ${S.volume.on ? 'checked' : ''} onchange="updPane('volume','on',this.checked)"><span class="nm">Volume</span>
@@ -82,6 +84,8 @@ function renderPanel() {
       ${paneRow('adx', 'ADX / +DI / −DI', fld('adx', 'period', 'دوره', 'min="2" max="100"'))}
       ${paneRow('cci', 'CCI', fld('cci', 'period', 'دوره', 'min="2" max="300"'))}
       ${paneRow('wpr', 'Williams %R', fld('wpr', 'period', 'دوره', 'min="2" max="300"'))}
+      ${paneRow('mom', 'Momentum', fld('mom', 'period', 'دوره', 'min="1" max="500"'))}
+      ${paneRow('mfi', 'MFI', fld('mfi', 'period', 'دوره', 'min="2" max="300"'))}
       <div class="ind-row sub"><span class="no-data">جابجایی پنل‌ها: با ▲ ▼ روی عنوان هر پنل در چارت.</span></div>
     </div>
     <div class="ind-sec"><h4>اسکریپت‌های من (اندیکاتور و استراتژی با کد)</h4>${scRows}
