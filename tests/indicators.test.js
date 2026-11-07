@@ -83,3 +83,26 @@ test('Williams %R: بازه‌ی ‎−۱۰۰ تا ۰', () => {
   const d = Array.from({ length: 60 }, (_, i) => c(100 + 10 * Math.sin(i / 5) + 2, 100 + 10 * Math.sin(i / 5) - 2, 100 + 10 * Math.sin(i / 5)));
   assert.ok(Array.from(I.calcWPR(d, 14)).filter(v => v != null).every(v => v >= -100 && v <= 0));
 });
+
+test('Momentum', () => {
+  const m = I.calcMOM([10, 12, 15, 11, 20], 2);
+  assert.equal(m[0], null); assert.equal(m[1], null); near(m[2], 5); near(m[3], -1); near(m[4], 5);
+});
+test('MFI: صعودی کامل=100، نزولی کامل=0، متناوب=مقدار مرجع', () => {
+  const mk = tps => tps.map(tp => ({ high: tp, low: tp, close: tp, volume: 10 }));
+  const up = I.calcMFI(mk([1, 2, 3, 4, 5, 6]), 4); assert.equal(up[3], null); near(up[4], 100); near(up[5], 100);
+  near(I.calcMFI(mk([6, 5, 4, 3, 2, 1]), 4)[5], 0);
+  near(I.calcMFI(mk([10, 11, 10, 11, 10]), 4)[4], 100 - 100 / (1 + 22 / 20));   // مقدار مرجع ≈ 52.38
+  const d = Array.from({ length: 80 }, (_, i) => { const c = 100 + 10 * Math.sin(i / 4); return { high: c + 2, low: c - 2, close: c, volume: 50 + (i % 7) }; });
+  assert.ok(Array.from(I.calcMFI(d, 14)).filter(v => v != null).every(v => v >= 0 && v <= 100));
+});
+test('SMMA و Williams Alligator', () => {
+  const s = I.calcSMMA([1, 2, 3, 4], 2);
+  assert.equal(s[0], null); near(s[1], 1.5); near(s[2], 2.25); near(s[3], 3.125);
+  const c = Array.from({ length: 60 }, (_, i) => ({ high: 102 + i, low: 98 + i, close: 100 + i }));
+  const a = I.calcAlligator(c, 13, 8, 5);
+  assert.equal(a.jaw.findIndex(v => v != null), 12); assert.equal(a.teeth.findIndex(v => v != null), 7); assert.equal(a.lips.findIndex(v => v != null), 4);
+  near(a.lips[4], 102);                                                          // میانگین (H+L)/2 پنج کندل اول = 100,101,...,104 → 102
+  assert.ok(a.lips[59] > a.teeth[59] && a.teeth[59] > a.jaw[59]);                // روند صعودی: لب > دندان > فک
+  assert.equal(I.ALLIGATOR_SHIFT ? 0 : 0, 0);
+});

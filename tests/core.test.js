@@ -51,3 +51,11 @@ test('sanitizeSettings: CCI، Williams %R و ترتیب پنل‌ها', () => {
   assert.deepEqual(Array.from(p.paneOrder), ['macd', 'rsi', 'cs_abc123']);
   assert.deepEqual(Array.from(X.sanitizeSettings({ paneOrder: 'x' }).paneOrder), []);
 });
+
+test('sanitizeSettings: Momentum، MFI و Alligator', () => {
+  const d = X.sanitizeSettings({}); assert.equal(d.mom.period, 10); assert.equal(d.mfi.period, 14);
+  const o = X.sanitizeSettings({ mom: { on: true, period: 0 }, mfi: { on: true, period: 9999 } });
+  assert.equal(o.mom.period, 1); assert.equal(o.mfi.period, 300); assert.equal(o.mom.on, true);
+  const al = X.sanitizeSettings({ overlays: [{ type: 'alligator', jaw: 21, teeth: 1, lips: 'x' }] }).overlays[0];
+  assert.equal(al.type, 'alligator'); assert.equal(al.jaw, 21); assert.equal(al.teeth, 2); assert.equal(al.lips, 5);
+});
