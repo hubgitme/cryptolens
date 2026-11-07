@@ -80,6 +80,9 @@ function renderPanel() {
       <div class="ind-row sub"><span class="no-data">OBV تجمعی است و مقدار مطلقش به کندل شروع بستگی دارد (TradingView از ابتدای تاریخچه‌ی خودش حساب می‌کند). شکل نمودار یکی است؛ با وارد کردن عدد فعلی TV، مقدار ثابت اختلاف جبران میشود. برای هر ارز و تایم‌فریم جداست.</span></div>
       ${paneRow('roc', 'ROC', fld('roc', 'period', 'دوره', 'min="1" max="500"'))}
       ${paneRow('adx', 'ADX / +DI / −DI', fld('adx', 'period', 'دوره', 'min="2" max="100"'))}
+      ${paneRow('cci', 'CCI', fld('cci', 'period', 'دوره', 'min="2" max="300"'))}
+      ${paneRow('wpr', 'Williams %R', fld('wpr', 'period', 'دوره', 'min="2" max="300"'))}
+      <div class="ind-row sub"><span class="no-data">جابجایی پنل‌ها: با ▲ ▼ روی عنوان هر پنل در چارت.</span></div>
     </div>
     <div class="ind-sec"><h4>اسکریپت‌های من (اندیکاتور و استراتژی با کد)</h4>${scRows}
       <div class="ind-add">
@@ -96,7 +99,7 @@ function renderPanel() {
         <label>بروزرسانی خودکار قیمت<select onchange="updSetting('refresh',this.value)">${[[0, 'خاموش'], [15, 'هر ۱۵ ثانیه'], [30, 'هر ۳۰ ثانیه'], [60, 'هر ۱ دقیقه'], [300, 'هر ۵ دقیقه']].map(([v, t]) => `<option value="${v}" ${S.refresh === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
       </div>
       <div class="ind-row"><label style="flex:1">سطوح فیبوناچی<input type="text" style="flex:1;direction:ltr" value="${S.fibLevels.join(', ')}" onchange="updSetting('fibLevels',this.value)"></label></div>
-      <div class="ind-row"><button onclick="resetLayout()">↺ بازنشانی اندازه‌ی پنل‌ها</button></div>
+      <div class="ind-row"><button onclick="resetLayout()">↺ بازنشانی اندازه و ترتیب پنل‌ها</button></div>
     </div>
     <div class="ind-sec"><h4>پشتیبان‌گیری و بازیابی (تنظیمات، اندیکاتورها، اسکریپت‌ها، رسم‌ها، ارزهای ذخیره‌شده)</h4>
       <div class="ind-add">

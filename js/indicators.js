@@ -167,3 +167,22 @@ function mergeCandles(old, fresh, maxLen, keepLen) {
   if (arr.length > maxLen) { removed = arr.length - keepLen; arr = arr.slice(removed); }
   return { candles: arr, removed };
 }
+
+// ─── CCI و Williams %R ─────────────────────────────────────────────────────
+function calcCCI(c, p) {
+  const tp = c.map(x => (x.high + x.low + x.close) / 3), sma = calcSMA(tp, p), out = new Array(c.length).fill(null);
+  for (let i = p - 1; i < c.length; i++) {
+    let dev = 0; for (let j = i - p + 1; j <= i; j++) dev += Math.abs(tp[j] - sma[i]);
+    dev /= p;
+    out[i] = dev ? (tp[i] - sma[i]) / (0.015 * dev) : 0;
+  }
+  return out;
+}
+function calcWPR(c, p) {   // بین ‎−۱۰۰ و ۰ ؛ بالای ‎−۲۰ اشباع خرید، زیر ‎−۸۰ اشباع فروش
+  return c.map((x, i) => {
+    if (i < p - 1) return null;
+    let hh = -Infinity, ll = Infinity;
+    for (let j = i - p + 1; j <= i; j++) { hh = Math.max(hh, c[j].high); ll = Math.min(ll, c[j].low); }
+    return hh === ll ? -50 : -100 * (hh - x.close) / (hh - ll);
+  });
+}

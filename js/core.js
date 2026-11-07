@@ -78,6 +78,9 @@ function defaultSettings() {
     tz: 'local', refresh: 60,
     roc:   { on: false, period: 9 },
     adx:   { on: false, period: 14 },
+    cci:   { on: false, period: 20 },
+    wpr:   { on: false, period: 14 },
+    paneOrder: [],
     customIndicators: []
   };
 }
@@ -130,6 +133,10 @@ function sanitizeSettings(raw, imported) {
     const a = ob.anchors[k];
     if (/^[A-Za-z0-9]{2,20}\|(1h|4h|1d|1w)$/.test(k) && a && isFinite(a.t) && isFinite(a.v)) o.obv.anchors[k] = { t: +a.t, v: +a.v };
   });
+  const cc = raw.cci || {}, wp = raw.wpr || {};
+  o.cci = { on: toBool(cc.on, false), period: toInt(cc.period, 20, 2, 300) };
+  o.wpr = { on: toBool(wp.on, false), period: toInt(wp.period, 14, 2, 300) };
+  o.paneOrder = Array.isArray(raw.paneOrder) ? [...new Set(raw.paneOrder.filter(k => typeof k === 'string' && /^\w{1,40}$/.test(k) && k !== '__proto__'))].slice(0, 40) : [];
   const rs = raw.rsisma || {};
   o.rsisma = { on: toBool(rs.on, false), period: toInt(rs.period, 14, 2, 200), sma: toInt(rs.sma, 9, 1, 500), hi: toNum(rs.hi, 70, 1, 100), lo: toNum(rs.lo, 40, 0, 99) };
   if (o.rsisma.lo >= o.rsisma.hi) { o.rsisma.hi = 70; o.rsisma.lo = 40; }

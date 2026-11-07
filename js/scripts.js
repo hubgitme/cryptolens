@@ -15,7 +15,7 @@ function makeTA(candles) {
     macd: (src, f, s, sg) => { const r = calcMACD(src, f || 12, s || 26, sg || 9); return { macd: r.ml, signal: r.sl, hist: r.hl }; },
     stoch: (k, d, sm) => calcStoch(candles, k || 14, d || 3, sm || 3),
     vwap: () => calcVWAP(candles, currentIv),
-    obv: () => calcOBV(candles), roc: (src, p) => calcROC(src, p || 9),
+    obv: () => calcOBV(candles), cci: p => calcCCI(candles, p || 20), wpr: p => calcWPR(candles, p || 14), roc: (src, p) => calcROC(src, p || 9),
     adx: p => { const r = calcADX(candles, p || 14); return { adx: r.adx, pdi: r.pdi, mdi: r.mdi }; },
     highest: (a, p) => rolling(a, p, Math.max), lowest: (a, p) => rolling(a, p, Math.min),
     change: (a, k) => a.map((v, i) => i >= (k || 1) && v != null && a[i - (k || 1)] != null ? v - a[i - (k || 1)] : null),

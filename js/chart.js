@@ -111,7 +111,7 @@ function renderExtras(candles, times) {
     extraData[k] = def.compute(candles);
     def.fill(extraPanes[k].series, extraData[k], times);
     document.getElementById(`lg-${k}-title`).textContent = def.title(extraData[k]);
-    const mk = { stoch: 'k', atr: 'a', obv: 'o', roc: 'r', adx: 'a', rsisma: 'r' }[k];   // خط اصلی هر پنل برای هم‌گام‌سازی کراس‌هیر
+    const mk = { stoch: 'k', atr: 'a', obv: 'o', roc: 'r', adx: 'a', rsisma: 'r', cci: 'c', wpr: 'w' }[k];   // خط اصلی هر پنل برای هم‌گام‌سازی کراس‌هیر
     extraPanes[k].xh = { series: extraPanes[k].series[mk], vals: extraData[k][mk] };
   });
 }
@@ -134,6 +134,9 @@ function applyIndicatorVisibility() {
   syncExtraPane('rsisma', S.rsisma.on);
   syncExtraPane('roc', S.roc.on);
   syncExtraPane('adx', S.adx.on);
+  syncExtraPane('cci', S.cci.on);
+  syncExtraPane('wpr', S.wpr.on);
+  applyPaneOrder();
   applyLockState();
   resizeChartsNow();
 }
@@ -372,6 +375,7 @@ function renderAll(resetView, quiet) {   // quiet: بروزرسانی بی‌ص�
       priceChart.timeScale().setVisibleLogicalRange({ from: Math.max(0, total - barsToShow), to: total + 3 });
     }
     onSymbolRendered(symbol);
+    applyPaneOrder();
     updateLiveInfo();
     if (!quiet) scheduleAlign();
     if (!quiet) document.getElementById('status').textContent = `${symbol} · ${currentIv} · ${candles.length} کندل`;
@@ -382,7 +386,7 @@ function renderAll(resetView, quiet) {   // quiet: بروزرسانی بی‌ص�
 function makePane(key) {
   const wrap = document.createElement('div');
   wrap.className = 'chart-wrap'; wrap.id = 'wrap-' + key;
-  wrap.innerHTML = `<div class="pane-legend"><span class="lg-symbol" id="lg-${key}-title"></span><span class="pane-btns"><button onclick="openInd()" title="تنظیمات">⚙</button><button onclick="closePane('${key}')" title="حذف از چارت">✕</button></span><span class="lg-item" id="lg-${key}-vals"></span></div><div id="chart-${key}"></div>`;
+  wrap.innerHTML = `<div class="pane-legend"><span class="lg-symbol" id="lg-${key}-title"></span><span class="pane-btns"><button class="mv-up" onclick="movePane('${key}',-1)" title="بالاتر">▲</button><button class="mv-dn" onclick="movePane('${key}',1)" title="پایین‌تر">▼</button><button onclick="openInd()" title="تنظیمات">⚙</button><button onclick="closePane('${key}')" title="حذف از چارت">✕</button></span><span class="lg-item" id="lg-${key}-vals"></span></div><div id="chart-${key}"></div>`;
   document.getElementById('chartsCol').insertBefore(wrap, document.getElementById('chartsPad'));
   const el = document.getElementById('chart-' + key);
   el.style.height = '180px';
@@ -445,7 +449,7 @@ function allPaneCharts() {
 }
 
 function closePane(key) {
-  if (['rsi', 'macd', 'stoch', 'atr', 'obv', 'rsisma', 'roc', 'adx'].includes(key)) S[key].on = false;
+  if (['rsi', 'macd', 'stoch', 'atr', 'obv', 'rsisma', 'roc', 'adx', 'cci', 'wpr'].includes(key)) S[key].on = false;
   else { const sc = S.customIndicators.find(s => 'cs_' + s.id === key); if (sc) sc.on = false; }
   onIndChange();
 }
@@ -467,7 +471,10 @@ function initGrips() {
   ['price', 'rsi', 'macd'].forEach(k => addGrip(document.getElementById('wrap-' + k), k));
   keepPaneAutoscale(rsiChart, document.getElementById('chart-rsi')); keepPaneAutoscale(macdChart, document.getElementById('chart-macd'));
 }
-function resetLayout() { S.paneH = {}; chartMax = false; updateMaxBtn(); saveSettings(); resizeChartsNow(); drawVersion++; msg('↺ اندازه‌ی پنل‌ها بازنشانی شد'); }
+function resetLayout() {   // اندازه و ترتیب پنل‌ها به پیش‌فرض
+  S.paneH = {}; S.paneOrder = []; chartMax = false; updateMaxBtn(); applyPaneOrder(); saveSettings(); resizeChartsNow(); drawVersion++;
+  msg('↺ اندازه و ترتیب پنل‌ها بازنشانی شد');
+}
 const lineOpt = color => ({ color, lineWidth: 1.5, priceLineVisible: false });
 EXTRA_DEFS.obv = {
   title: d => `OBV (SMA ${S.obv.sma})` + (d && d.cal ? ' · همتراز با TV' : d && d.lost ? ' · ⚠ همترازی منقضی' : ''),
@@ -502,6 +509,30 @@ EXTRA_DEFS.rsisma = {
       sr.r.createPriceLine({ price, color, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' }));
   },
   legend: (d, i) => `<span style="color:#ffc107">RSI ${fx(d.r[i])}</span> <span style="color:#3b82f6">SMA ${fx(d.m[i])}</span>`
+};
+EXTRA_DEFS.cci = {
+  title: () => `CCI (${S.cci.period})`,
+  build(ch) {
+    const c = ch.addLineSeries(withLevels(lineOpt('#2962ff'), () => [100, -100]));
+    [[100, '#6b7280', true], [-100, '#6b7280', true], [0, '#374151', false]].forEach(([price, color, lbl]) =>
+      c.createPriceLine({ price, color, lineWidth: 1, lineStyle: 2, axisLabelVisible: lbl, title: '' }));
+    return { c };
+  },
+  compute: cd => ({ c: calcCCI(cd, S.cci.period) }),
+  fill(sr, d, t) { sr.c.setData(toSeries(t, d.c)); },
+  legend: (d, i) => `<span style="color:#2962ff">${fx(d.c[i])}</span>`
+};
+EXTRA_DEFS.wpr = {
+  title: () => `%R (${S.wpr.period})`,
+  build(ch) {
+    const w = ch.addLineSeries(withLevels(lineOpt('#7e57c2'), () => [-20, -80]));
+    [[-20, '#ef5350'], [-80, '#26a69a']].forEach(([price, color]) =>
+      w.createPriceLine({ price, color, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' }));
+    return { w };
+  },
+  compute: cd => ({ w: calcWPR(cd, S.wpr.period) }),
+  fill(sr, d, t) { sr.w.setData(toSeries(t, d.w)); },
+  legend: (d, i) => `<span style="color:#7e57c2">${fx(d.w[i])}</span>`
 };
 EXTRA_DEFS.roc = {
   title: () => `ROC (${S.roc.period})`,
@@ -579,3 +610,39 @@ function updateLiveInfo() {   // قیمت لحظه‌ای + درصد کندل ج
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden && S.refresh > 0 && Date.now() - lastUpdate > S.refresh * 500) refreshLatest(); });
 window.addEventListener('online', () => { if (S.refresh > 0) refreshLatest(); });
+
+// ═══════════ جابجایی پنل‌های اندیکاتور (▲▼ روی عنوان هر پنل) ═══════════
+const BUILTIN_PANES = ['rsi', 'macd', 'stoch', 'atr', 'obv', 'rsisma', 'roc', 'adx', 'cci', 'wpr'];
+function fullPaneOrder() {   // ترتیب کامل، شامل پنل‌های فعلاً مخفی
+  const known = new Set(BUILTIN_PANES.concat(Object.keys(extraPanes))), out = [];
+  S.paneOrder.forEach(k => { if (known.has(k) && !out.includes(k)) out.push(k); });
+  ['rsi', 'macd'].concat(Object.keys(extraPanes)).forEach(k => { if (!out.includes(k)) out.push(k); });   // پنل تازه ته لیست می‌نشیند
+  BUILTIN_PANES.forEach(k => { if (!out.includes(k)) out.push(k); });
+  return out;
+}
+function visiblePaneOrder() {
+  return fullPaneOrder().filter(k => k === 'rsi' ? S.rsi.on : k === 'macd' ? S.macd.on : !!extraPanes[k]);
+}
+function applyPaneOrder() {
+  const col = document.getElementById('chartsCol'), pad = document.getElementById('chartsPad');
+  if (!col || !pad) return;
+  const want = visiblePaneOrder().map(k => document.getElementById('wrap-' + k)).filter(Boolean);
+  const cur = Array.from(col.children).filter(w => w.classList.contains('chart-wrap') && w.id !== 'wrap-price' && w.style.display !== 'none');
+  if (!(want.length === cur.length && want.every((w, i) => w === cur[i]))) {
+    const top = col.scrollTop;
+    want.forEach(w => col.insertBefore(w, pad));
+    col.scrollTop = top;
+  }
+  want.forEach((w, i) => {
+    const up = w.querySelector('.mv-up'), dn = w.querySelector('.mv-dn');
+    if (up) up.disabled = i === 0; if (dn) dn.disabled = i === want.length - 1;
+  });
+}
+function movePane(key, dir) {
+  const vis = visiblePaneOrder(), i = vis.indexOf(key), j = i + dir;
+  if (i < 0 || j < 0 || j >= vis.length) return;
+  const full = fullPaneOrder(), a = full.indexOf(vis[i]), b = full.indexOf(vis[j]);
+  [full[a], full[b]] = [full[b], full[a]];
+  S.paneOrder = full; saveSettings();
+  applyPaneOrder(); resizeChartsNow(); drawVersion++;
+}
