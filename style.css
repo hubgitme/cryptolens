@@ -196,6 +196,8 @@ header.topbar {
 .pane-btns { pointer-events:auto; display:inline-flex; gap:2px; }
 .pane-btns button { padding:0 6px; font-size:.72rem; line-height:1.4; background:transparent; border:none; color:var(--muted); cursor:pointer; }
 .pane-btns button:hover { color:#fff; }
+.pane-btns button:disabled { opacity:.25; cursor:default; }
+.pane-btns .mv-up, .pane-btns .mv-dn { font-size:.6rem; }
 .charts-col > * { flex-shrink: 0; }
 .splitter { height:14px; display:flex; align-items:center; justify-content:center; font-size:9px; color:var(--muted); background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border); cursor:ns-resize; touch-action:none; user-select:none; }
 .splitter:hover { background:var(--border); }

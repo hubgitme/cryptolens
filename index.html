@@ -79,14 +79,14 @@
     </div>
     <div class="chart-wrap" id="wrap-rsi">
       <div class="pane-legend" id="legend-rsi">
-        <span class="lg-symbol" id="lg-rsi-title">RSI (14)</span><span class="pane-btns"><button onclick="openInd()" title="تنظیمات">⚙</button><button onclick="closePane('rsi')" title="حذف از چارت">✕</button></span>
+        <span class="lg-symbol" id="lg-rsi-title">RSI (14)</span><span class="pane-btns"><button class="mv-up" onclick="movePane('rsi',-1)" title="بالاتر">▲</button><button class="mv-dn" onclick="movePane('rsi',1)" title="پایین‌تر">▼</button><button onclick="openInd()" title="تنظیمات">⚙</button><button onclick="closePane('rsi')" title="حذف از چارت">✕</button></span>
         <b id="lg-rsi" class="lg-val">—</b>
       </div>
       <div id="chart-rsi"></div>
     </div>
     <div class="chart-wrap" id="wrap-macd">
       <div class="pane-legend" id="legend-macd">
-        <span class="lg-symbol" id="lg-macd-title">MACD (12,26,9)</span><span class="pane-btns"><button onclick="openInd()" title="تنظیمات">⚙</button><button onclick="closePane('macd')" title="حذف از چارت">✕</button></span>
+        <span class="lg-symbol" id="lg-macd-title">MACD (12,26,9)</span><span class="pane-btns"><button class="mv-up" onclick="movePane('macd',-1)" title="بالاتر">▲</button><button class="mv-dn" onclick="movePane('macd',1)" title="پایین‌تر">▼</button><button onclick="openInd()" title="تنظیمات">⚙</button><button onclick="closePane('macd')" title="حذف از چارت">✕</button></span>
         <span class="lg-item" style="color:#2962ff">MACD <b id="lg-macd" class="lg-val">—</b></span>
         <span class="lg-item" style="color:#ff6d00">Signal <b id="lg-signal" class="lg-val">—</b></span>
         <span class="lg-item">Hist <b id="lg-hist" class="lg-val">—</b></span>
@@ -110,7 +110,7 @@
   <details><summary style="cursor:pointer;font-size:.78rem;color:var(--muted)">راهنمای API</summary><pre class="code-doc">متغیرها (آرایه هم‌طول کندل‌ها): open high low close volume time
 ta.sma(src,len)  ta.ema(src,len)  ta.rsi(src,len)  ta.atr(len)
 ta.bb(src,len,mult) -> {mid,up,lo}     ta.macd(src,fast,slow,sig) -> {macd,signal,hist}
-ta.stoch(k,d,smooth) -> {k,d}          ta.vwap()   ta.obv()   ta.roc(src,len)   ta.adx(len) -> {adx,pdi,mdi}
+ta.stoch(k,d,smooth) -> {k,d}          ta.vwap()   ta.obv()   ta.roc(src,len)   ta.adx(len) -> {adx,pdi,mdi}   ta.cci(len)   ta.wpr(len)
 ta.highest(src,len)  ta.lowest(src,len)  ta.change(src,n)
 ta.crossover(a,b)  ta.crossunder(a,b)  ta.gt(a,b)  ta.lt(a,b)  ta.and(..)  ta.or(..)  ta.not(a)   (a و b آرایه یا عدد)
 
