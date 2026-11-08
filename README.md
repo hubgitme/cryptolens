@@ -3,6 +3,7 @@
 داشبورد تحلیل تکنیکال با داده‌ی زنده‌ی Binance، قابل نصب به‌صورت PWA.
 
 ## ویژگی‌ها
+- نوع کندل: معمولی یا **هیکن آشی (Heikin Ashi)** با دکمه‌ی HA؛ اندیکاتورها مثل TradingView روی کندل‌های نمایشی حساب میشوند (معاملات بک‌تست با قیمت واقعی)
 - چارت کندل (Lightweight Charts) با تایم‌فریم 1H / 4H / 1D / 1W؛ بارگذاری خودکار هنگام باز شدن و تغییر ارز/تایم‌فریم
 - اندیکاتورهای روی قیمت: EMA، SMA، Bollinger، VWAP، Williams Alligator، Volume
 - پنل‌های جدا (ارتفاع ثابت، قابل تغییر اندازه، محور زمان فقط پایین‌ترین): RSI، RSI+SMA، MACD، Stochastic، CCI، Williams %R، Momentum، MFI، ATR، OBV+SMA (با همترازی با TradingView)، ROC، ADX/+DI/−DI

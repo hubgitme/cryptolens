@@ -68,6 +68,8 @@ header.topbar {
 .iv-group button + button { border-inline-start: 1px solid var(--border); }
 .iv-group button.active { background: var(--accent); color: #fff; }
 #loadBtn { color: var(--text); }
+.ha-btn { font-weight: 800; font-size: .78rem; letter-spacing: .2px; color: var(--muted); }
+.ha-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 .tb-status { display: flex; justify-content: space-between; gap: 10px; font-size: .68rem; color: var(--muted); min-height: 14px; padding: 0 2px; }
 #status { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .live-info { flex: none; display: inline-flex; align-items: center; gap: 5px; direction: ltr; font-variant-numeric: tabular-nums; color: var(--text); font-size: .72rem; }
