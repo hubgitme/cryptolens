@@ -59,3 +59,9 @@ test('sanitizeSettings: Momentum، MFI و Alligator', () => {
   const al = X.sanitizeSettings({ overlays: [{ type: 'alligator', jaw: 21, teeth: 1, lips: 'x' }] }).overlays[0];
   assert.equal(al.type, 'alligator'); assert.equal(al.jaw, 21); assert.equal(al.teeth, 2); assert.equal(al.lips, 5);
 });
+
+test('sanitizeSettings: نوع کندل و کلید لنگر OBV برای همه‌ی تایم‌فریم‌ها و HA', () => {
+  assert.equal(X.sanitizeSettings({}).chartType, 'candles'); assert.equal(X.sanitizeSettings({ chartType: 'ha' }).chartType, 'ha'); assert.equal(X.sanitizeSettings({ chartType: 'renko' }).chartType, 'candles');
+  const a = { t: 1, v: 2 }, o = X.sanitizeSettings({ obv: { anchors: { 'BTCUSDT|15m': a, 'ETHUSDT|4h|ha': a, 'BTCUSDT|30m|ha': a, 'BTCUSDT|5m': a, 'BTCUSDT|4h|x': a } } });
+  assert.deepEqual(Array.from(Object.keys(o.obv.anchors)).sort(), ['BTCUSDT|15m', 'BTCUSDT|30m|ha', 'ETHUSDT|4h|ha']);
+});

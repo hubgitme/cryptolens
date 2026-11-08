@@ -106,3 +106,15 @@ test('SMMA و Williams Alligator', () => {
   assert.ok(a.lips[59] > a.teeth[59] && a.teeth[59] > a.jaw[59]);                // روند صعودی: لب > دندان > فک
   assert.equal(I.ALLIGATOR_SHIFT ? 0 : 0, 0);
 });
+
+test('Heikin Ashi: مقدار مرجع، حفظ زمان/حجم و بدون تغییر داده‌ی ورودی', () => {
+  const raw = [{ time: 1, open: 10, high: 20, low: 5, close: 15, volume: 7 }, { time: 2, open: 15, high: 25, low: 10, close: 20, volume: 8 }, { time: 3, open: 20, high: 22, low: 8, close: 9, volume: 9 }];
+  const snapshot = JSON.stringify(raw), h = I.toHeikinAshi(raw);
+  near(h[0].close, 12.5); near(h[0].open, 12.5); near(h[0].high, 20); near(h[0].low, 5);
+  near(h[1].close, 17.5); near(h[1].open, 12.5); near(h[1].high, 25); near(h[1].low, 10);
+  near(h[2].close, 14.75); near(h[2].open, 15); near(h[2].high, 22); near(h[2].low, 8);
+  assert.equal(JSON.stringify(h.map(x => [x.time, x.volume])), JSON.stringify([[1, 7], [2, 8], [3, 9]]));
+  assert.equal(JSON.stringify(raw), snapshot);                       // ورودی دست‌نخورده
+  const t = I.toHeikinAshi(Array.from({ length: 50 }, (_, i) => ({ time: i, open: 100 + i, high: 103 + i, low: 98 + i, close: 102 + i, volume: 1 })));
+  assert.ok(t.every(x => x.high >= Math.max(x.open, x.close) && x.low <= Math.min(x.open, x.close)));   // فتیله‌ها همیشه بدنه را می‌پوشانند
+});
