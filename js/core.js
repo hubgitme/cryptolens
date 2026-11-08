@@ -59,6 +59,7 @@ function refreshStar() {
 // ═══════════ تنظیمات، اندیکاتورها و پشتیبان‌گیری ═══════════
 const LS_KEY = 'ta_settings_v1';
 const INTERVALS = ['15m', '30m', '1h', '4h', '1d', '1w'];
+const ANCHOR_KEY_RE = new RegExp('^[A-Za-z0-9]{2,20}\\|(' + INTERVALS.join('|') + ')(\\|ha)?$');   // کلید لنگر OBV: نماد|تایم‌فریم(|ha)
 const OV_TYPES = { sma: 'SMA', ema: 'EMA', bb: 'Bollinger', vwap: 'VWAP', alligator: 'Alligator' };
 const OV_COLORS = ['#f59e0b', '#3b82f6', '#a855f7', '#14b8a6', '#ec4899', '#84cc16'];
 const SYMBOL_RE = /^[A-Za-z0-9]{2,20}$/;
@@ -75,7 +76,7 @@ function defaultSettings() {
     atr:   { on: false, period: 14 },
     obv:   { on: false, sma: 20, anchors: {} },
     rsisma: { on: false, period: 14, sma: 9, hi: 70, lo: 40 },
-    tz: 'local', refresh: 60,
+    tz: 'local', refresh: 60, chartType: 'candles',
     roc:   { on: false, period: 9 },
     adx:   { on: false, period: 14 },
     cci:   { on: false, period: 20 },
@@ -134,7 +135,7 @@ function sanitizeSettings(raw, imported) {
   o.obv = { on: toBool(ob.on, false), sma: toInt(ob.sma, 20, 1, 500), anchors: {} };
   if (ob.anchors && typeof ob.anchors === 'object') Object.keys(ob.anchors).slice(0, 60).forEach(k => {
     const a = ob.anchors[k];
-    if (/^[A-Za-z0-9]{2,20}\|(1h|4h|1d|1w)$/.test(k) && a && isFinite(a.t) && isFinite(a.v)) o.obv.anchors[k] = { t: +a.t, v: +a.v };
+    if (ANCHOR_KEY_RE.test(k) && a && isFinite(a.t) && isFinite(a.v)) o.obv.anchors[k] = { t: +a.t, v: +a.v };
   });
   const mo = raw.mom || {}, mf = raw.mfi || {};
   o.mom = { on: toBool(mo.on, false), period: toInt(mo.period, 10, 1, 500) };
@@ -147,6 +148,7 @@ function sanitizeSettings(raw, imported) {
   o.rsisma = { on: toBool(rs.on, false), period: toInt(rs.period, 14, 2, 200), sma: toInt(rs.sma, 9, 1, 500), hi: toNum(rs.hi, 70, 1, 100), lo: toNum(rs.lo, 40, 0, 99) };
   if (o.rsisma.lo >= o.rsisma.hi) { o.rsisma.hi = 70; o.rsisma.lo = 40; }
   o.tz = raw.tz === 'utc' ? 'utc' : 'local';
+  o.chartType = raw.chartType === 'ha' ? 'ha' : 'candles';
   o.refresh = [0, 15, 30, 60, 300].includes(+raw.refresh) ? +raw.refresh : 60;   // ثانیه؛ 0 = خاموش
   o.roc = { on: toBool(ro.on, false), period: toInt(ro.period, 9, 1, 500) };
   o.adx = { on: toBool(ad.on, false), period: toInt(ad.period, 14, 2, 100) };
@@ -163,6 +165,7 @@ function applySettingsToUI() {
   document.getElementById('symbolInput').value = S.symbol;
   setIv(S.iv);
   const dc = document.getElementById('drawColor'); if (dc) dc.value = S.drawColor;
+  updateHaBtn();
   updateMagnetBtn();
 }
 function loadSettings() {
@@ -267,6 +270,7 @@ function updSetting(k, v) {
   S[k] = v; S = sanitizeSettings(S); saveSettings(); updateMagnetBtn(); drawVersion++;
   if (k === 'tz' && lastCandles.length) renderAll(false);
   if (k === 'refresh') startAutoRefresh();
+  if (k === 'chartType') { updateHaBtn(); if (lastCandles.length) renderAll(false); }
   renderPanel();
   if (k === 'limit') loadData();
 }

@@ -356,7 +356,7 @@ async function loadData() {
 }
 
 function renderAll(resetView, quiet) {   // quiet: بروزرسانی بی‌صدای هر دقیقه (بدون ریست مقیاس/اندازه/نمای کاربر)
-  const symbol = lastSymbol, candles = lastCandles;
+  const symbol = lastSymbol, candles = S.chartType === 'ha' ? toHeikinAshi(lastCandles) : lastCandles;   // هیکن‌آشی: اندیکاتورها هم مثل TradingView روی همین کندل‌ها حساب میشوند
   if (!candles.length) return;
   try {
     const closes = candles.map(c => c.close);
@@ -383,7 +383,7 @@ function renderAll(resetView, quiet) {   // quiet: بروزرسانی بی‌ص�
     renderOverlays(candles, times);
     renderExtras(candles, times);
     renderCustom(candles, times);
-    document.getElementById('lg-symbol').textContent = `${symbol} · ${currentIv.toUpperCase()}`;
+    document.getElementById('lg-symbol').textContent = `${symbol} · ${currentIv.toUpperCase()}${S.chartType === 'ha' ? ' · HA' : ''}`;
     showLastLegend();
     if (!quiet) {
       resizeChartsNow();
@@ -398,7 +398,7 @@ function renderAll(resetView, quiet) {   // quiet: بروزرسانی بی‌ص�
     applyPaneOrder();
     updateLiveInfo();
     if (!quiet) scheduleAlign();
-    if (!quiet) document.getElementById('status').textContent = `${symbol} · ${currentIv} · ${candles.length} کندل`;
+    if (!quiet) document.getElementById('status').textContent = `${symbol} · ${currentIv}${S.chartType === 'ha' ? ' · HA' : ''} · ${candles.length} کندل`;
   } catch (e) {
     document.getElementById('status').textContent = '❌ ' + e.message;
   }
@@ -503,7 +503,7 @@ EXTRA_DEFS.obv = {
              s: ch.addLineSeries({ ...lineOpt('#ff6d00'), priceFormat: { type: 'custom', formatter: fxc, minMove: 1 } }) };
   },
   compute: c => {
-    const key = lastSymbol + '|' + currentIv, a0 = S.obv.anchors[key];
+    const key = obvKey(), a0 = S.obv.anchors[key];
     const r = calibrateOBV(calcOBV(c), c.map(x => x.time), a0);
     if (r.matched && r.anchor && (!a0 || r.anchor.t !== a0.t)) { S.obv.anchors[key] = r.anchor; saveSettings(); }
     return { o: r.values, s: calcSMA(r.values, S.obv.sma), cal: r.matched, lost: !!a0 && !r.matched };
@@ -689,3 +689,11 @@ function movePane(key, dir) {
   S.paneOrder = full; saveSettings();
   applyPaneOrder(); resizeChartsNow(); drawVersion++;
 }
+
+// ═══════════ کندل هیکن آشی (Heikin Ashi) ═══════════
+function updateHaBtn() {
+  const b = document.getElementById('haBtn'); if (!b) return;
+  b.classList.toggle('active', S.chartType === 'ha');
+  b.title = S.chartType === 'ha' ? 'برگشت به کندل معمولی' : 'کندل هیکن آشی (Heikin Ashi)';
+}
+function toggleHA() { updSetting('chartType', S.chartType === 'ha' ? 'candles' : 'ha'); }

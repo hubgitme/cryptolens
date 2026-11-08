@@ -211,3 +211,15 @@ function calcAlligator(c, jaw, teeth, lips) {   // روی میانه‌ی قیم
   const hl2 = c.map(x => (x.high + x.low) / 2);
   return { jaw: calcSMMA(hl2, jaw), teeth: calcSMMA(hl2, teeth), lips: calcSMMA(hl2, lips) };
 }
+
+// ─── Heikin Ashi ────────────────────────────────────────────────────────────
+// close=(O+H+L+C)/4 ، open=میانگین open و close کندل HA قبلی (اولی: (O+C)/2) ، high/low با احتساب open/close جدید. داده‌ی ورودی تغییر نمیکند.
+function toHeikinAshi(c) {
+  const out = []; let po = 0, pc = 0;
+  c.forEach((x, i) => {
+    const cl = (x.open + x.high + x.low + x.close) / 4, op = i === 0 ? (x.open + x.close) / 2 : (po + pc) / 2;
+    out.push({ ...x, open: op, high: Math.max(x.high, op, cl), low: Math.min(x.low, op, cl), close: cl });
+    po = op; pc = cl;
+  });
+  return out;
+}

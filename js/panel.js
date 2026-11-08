@@ -99,6 +99,7 @@ function renderPanel() {
       <div class="ind-row">
         <label>تعداد کندل<select onchange="updSetting('limit',this.value)">${[300, 500, 1000].map(n => `<option value="${n}" ${S.limit === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
         <label><input type="checkbox" ${S.magnet ? 'checked' : ''} onchange="updSetting('magnet',this.checked)">Magnet (چسبیدن به OHLC)</label>
+        <label>نوع کندل<select onchange="updSetting('chartType',this.value)"><option value="candles" ${S.chartType === 'candles' ? 'selected' : ''}>معمولی</option><option value="ha" ${S.chartType === 'ha' ? 'selected' : ''}>هیکن آشی</option></select></label>
         <label>ساعت کندل‌ها<select onchange="updSetting('tz',this.value)"><option value="local" ${S.tz === 'local' ? 'selected' : ''}>محلی (مثل TradingView)</option><option value="utc" ${S.tz === 'utc' ? 'selected' : ''}>UTC</option></select></label>
         <label>بروزرسانی خودکار قیمت<select onchange="updSetting('refresh',this.value)">${[[0, 'خاموش'], [15, 'هر ۱۵ ثانیه'], [30, 'هر ۳۰ ثانیه'], [60, 'هر ۱ دقیقه'], [300, 'هر ۵ دقیقه']].map(([v, t]) => `<option value="${v}" ${S.refresh === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
       </div>
@@ -120,12 +121,12 @@ function renderPanel() {
 }
 
 // ─── OBV: همترازی با TradingView ────────────────────────────────────────────
-function obvKey() { return `${lastSymbol}|${currentIv}`; }
+function obvKey() { return `${lastSymbol}|${currentIv}${S.chartType === 'ha' ? '|ha' : ''}`; }
 function calibrateObv() {
   const v = parseCompact(document.getElementById('obvTv').value);
   if (v == null) return msg('❌ عدد معتبر وارد کنید (مثلاً 40.5K یا 1250000)');
   if (lastCandles.length < 3) return msg('ابتدا داده بارگذاری شود');
-  S.obv.anchors[obvKey()] = makeObvAnchor(calcOBV(lastCandles), lastCandles.map(c => c.time), v);
+  S.obv.anchors[obvKey()] = makeObvAnchor(calcOBV(globalCandles), globalCandles.map(c => c.time), v);
   S.obv.on = true;
   onIndChange(); msg('✅ OBV با TradingView همتراز شد');
 }

@@ -122,6 +122,7 @@ function fillCustomPane(key, r, times) {
   p.xh = p.series[0] ? { series: p.series[0], vals: r.plots[0].values } : null;
   document.getElementById(`lg-${key}-title`).textContent = r.title;
 }
+// بک‌تست: سیگنال‌ها از کندل‌های نمایشی (در حالت هیکن آشی مثل TradingView) می‌آیند، ولی ورود/خروج/حد ضرر با قیمت‌های واقعی انجام میشود.
 function renderCustom(candles, times) {
   csOverlaySeries.forEach(s => { try { priceChart.removeSeries(s); } catch (e) {} }); csOverlaySeries = [];
   Object.keys(btResults).forEach(k => delete btResults[k]);
@@ -130,7 +131,7 @@ function renderCustom(candles, times) {
     const r = runScript(sc, candles);
     scriptInfo[sc.id] = { kind: r.kind, inputs: r.inputs, error: r.error };
     if (r.error) return;
-    if (r.kind === 'strategy') { const bt = backtest(r, candles); bt.title = r.title; btResults[sc.id] = bt; markers.push(...bt.markers); }
+    if (r.kind === 'strategy') { const bt = backtest(r, lastCandles.length === candles.length ? lastCandles : candles); bt.title = r.title; btResults[sc.id] = bt; markers.push(...bt.markers); }
     if (!r.plots.length) return;
     if (r.overlay) {
       r.plots.forEach(pl => {
