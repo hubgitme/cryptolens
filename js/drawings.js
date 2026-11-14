@@ -170,7 +170,7 @@ function drawOne(d, P, W, sel) {
       if (y == null) return;
       ys.push(y);
       const col = FIB_COLORS[i % FIB_COLORS.length];
-      s += svgLine(xl, y, W, y, col, sel ? 1.6 : 1) + svgText(xl + 4, y - 3, `${l} (${fmtPrice(price)})`, col, 'start');
+      s += svgLine(xl, y, W, y, col, sel ? 1.6 : 1) + svgText(W - 4, y - 3, `${l} (${fmtPrice(price)})`, col, 'end');
     });
     if (canHit && ys.length) {   // کل ناحیه‌ی فیبو قابل گرفتن است
       const y0 = Math.min(...ys, P[0].y, P[1].y), y1 = Math.max(...ys, P[0].y, P[1].y);
