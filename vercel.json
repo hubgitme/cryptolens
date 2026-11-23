@@ -3,6 +3,9 @@
   "functions": {
     "api/klines.js": {
       "regions": ["fra1"]
+    },
+    "api/tickers.js": {
+      "regions": ["fra1"]
     }
   }
 }

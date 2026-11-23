@@ -206,7 +206,7 @@ function initCharts() {
     upColor: '#26a69a', downColor: '#ef5350',
     borderUpColor: '#26a69a', borderDownColor: '#ef5350',
     wickUpColor: '#26a69a', wickDownColor: '#ef5350',
-    priceFormat: { type: 'price', precision: 4, minMove: 0.01 }, // ← تعداد رقم اعشار قیمت اینجا
+    priceFormat: { type: 'price', precision: 2, minMove: 0.01 }, // مقدار اولیه (BTC)؛ در هر رندر بر اساس قیمت پویا میشود
   });
 
   // RSI
@@ -365,9 +365,8 @@ function renderAll(resetView, quiet) {   // quiet: بروزرسانی بی‌ص�
     const rsiArr = calcRSI(closes, S.rsi.period);
     const { ml, sl, hl } = calcMACD(closes, S.macd.fast, S.macd.slow, S.macd.sig);
     globalCandles = candles; globalCloses = closes; globalRsi = rsiArr; globalMacdL = ml; globalMacdS = sl; globalMacdH = hl;
-    const small = closes[closes.length - 1] < 1;
-    lastPricePrecision = small ? 4 : 2;
-    candleSeries.applyOptions({ priceFormat: { type: 'price', precision: lastPricePrecision, minMove: small ? 0.0001 : 0.01 } });
+    lastPricePrecision = calcPricePrecision(closes[closes.length - 1]);
+    candleSeries.applyOptions({ priceFormat: { type: 'price', precision: lastPricePrecision, minMove: Math.pow(10, -lastPricePrecision) } });
     candleSeries.setData(candles.map((c, i) => ({ ...c, time: times[i] })));
     if (!quiet) priceChart.priceScale('right').applyOptions({ autoScale: true });
     rsiSeries.setData(toSeries(times, rsiArr));

@@ -1,5 +1,5 @@
 // نسخه‌ی کش را با هر انتشار عوض کنید تا کش‌های قدیمی پاک شوند
-const CACHE_NAME = 'crypto-lenz-v11';
+const CACHE_NAME = 'crypto-lenz-v15';
 
 const ASSETS = [
   './',
@@ -12,6 +12,7 @@ const ASSETS = [
   './js/drawings.js',
   './js/scripts.js',
   './js/panel.js',
+  './js/watchlist.js',
   './js/main.js'
 ];
 

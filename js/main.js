@@ -9,6 +9,7 @@ populateSymbolDropdown();
 applyIndicatorVisibility();
 initDrawings();
 initGrips();
+initWatchlist();
 updateMaxBtn();
 loadData();
 startAutoRefresh();   // بارگذاری خودکار هنگام باز شدن صفحه

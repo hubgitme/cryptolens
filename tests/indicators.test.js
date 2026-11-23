@@ -118,3 +118,15 @@ test('Heikin Ashi: مقدار مرجع، حفظ زمان/حجم و بدون تغ
   const t = I.toHeikinAshi(Array.from({ length: 50 }, (_, i) => ({ time: i, open: 100 + i, high: 103 + i, low: 98 + i, close: 102 + i, volume: 1 })));
   assert.ok(t.every(x => x.high >= Math.max(x.open, x.close) && x.low <= Math.min(x.open, x.close)));   // فتیله‌ها همیشه بدنه را می‌پوشانند
 });
+
+test('calcPricePrecision: دقت نمایش بر اساس بزرگی قیمت', () => {
+  assert.equal(I.calcPricePrecision(67000), 2);      // BTC: مثل قبل
+  assert.equal(I.calcPricePrecision(1), 2);
+  assert.equal(I.calcPricePrecision(0.5), 4);
+  assert.equal(I.calcPricePrecision(0.01), 4);
+  assert.equal(I.calcPricePrecision(0.005), 6);
+  assert.equal(I.calcPricePrecision(0.0001), 6);
+  assert.equal(I.calcPricePrecision(0.00001), 8);    // PEPE: دیگر 0.0000 نمیشود
+  assert.equal(I.calcPricePrecision(0), 8);
+  assert.equal(I.calcPricePrecision(NaN), 2);        // ورودی خراب: پیش‌فرض امن
+});

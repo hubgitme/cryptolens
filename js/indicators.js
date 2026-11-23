@@ -223,3 +223,13 @@ function toHeikinAshi(c) {
   });
   return out;
 }
+
+// ─── دقت نمایش قیمت بر اساس بزرگی آن (فقط نمایش؛ محاسبات با قیمت خام انجام میشوند) ──
+// ‎>=1: دو رقم (مثل قبل)، ‎>=0.01: چهار رقم، ‎>=0.0001: شش رقم، کوچک‌تر (مثل PEPE): هشت رقم
+function calcPricePrecision(price) {
+  const p = Math.abs(+price);
+  if (!isFinite(p) || p >= 1) return 2;
+  if (p >= 0.01) return 4;
+  if (p >= 0.0001) return 6;
+  return 8;
+}

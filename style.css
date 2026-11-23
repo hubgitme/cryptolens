@@ -236,3 +236,33 @@ header.topbar {
 .ind-modal textarea { width:100%; height:64px; direction:ltr; font-size:.72rem; margin-top:8px;
   background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px; resize:vertical; }
 .ind-msg { font-size:.78rem; color:var(--green); min-height:1em; }
+
+/* ── سایدبار لیست ارزها (watchlist) ── */
+#wlBtn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+.wl-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:949; }
+.wl-backdrop.show { display:block; }
+.wl-aside { display:none; flex-direction:column; background:var(--surface); border-inline-end:1px solid var(--border); min-height:0; position:relative; flex:0 0 280px; }
+.wl-aside.show { display:flex; }
+.wl-head { display:flex; align-items:center; justify-content:space-between; padding:10px 12px 6px; }
+.wl-head h3 { font-size:.9rem; color:#fff; }
+.wl-head-btns { display:inline-flex; gap:6px; }
+.wl-head-btns .icon-btn { width:32px; height:32px; font-size:.85rem; }
+.wl-tools { display:flex; gap:6px; padding:0 12px 10px; }
+.wl-tools input { flex:1; min-width:0; }
+.wl-tools select { flex:0 0 auto; max-width:128px; }
+.wl-list { flex:1; overflow-y:auto; padding:0 8px 8px; display:flex; flex-direction:column; gap:4px; min-height:0; }
+.wl-row { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; text-align:start; padding:8px 10px; border-radius:8px; background:var(--bg); border:1px solid transparent; cursor:pointer; }
+.wl-del { flex:0 0 auto; padding:2px 6px; font-size:.7rem; line-height:1.2; color:var(--muted); background:transparent; border:none; border-radius:6px; }
+.wl-del:hover { color:var(--red); }
+.wl-row:hover { border-color:var(--border); }
+.wl-row.cur { border-color:var(--accent); }
+.wl-sym { font-weight:700; color:#fff; direction:ltr; display:flex; flex-direction:column; gap:2px; font-size:.8rem; flex:1; }
+.wl-sym small { color:var(--muted); font-weight:400; font-size:.66rem; }
+.wl-nums { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+.wl-nums b { color:var(--text); font-size:.82rem; }
+.wl-nums small { font-size:.68rem; }
+.wl-nums .up { color:var(--green); } .wl-nums .dn { color:var(--red); }
+.wl-status { padding:6px 12px 10px; font-size:.68rem; color:var(--muted); }
+@media (max-width: 768px) {
+  .wl-aside { position:fixed; inset-inline-start:0; top:0; bottom:0; width:min(320px,88vw); z-index:950; box-shadow:0 0 24px rgba(0,0,0,.5); flex:none; }
+}

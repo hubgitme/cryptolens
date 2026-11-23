@@ -45,7 +45,11 @@ function saveCurrentSymbol() {   // ستاره: ذخیره / برداشتن ذخ
   const had = saved.includes(symbol);
   saved = had ? saved.filter(s => s !== symbol) : saved.concat(symbol);
   setSavedSymbols(saved);
+  if (!had && S.watchlist.hidden.includes(symbol)) {   // ستاره دوباره = برگرداندن به لیست سایدبار
+    S.watchlist.hidden = S.watchlist.hidden.filter(s => s !== symbol); saveSettings();
+  }
   populateSymbolDropdown();
+  if (typeof fetchWatchlist === 'function') fetchWatchlist();
   document.getElementById('status').textContent = had ? `${symbol} از ذخیره‌شده‌ها برداشته شد` : `⭐ ${symbol} ذخیره شد`;
 }
 function refreshStar() {
@@ -84,6 +88,7 @@ function defaultSettings() {
     mom:   { on: false, period: 10 },
     mfi:   { on: false, period: 14 },
     paneOrder: [],
+    watchlist: { open: false, pinned: false, sort: 'default', hidden: [] },
     customIndicators: []
   };
 }
@@ -153,6 +158,9 @@ function sanitizeSettings(raw, imported) {
   o.roc = { on: toBool(ro.on, false), period: toInt(ro.period, 9, 1, 500) };
   o.adx = { on: toBool(ad.on, false), period: toInt(ad.period, 14, 2, 100) };
   o.customIndicators = sanitizeScripts(raw.customIndicators, imported);
+  const wl = raw.watchlist || {};
+  o.watchlist = { open: toBool(wl.open, false), pinned: toBool(wl.pinned, false), sort: ['default', 'change', 'volume'].includes(wl.sort) ? wl.sort : 'default',
+    hidden: Array.isArray(wl.hidden) ? [...new Set(wl.hidden.filter(s => typeof s === 'string' && SYMBOL_RE.test(s.toUpperCase())).map(s => s.toUpperCase()))].slice(0, 50) : [] };
   return o;
 }
 function saveSettings() {
@@ -269,7 +277,7 @@ function updSetting(k, v) {
   if (k === 'fibLevels') v = String(v).split(/[\s,،]+/).map(parseFloat).filter(isFinite);
   S[k] = v; S = sanitizeSettings(S); saveSettings(); updateMagnetBtn(); drawVersion++;
   if (k === 'tz' && lastCandles.length) renderAll(false);
-  if (k === 'refresh') startAutoRefresh();
+  if (k === 'refresh') { startAutoRefresh(); if (typeof startWlAutoRefresh === 'function') startWlAutoRefresh(); }
   if (k === 'chartType') { updateHaBtn(); if (lastCandles.length) renderAll(false); }
   renderPanel();
   if (k === 'limit') loadData();
