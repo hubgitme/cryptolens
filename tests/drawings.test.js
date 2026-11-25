@@ -70,3 +70,16 @@ test('sanitizeDrawings: بازه قیمت با ۲ نقطه نگه داشته م�
   assert.equal(out.BTCUSDT.length, 1);
   assert.equal(out.BTCUSDT[0].type, 'range');
 });
+
+test('deoverlapChips: برچسب پایین پنل به بالا کشیده می‌شود، نه اینکه بریده شود', () => {
+  const out = D.deoverlapChips(
+    [{ y: 470, price: 1, color: '#fff' }, { y: 480, price: 2, color: '#fff' }, { y: 490, price: 3, color: '#fff' }], 500);
+  assert.ok(out.every(c => c.y <= 491), 'none past bottom');
+  assert.deepEqual(out.map(c => c.y), [455, 473, 491]);
+});
+test('deoverlapChips: دسته‌ی بلندتر از پنل از بالا چسبانده می‌شود', () => {
+  const chips = Array.from({ length: 10 }, (_, i) => ({ y: 90 + i * 5, price: i, color: '#fff' }));
+  const out = D.deoverlapChips(chips, 100);
+  assert.ok(out.every(c => c.y >= -9 && c.y <= 109));
+  for (let i = 1; i < out.length; i++) assert.ok(out[i].y - out[i - 1].y >= 18);
+});
