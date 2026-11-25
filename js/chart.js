@@ -17,7 +17,9 @@ function baseChartOptions() {
   return {
     layout: { background: { color: '#0b0e17' }, textColor: '#6b7280' },
     grid: { vertLines: { color: '#1e2535' }, horzLines: { color: '#1e2535' } },
-    crosshair: { mode: LightweightCharts.CrosshairMode.Magnet },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Magnet,
+      vertLine: { color: '#758696', width: 1, style: 0, labelBackgroundColor: '#758696' },
+      horzLine: { color: '#758696', width: 1, style: 0, labelBackgroundColor: '#758696' } },
     timeScale: { borderColor: '#1e2535', timeVisible: true, secondsVisible: false, rightOffset: 5, barSpacing: 9, visible: false },   // محور زمان فقط در نوار ثابت پایین صفحه
     localization: { timeFormatter: fmtCrossTime },
     rightPriceScale: { borderColor: '#1e2535' },
@@ -274,6 +276,21 @@ function crosshairTargets() {
   Object.keys(extraPanes).forEach(k => { const p = extraPanes[k]; if (p.xh) list.push({ key: k, chart: p.chart, series: p.xh.series, vals: p.xh.vals }); });
   if (axisChart) list.push({ key: 'axis', chart: axisChart, series: axisSeries, vals: null });
   return list;
+}
+function placeCrosshair(time) {   // کلیک/لمس: کراس‌هیر را روی آن کندل می‌نشاند (در لمسی هاور نیست)
+  const idx = time ? candleIndexAt(time) : -1;
+  crossIdx = idx;
+  isSyncing = true;
+  try {
+    crosshairTargets().forEach(t => {
+      try {
+        if (idx < 0 || !time) t.chart.clearCrosshairPosition();
+        else { const v = idx >= 0 && t.vals ? t.vals[idx] : null; t.chart.setCrosshairPosition(v == null ? 0 : v, time, t.series); }
+      } catch (e) {}
+    });
+  } finally { isSyncing = false; }
+  if (idx !== -1) updateLegendByIndex(idx); else showLastLegend();
+  drawVersion++;
 }
 function hookCrosshair(chart, key) {
   chart.subscribeCrosshairMove(param => {

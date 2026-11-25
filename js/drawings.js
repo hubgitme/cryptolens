@@ -149,6 +149,7 @@ function hitTest(x, y) {
 }
 function onChartClick(param) {
   if (!param || !param.point || !globalCandles.length) return;
+  if (param.time) placeCrosshair(param.time);   // کراس‌هیر (+) با کلیک/لمس روی کندل می‌نشیند
   if (drawTool === 'cursor') { selectedId = hitTest(param.point.x, param.point.y); drawVersion++; refreshToolbar(); return; }
   const pt = snapPoint(param.point.x, param.point.y); if (!pt) return;
   if (!draft) draft = { type: drawTool, pts: [] };
@@ -308,10 +309,18 @@ function axisChipList() {
   }
   return chips;
 }
-function deoverlapChips(chips, height) {   // مرتب‌سازی بر اساس y و فاصله‌ی حداقل ۱۸ پیکسل تا روی هم نیفتند
+function deoverlapChips(chips, height) {   // مرتب‌سازی بر اساس y و فاصله‌ی حداقل ۱۸ پیکسل تا روی هم نیفتند؛ هیچ برچسبی از پایین پنل بیرون نمی‌زند
   const list = chips.filter(c => c.y >= -9 && c.y <= height + 9).sort((a, b) => a.y - b.y);
   for (let i = 1; i < list.length; i++) if (list[i].y < list[i - 1].y + 18) list[i].y = list[i - 1].y + 18;
-  return list;
+  if (list.length && list[list.length - 1].y > height - 9) {   // اگر پایین‌ترین برچسب از پنل بیرون زد، کل دسته را بالا می‌کشیم
+    const shift = list[list.length - 1].y - (height - 9);
+    list.forEach(c => { c.y -= shift; });
+    if (list[0].y < -9) {   // دسته از پنل بلندتر است: از بالا می‌چسبانیم و دوباره فاصله می‌دهیم
+      list[0].y = -9;
+      for (let i = 1; i < list.length; i++) if (list[i].y < list[i - 1].y + 18) list[i].y = list[i - 1].y + 18;
+    }
+  }
+  return list.filter(c => c.y >= -9 && c.y <= height + 9);
 }
 function renderAxisChips() {
   const el = document.getElementById('axisChips');
@@ -322,7 +331,7 @@ function renderAxisChips() {
   w = Math.max(50, w);
   el.style.width = w + 'px'; el.style.height = H + 'px';
   el.innerHTML = chips.map(c =>
-    `<div class="axis-chip" style="top:${Math.round(c.y - 9)}px;width:${w - 2}px;background:${c.color}">${fmtPrice(c.price)}</div>`).join('');
+    `<div class="axis-chip" style="top:${Math.round(c.y - 9)}px;background:${c.color}">${fmtPrice(c.price)}</div>`).join('');
 }
 function drawLoop() {
   try {
@@ -358,7 +367,7 @@ function initDrawings() {
   window.addEventListener('keydown', e => {
     const tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
-    if (e.key === 'Escape') { draft = null; selectedId = null; setTool('cursor'); }
+    if (e.key === 'Escape') { draft = null; selectedId = null; setTool('cursor'); placeCrosshair(null); }
     else if (e.key === 'Enter') finishDraftEarly();
     else if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
   });
