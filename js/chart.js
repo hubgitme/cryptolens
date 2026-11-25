@@ -8,6 +8,8 @@ let isSyncing = false;
 let allCharts = [];
 let lastCandles = [], lastSymbol = '';
 let overlaySeries = [], overlayDefs = [], volSeries = null;
+let axisOverlayDefs = [];   // مقدار خط‌های روی قیمت برای برچسب محور (SMA/EMA/BB/VWAP/Alligator)
+let crossIdx = -1;   // اندیس کندل زیر کراس‌هیر؛ ‎-1 یعنی آخرین کندل
 const extraPanes = {}, extraData = {};
 
 // ─── Chart helpers (مشترک بین پنل‌های اصلی و پنل‌های اضافه) ─────────────────
@@ -35,7 +37,7 @@ function hookSync(src) {
 // ─── Overlay روی نمودار قیمت (SMA/EMA/Bollinger/VWAP/Volume) ─────────────────
 function renderOverlays(candles, times) {
   overlaySeries.forEach(s => { try { priceChart.removeSeries(s); } catch (e) {} });
-  overlaySeries = []; overlayDefs = [];
+  overlaySeries = []; overlayDefs = []; axisOverlayDefs = [];
   if (volSeries) { try { priceChart.removeSeries(volSeries); } catch (e) {} volSeries = null; }
   const closes = candles.map(c => c.close);
   const line = (vals, color, w, style) => {
@@ -48,14 +50,17 @@ function renderOverlays(candles, times) {
       const v = o.type === 'sma' ? calcSMA(closes, o.period) : calcEMA(closes, o.period);
       line(v, o.color);
       overlayDefs.push({ label: `${OV_TYPES[o.type]} ${o.period} `, color: o.color, vals: v });
+      axisOverlayDefs.push({ vals: v, color: o.color });
     } else if (o.type === 'bb') {
       const b = calcBB(closes, o.period, o.mult);
       line(b.up, o.color, 1); line(b.lo, o.color, 1); line(b.mid, o.color, 1, 2);
       overlayDefs.push({ label: `BB ${o.period},${o.mult} `, color: o.color, vals: b.mid });
+      axisOverlayDefs.push({ vals: b.up, color: o.color }, { vals: b.mid, color: o.color }, { vals: b.lo, color: o.color });
     } else if (o.type === 'vwap') {
       const v = calcVWAP(candles, currentIv);
       line(v, o.color);
       overlayDefs.push({ label: 'VWAP ', color: o.color, vals: v });
+      axisOverlayDefs.push({ vals: v, color: o.color });
     } else if (o.type === 'alligator') {
       // Williams Alligator: سه SMMA از (H+L)/2 با جابه‌جایی رو به جلو؛ بخشی از خطوط به آینده‌ی چارت می‌رسد
       const al = calcAlligator(candles, o.jaw, o.teeth, o.lips), n = candles.length, step = IV_SEC[currentIv] || 1, lastT = candles[n - 1].time;
@@ -70,6 +75,7 @@ function renderOverlays(candles, times) {
         const sr = priceChart.addLineSeries({ color, lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
         sr.setData(data); overlaySeries.push(sr);
         overlayDefs.push({ label: `${name} `, color, vals: shifted });
+        axisOverlayDefs.push({ vals: shifted, color });
       });
     }
   });
@@ -273,6 +279,7 @@ function hookCrosshair(chart, key) {
   chart.subscribeCrosshairMove(param => {
     if (isSyncing) return;
     const idx = param.time ? candleIndexAt(param.time) : -1;
+    crossIdx = idx;   // برچسب‌های محور قیمتِ خط‌ها مقدار همین کندل را نشان می‌دهند
     isSyncing = true;
     try {
       crosshairTargets().forEach(t => {
