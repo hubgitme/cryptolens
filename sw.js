@@ -1,5 +1,5 @@
 // نسخه‌ی کش را با هر انتشار عوض کنید تا کش‌های قدیمی پاک شوند
-const CACHE_NAME = 'crypto-lenz-v15';
+const CACHE_NAME = 'crypto-lenz-v16';
 
 const ASSETS = [
   './',

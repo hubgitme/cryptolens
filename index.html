@@ -48,6 +48,9 @@
     <button class="tb" data-tool="fib" onclick="setTool('fib')" title="فیبوناچی" aria-label="فیبوناچی"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M3 10h18M3 15h18M3 20h18"/><path d="M5 20L19 5" stroke-width="1.2"/></svg></button>
     <button class="tb" data-tool="ewi" onclick="setTool('ewi')" title="الیوت ۱-۵ (۶ نقطه)" aria-label="الیوت ۱-۵ (۶ نقطه)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19l4-8 3 4 5-10 3 5 3-4"/></svg></button>
     <button class="tb" data-tool="ewc" onclick="setTool('ewc')" title="الیوت ABC (۴ نقطه)" aria-label="الیوت ABC (۴ نقطه)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6 8 4-5 8 10"/></svg></button>
+    <button class="tb" data-tool="long" onclick="setTool('long')" title="پوزیشن خرید: ورود، هدف، حد ضرر (۳ کلیک)" aria-label="پوزیشن خرید"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+    <button class="tb" data-tool="short" onclick="setTool('short')" title="پوزیشن فروش: ورود، هدف، حد ضرر (۳ کلیک)" aria-label="پوزیشن فروش"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></button>
+    <button class="tb" data-tool="range" onclick="setTool('range')" title="بازه قیمت: تغییر، درصد، تعداد کندل (۲ کلیک)" aria-label="بازه قیمت"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z" fill="none"/><path d="M7 17L17 7M17 7h-5M17 7v5"/></svg></button>
     <button id="drawDone" class="tb done" onclick="finishDraftEarly()" style="display:none" title="اتمام رسم" aria-label="اتمام"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></button>
   </div>
   <div class="tg">
@@ -85,6 +88,7 @@
         <span class="lg-item">C<b id="lg-close" class="lg-val">—</b></span>
       </div>
       <svg id="drawSvg" class="draw-svg" width="0" height="0"></svg>
+      <div id="axisChips"></div>
       <div class="pane-legend" id="legend-ov" style="top:26px; flex-wrap:wrap; max-width:92%;"></div>
       <div id="chart-price"></div>
     </div>
